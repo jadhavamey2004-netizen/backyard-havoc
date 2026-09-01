@@ -51,7 +51,7 @@
 - **Physics Engine (`src/physics.js`)**: Custom continuous Verlet integration with circular-arc restitution, air drag, and velocity clamping.
 - **Adaptive NPC Behavioral State Machine (`src/ai.js`, `src/npc.js`)**: 6-state dynamic behavior controller tracking player accuracy, distance, and combo level in real time.
 - **Audio & Generative Procedural Music (`src/audio.js`, `src/audio_assets.js`)**:
-  - Web Audio API master compressor & dynamic presence EQ filter.
+  - Web Audio API master dynamics compressor & speech presence EQ filter.
   - Multi-clause emotional inflection engine with phonetic normalization (zero robotic speech artifacts).
   - Procedural generative funk bassline scaling tempo dynamically from 88 BPM to 150 BPM with combo tiers.
 - **Visual Effects & Camera Juice (`src/particles.js`, `src/camera.js`)**:
@@ -61,12 +61,12 @@
 
 ---
 
-# 📝 Game Design Document & Pitch (Question #1 Submission)
+# 📝 Question #1: Build a Playable Prototype (Design & Strategy)
 
 ### 1. The Pitch
 - **What it is**: *Backyard Havoc* is a fast-paced physics-arcade soccer juggler and comedic destruction game where you juggle a street football to charge high-velocity trick shots, smash your grumpy neighbor Kevin’s windows and backyard ornaments, and parry his retaliatory flowerpot counterattacks back at him.
 - **Who it’s for**: Casual and mid-core arcade gamers who love physics trick-shot games (*Angry Birds*, *Brawl Stars*), combo-chaining arcade titles (*Tony Hawk*, *OlliOlli*), and slapstick neighbor-prank games (*Untitled Goose Game*, *Neighbors from Hell*).
-- **Why someone plays it**: Instant kinetic satisfaction. The tactile kick physics, slow-motion bullet-time headers, escalating destruction chains, and the comedic satisfaction of provoking a grumpy neighbor into an over-the-top rage tantrum create an immediate dopamine loop.
+- **Why someone plays it**: Instant kinetic satisfaction. The tactile kick physics, slow-motion bullet-time headers, escalating destruction chains, and the comedic satisfaction of provoking a grumpy neighbor into an over-the-top rage tantrum create an immediate, addictive dopamine loop.
 
 ---
 
@@ -81,33 +81,36 @@
 
 ---
 
-### 3. Progression & Metagame
-- **Short-Term (Day 1 – Day 7)**:
-  - **Backyard Biome Mastery**: Progress through 5 distinct neighborhood properties (The Conservative Greenhouse $\rightarrow$ The Luxury Poolside Villa $\rightarrow$ The Mad Scientist’s Rooftop).
-  - **Trick Shot Achievements**: Unlock special trick categories (Rainbow Flicks, Headshot Snipes, Triple Deflection Volleys).
-- **Long-Term (Months 1 – 6)**:
-  - **Roguelite Yard Modifier Cards**: Between backyard stages, draft arcade modifiers (*"Bouncy Lawn Gnomes"*, *"Double Parried Projectiles"*, *"Multi-Ball Overdrive"*).
-  - **Seasonal Havoc Ladder**: Weekly competitive leaderboards where players compete in seeded runs with identical backyard layouts.
-  - **Customization Locker**: Collectible trick balls (Bouncy Retro Ball, Glitch Plasma Ball), custom player kits, and unique kick trails.
+### 3. Progression and Metagame
+- **Prototype State**:
+  - Pure arcade high-score chase where mastery comes from timing, angle prediction, and clearing all breakable backyard targets in a single run.
+- **Production Roadmap (Retention System)**:
+  - **Daily Objectives & Cred Points**: Daily challenges (e.g., *"Shatter 3 gnomes in one combo"*, *"Parry 5 flowerpots without taking damage"*) award Cred Points to unlock authentic vintage street jerseys, custom balls, and character skins.
+  - **Weekly Mystery Icon Hunt**: A 7-day reveal system where daily trivia and visual clues tease a legendary football icon, culminating in an unlockable playable character.
+  - **Playable Iconic Moments**: Mini-scenarios where players recreate famous career highlights inside the backyard engine using signature player animations.
 
 ---
 
-### 4. Monetization Strategy (Player-First, Zero Pay-to-Win)
-- **Cosmetics & Prestige Only**:
-  - **Lawn Havoc Battle Pass**: Free & Premium reward tracks offering themed character jerseys, goal celebration animations, and custom kick particle trails (Flame, Lightning, Rainbow).
-  - **Ball & Sound FX Vault**: Custom ball trails, soccer ball skins (8-Bit Voxel Ball, Golden World Cup Ball), and comedic neighbor sound skins.
-- **Rewarded Engagement (Opt-In Only)**:
-  - Watch a 5-second rewarded clip to retry a failed high-score streak once per day. No intrusive popups or unskippable mid-game ads.
+### 4. Monetization Strategy
+An accessible, low-friction micro-economy designed around fan nostalgia rather than pay-to-win barriers:
+
+| Feature | Model | Price | Content Included |
+| :--- | :--- | :--- | :--- |
+| **Core Game** | Free-to-Play | **$0.00** | Full sandbox juggling, breakable backyard targets, high-score tracking, base customization. |
+| **Icon Micro-Pass** | Weekly Campaign | **$0.05 (5¢)** | Unlocks 3 playable episodic historical chapters for the weekly featured Icon, their signature jersey, and unique visual flair. |
+
+*At just 5 cents per Icon pack, the pass acts as an impulse digital collectible card that rewards football trivia without aggressive monetization tactics.*
 
 ---
 
-### 5. AI Integration (Development & In-Game)
-- **In-Game Adaptive AI**:
-  - **Kevin’s Dynamic Behavioral State Machine**: Uses real-time situational tracking (`src/ai.js`, `src/npc.js`) to analyze player juggle angle, distance, combo level, and accuracy.
-  - As Kevin’s rage builds from 0 to 100%, his behavior dynamically shifts across 6 states: `PEEKING_INSIDE` $\rightarrow$ `LEANING_OUT_RAGE` $\rightarrow$ `SHAKING_FIST` $\rightarrow$ `THROWING_PROJECTILE` $\rightarrow$ `HEADSHOT_STUNNED` $\rightarrow$ `REPAIRING_WINDOW`.
-  - **Emotion-Gated Dialogue Engine**: Dialogue selection adapts to specific environmental destruction events with custom phonetic normalization for natural speech cadence.
-- **In-Development AI**:
-  - Used for rapid iterative game physics balancing, procedural audio synthesis architectures, canvas rendering pipelines, and automated test-suite generation (60 automated unit/integration tests).
+### 5. AI Integration
+- **Prototype Implementation**:
+  - **Kevin’s Dynamic Behavioral State Machine**: Uses real-time situational tracking (`src/ai.js`, `src/npc.js`) to analyze player juggle angle, distance, combo level, and accuracy across 6 dynamic behavioral states (`PEEKING_INSIDE` $\rightarrow$ `LEANING_OUT_RAGE` $\rightarrow$ `SHAKING_FIST` $\rightarrow$ `THROWING_PROJECTILE` $\rightarrow$ `HEADSHOT_STUNNED` $\rightarrow$ `REPAIRING_WINDOW`).
+  - **Emotion-Gated Voice Synthesis**: Generates reactive, escalating voice lines with phonetic normalization for the disgruntled neighbor as property damage mounts.
+- **Production Vision**:
+  - **Icon Voiceovers**: Generating stylized commentary, post-shot banter, and authentic persona voice lines for featured football legends.
+  - **Procedural Cinematics**: Generating comic-panel narrative vignettes to illustrate the backstory of each Icon’s 3-chapter campaign.
+  - **Dynamic Match Scenarios**: Utilizing LLM logic pipelines to translate historical match data (distance, defensive setup, weather) into custom backyard target configurations.
 
 ---
 
