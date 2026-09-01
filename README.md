@@ -97,9 +97,9 @@ An accessible, low-friction micro-economy designed around fan nostalgia rather t
 | Feature | Model | Price | Content Included |
 | :--- | :--- | :--- | :--- |
 | **Core Game** | Free-to-Play | **$0.00** | Full sandbox juggling, breakable backyard targets, high-score tracking, base customization. |
-| **Icon Micro-Pass** | Weekly Campaign | **$0.05 (5 cents)** | Unlocks 3 playable episodic historical chapters for the weekly featured Icon, their signature jersey, and unique visual flair. |
+| **Icon Micro-Pass** | Weekly Campaign | **$0.99** | Unlocks 3 playable episodic historical chapters for the weekly featured Icon, their signature jersey, and unique visual flair. |
 
-*At just 5 cents per Icon pack, the pass acts as an impulse digital collectible card that rewards football trivia without aggressive monetization tactics.*
+*At just 99 cents per Icon pack, the pass acts as an impulse digital collectible card that rewards football trivia without aggressive monetization tactics.*
 
 ---
 
