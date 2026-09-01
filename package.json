@@ -1,0 +1,29 @@
+{
+  "name": "backyard-havoc",
+  "version": "1.0.0",
+  "description": "High-octane 2D physics-arcade keepy-uppy destruction game with Matter.js and HTML5 Canvas",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "matter-js": "^0.20.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.14",
+    "vitest": "^2.1.8"
+  },
+  "keywords": [
+    "game",
+    "matter-js",
+    "physics",
+    "canvas",
+    "arcade"
+  ],
+  "author": "",
+  "license": "MIT"
+}

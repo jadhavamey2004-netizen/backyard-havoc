@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Backyard Havoc - High-Octane 2D Physics Arcade</title>
+    <!-- Google Fonts: Bebas Neue, Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- High-Aesthetic Glassmorphic Navigation Bar -->
+      <header class="game-header">
+        <div class="header-left">
+          <div class="logo-container">
+            <span class="logo-icon">⚽</span>
+            <div class="logo-text-group">
+              <h1 class="logo-title">BACKYARD HAVOC</h1>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-center">
+          <div class="stats-pill">
+            <div class="stat-item">
+              <span class="stat-label">HEALTH</span>
+              <span id="player-health-display" class="stat-value" style="letter-spacing: 2px;">❤️❤️❤️</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-label">SCORE</span>
+              <span id="score-display" class="stat-value score-number">0</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-label">PEAK COMBO</span>
+              <span id="peak-combo-display" class="stat-value highlight-cyan">1x</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-label">HIGH SCORE</span>
+              <span id="high-score-display" class="stat-value highlight-gold">0</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-label">YARDS</span>
+              <span id="yards-display" class="stat-value highlight-cyan">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <button id="btn-reset-yard" class="action-btn secondary-btn" title="Reset All Backyard Props">
+            <span class="btn-icon">🔄</span> Reset
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Game Canvas Container -->
+      <main class="game-viewport-wrapper">
+        <div class="canvas-container">
+          <canvas id="game-canvas" width="960" height="540"></canvas>
+
+          <!-- Title Screen Overlay -->
+          <div id="title-screen" class="title-screen-overlay">
+            <div class="title-box">
+              <div class="title-badge">STREET FOOTBALL × DESTRUCTION</div>
+              <h1 class="title-logo">BACKYARD HAVOC</h1>
+              <p class="title-sub">Juggle to escalate combo • Aim trickshots • Demolish Kevin's yard!</p>
+              
+              <div class="title-controls-card">
+                <div class="control-row"><span class="key-pill">A</span> / <span class="key-pill">D</span> <span>Move Footballer</span></div>
+                <div class="control-row"><span class="key-pill">SHIFT</span> <span>Sprint Dash</span></div>
+                <div class="control-row"><span class="key-pill">MOUSE AIM</span> <span>Adjust Kick Angle</span></div>
+                <div class="control-row"><span class="key-pill">LEFT CLICK</span> <span>Kick & Parry</span></div>
+                <div class="control-row"><span class="key-pill">HOLD CLICK</span> <span>Charge Mega Power Shot</span></div>
+              </div>
+
+              <button id="btn-start-game" class="start-btn pulse-glow">
+                ⚽ TAP OR CLICK TO PLAY
+              </button>
+            </div>
+          </div>
+
+          <!-- Floating In-Game Dynamic HUD -->
+          <div class="floating-hud">
+            <!-- Left: Combo Multiplier Flame Gauge -->
+            <div class="hud-card combo-card">
+              <div class="combo-title">JUGGLE COMBO</div>
+              <div id="combo-display" class="combo-number">1x</div>
+              <div class="combo-bar-bg">
+                <div id="combo-bar-fill" class="combo-bar-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Control Tips Bar -->
+          <div class="bottom-hud-bar">
+            <div class="controls-hint">
+              <span class="key-pill">A</span>/<span class="key-pill">D</span> Move
+              <span class="hint-divider">|</span>
+              <span class="key-pill">SHIFT</span> Sprint
+              <span class="hint-divider">|</span>
+              <span class="key-pill">AIM</span> Mouse Angle
+              <span class="hint-divider">|</span>
+              <span class="key-pill">CLICK</span> Kick
+              <span class="hint-divider">|</span>
+              <span class="key-pill">HOLD CLICK</span> Power Shot
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- SURVIVAL GAME OVER MODAL -->
+      <div id="gameover-modal" class="modal-backdrop hidden">
+        <div class="modal-content glass-panel gameover-modal-box" style="max-width: 460px; text-align: center;">
+          <div class="modal-header" style="justify-content: center;">
+            <div class="modal-title-group">
+              <span class="modal-badge" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border-color: #ef4444;">KNOCKED OUT BY KEVIN</span>
+              <h2 class="modal-heading" style="color: #ef4444; font-size: 26px;">RUN OVER!</h2>
+            </div>
+          </div>
+
+          <div style="padding: 20px 0;">
+            <p style="color: #94a3b8; margin-bottom: 20px; font-size: 14px;">Neighbor Kevin's projectile knocked you out cold!</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+              <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">FINAL SCORE</div>
+                <div id="go-score" style="font-size: 22px; font-weight: 900; color: #38bdf8;">0</div>
+              </div>
+              <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">HIGH SCORE</div>
+                <div id="go-high-score" style="font-size: 22px; font-weight: 900; color: #facc15;">0</div>
+              </div>
+              <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">PEAK COMBO</div>
+                <div id="go-combo" style="font-size: 22px; font-weight: 900; color: #4ade80;">1x</div>
+              </div>
+              <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">DISTANCE</div>
+                <div id="go-yards" style="font-size: 22px; font-weight: 900; color: #a78bfa;">0m</div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+              <button id="btn-share-score" class="action-btn blue-btn" style="flex: 1; padding: 12px; font-size: 14px; font-weight: 800;">
+                📢 SHARE SCORE
+              </button>
+              <button id="btn-restart-run" class="action-btn gold-btn" style="flex: 2; padding: 12px; font-size: 15px; font-weight: 900;">
+                ⚽ PLAY AGAIN
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
