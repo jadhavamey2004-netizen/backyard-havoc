@@ -5,8 +5,8 @@
 - **Current branch:** `codex/phase-1a-quality-gate`
 - **Current phase:** Phase 1A — Quality Gate / Reproducibility; no gameplay changes
 - **Local quality gate:** `npm ci` PASS; `npm test` PASS — 18 files, 60 passed; `npm run build` PASS — Vite 5.4.21, 20 modules, 214.64 kB JS (62.73 kB gzip)
-- **Playwright:** Chromium smoke tests PASS in two consecutive runs — 5 scenarios each at 1280×720, one worker. Scenario screenshots and browser-health diagnostics attach to the HTML report; traces, screenshots and video are retained on failure.
-- **GitHub Actions:** Not run yet for Phase 1A; report only after the pushed PR workflow executes.
+- **Playwright:** Chromium smoke tests PASS locally in two consecutive runs — 5 scenarios each at 1280×720, one worker. GitHub run `36685340196` also passed all 5 scenarios; each recorded zero page errors, console errors/warnings, failed requests, and same-origin HTTP failures. Scenario screenshots and browser-health diagnostics attach to the HTML report; traces, screenshots and video are retained on failure.
+- **GitHub Actions:** Run `36685340196` PASS — unit/build job and Chromium job both green; CI artifact `playwright-evidence` uploaded (7-day retention).
 - **Known limitations:** Vitest emits existing headless Web Audio `window is not defined` warnings in two test files. `npm ci` reports 5 dependency audit vulnerabilities (3 moderate, 1 high, 1 critical); no automated dependency upgrades were applied. Full gameplay, mobile, and visual regression coverage remain out of scope.
 
 ## Architecture
