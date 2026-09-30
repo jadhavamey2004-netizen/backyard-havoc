@@ -24,8 +24,9 @@ No CRITICAL defect was confirmed. The strongest findings are a dead timed-mode c
 
 | Check | Exact result |
 |---|---|
-| `npm test` | Exit 0; 18/18 files passed; 60 passed, 0 failed, 0 skipped; duration 961 ms. Four test cases printed `ReferenceError: window is not defined` from Web Audio initialization in headless Node, but Vitest marked those tests passed. |
-| `npm run build` | Exit 0; Vite 5.4.21; 20 modules transformed; `dist/index.html` 8.46 kB, CSS 8.41 kB, JS 214.64 kB (62.73 kB gzip); built in 1.07 s. |
+| `npm test` | LOCAL CODEX EVIDENCE only; Exit 0; 18/18 files passed; 60 passed, 0 failed, 0 skipped; duration 961 ms. Four test cases printed `ReferenceError: window is not defined` from Web Audio initialization in headless Node, but Vitest marked those tests passed. GitHub did not run this check. |
+| `npm run build` | LOCAL CODEX EVIDENCE only; Exit 0; Vite 5.4.21; 20 modules transformed; `dist/index.html` 8.46 kB, CSS 8.41 kB, JS 214.64 kB (62.73 kB gzip); built in 1.07 s. GitHub did not run this check. |
+| GitHub CI | No workflow/status checks or CI run were present for the Phase 0 commit. These results are local evidence, not independent GitHub verification. |
 | lint/typecheck | Not available as package scripts. |
 | browser smoke | Production preview on localhost rendered title screen and active game; console query returned no warning/error entries. Failed request inspection and complete gameplay/device coverage were unavailable in the browser surface. `/vite.svg` request returns the HTML fallback rather than an image (confirmed via local preview response). |
 
@@ -266,6 +267,33 @@ No CRITICAL defect was confirmed. The strongest findings are a dead timed-mode c
 - **Recommended direction:** define a reset contract that names every per-run owner and transient field.
 - **Verification:** reach a later chunk, trigger active effects, restart and compare state to a fresh engine.
 
+#### BH-24 — MEDIUM · CONFIRMED BUG / ARCHITECTURAL DEBT · Duplicate input methods shadow audio initialization
+
+- **File/function:** `src/game.js`, `GameEngine.handleKeyDown()` and `handleKeyUp()`.
+- **Evidence:** both method names are defined twice in the same class (first pair near lines 441–448, second pair near 498–507). JavaScript class semantics retain the later definition. The first `handleKeyDown()` forwards to the player and calls `sounds.init()` plus `sounds.startGenerativeMusic()`; the later override only skips the intro when appropriate and forwards input to the player. Both `handleKeyUp()` bodies currently forward to the player, so the earlier copy is dead duplicate code.
+- **Root cause:** overlapping input implementation was added without removing the earlier methods.
+- **Player consequence:** audio/input activation semantics depend on which handler path receives the action (pointer handlers initialize audio separately); maintainers may edit the dead method and see no effect, and keyboard audio lifecycle is ambiguous.
+- **Recommended direction:** consolidate to one explicit input handler and define exactly which gesture initializes/resumes audio and music.
+- **Verification:** static duplicate-method check plus browser tests for keyboard movement, intro skip, mute and audio start/resume behavior.
+
+#### BH-25 — MEDIUM · CONFIRMED BUG / PRESENTATION WEAKNESS · Kevin is assigned an unimplemented cutscene state
+
+- **Files/functions:** `src/game.js`, `startIntroCutscene()` and `startEndingCutscene()`; `src/npc.js`, `update()` and `draw()`.
+- **Evidence:** both cutscene methods assign `this.npc.state = 'SHOUTING_OUT'`. The implemented state machine handles `PEEKING_INSIDE`, `LEANING_OUT_RAGE`, `THROWING_PROJECTILE`, `DIZZY_BONK`, and `REPAIRING`; no `SHOUTING_OUT` branch exists. The draw logic only treats leaning, throwing, dizzy and repairing as special poses, so `SHOUTING_OUT` has no unique shout pose. On a fresh intro the NPC timer is zero and the first `npc.update()` falls through to `PEEKING_INSIDE` (rage is zero), replacing the state immediately. In an ending, a prior positive `stateTimer` can leave the unsupported value until it expires; no state-specific shout animation runs, then normal rage/peek fallback replaces it.
+- **Root cause:** cutscene code assumes an NPC state/animation that the NPC state machine and renderer do not implement.
+- **Player consequence:** Kevin's intro/defeat line can be shown/spoken while his body remains in a non-shouting pose; his acting is inconsistent at a key narrative beat.
+- **Recommended direction:** future character work should either add a deliberate cutscene state with lifecycle/pose behavior or use an existing supported pose; do not infer a functional animation from the assigned string.
+- **Verification:** source trace above; later browser capture should inspect intro and ending pose across first update and prior NPC timer conditions.
+
+#### BH-26 — LOW · UNVERIFIED / REQUIRES RUNTIME TEST · Canvas may be styled for pixel art unintentionally
+
+- **File:** `style.css`, canvas/image-rendering rules.
+- **Evidence:** `image-rendering: pixelated` and `image-rendering: crisp-edges` are both set. This may be intentional, but the target direction is polished stylized 2D illustration rather than accidental pixelation.
+- **Root cause:** render scaling policy has not been reconciled with the current art direction.
+- **Player consequence:** scaled canvas artwork may appear jagged or overly pixelated; actual impact depends on viewport and browser rendering.
+- **Recommended direction:** assess the game at target viewport sizes against the agreed illustration style before changing the rule.
+- **Verification:** compare fixed-state captures at native and scaled desktop/mobile viewports with browser interpolation documented.
+
 ## Testing weaknesses
 
 - Existing 60 tests pass but primarily validate formula helpers, state transitions and mocked engine behavior.
@@ -276,10 +304,10 @@ No CRITICAL defect was confirmed. The strongest findings are a dead timed-mode c
 
 ## Documentation mismatches
 
-- Physics engine and collision model differ from README/memory-bank architecture (BH-19).
-- AI/edge service descriptions differ from local heuristic runtime (BH-12).
-- Header/Space controls differ from runtime (BH-08).
-- Ball profiles and unlock claims are reference/roadmap only (BH-19 and feature truth matrix).
+- Physics engine and collision model differ from README/memory-bank architecture (BH-20).
+- AI/edge service descriptions differ from local heuristic runtime (BH-13).
+- Header/Space controls differ from runtime (BH-09).
+- Ball profiles and unlock claims are reference/roadmap only (BH-20 and feature truth matrix).
 - README states MIT, but no `LICENSE` file is present in this checkout.
 - README 60-test badge/count agrees with the executed baseline (18 files, 60 tests); no issue found there.
 - Prominent README copy describes features, while later sections clearly label some progression/monetization as roadmap; maintain that distinction.
@@ -304,10 +332,17 @@ No CRITICAL defect was confirmed. The strongest findings are a dead timed-mode c
 
 - Kick/parry feel and correctness, destruction readability, Kevin reactions and synchronization, music/voice quality, touch/mobile parity, pause/focus behavior, camera and VFX, DPR/resizing, frame-time and memory under long play.
 
-## Recommended overhaul order
+## Recommended next phases
 
-1. Let an external reviewer inspect this evidence and agree on product truth/controls.
-2. Close correctness gaps with deterministic, production-path tests (timer/header/contact/direction/reset).
-3. Add minimal browser smoke/E2E and artifact capture for the main loop before visual redesign.
-4. Measure and decide subsystem boundaries; refactor incrementally behind behavior tests.
-5. Then prioritize one player-visible area (controls/gameplay, character/animation, audio, destruction or UI) based on playtest evidence.
+### Phase 1A — Quality gate and reproducibility
+
+- Add a minimal GitHub Actions gate running `npm ci`, `npm test`, and `npm run build`.
+- Set up Playwright Chromium and repeatable browser smoke tests, console error capture, a fixed viewport, and a stable evidence/artifact structure.
+
+### Phase 1B — Run lifecycle correctness
+
+Verify and fix through production-path tests: IDLE/title simulation, duplicate key handlers (BH-24), invalid Kevin `SHOUTING_OUT` state (BH-25), reset-state contract, focus/background pause semantics, Kevin hit ejection direction (BH-03), kick/contact correctness (BH-04), and input truth versus documented controls (BH-09). Do not make major architecture or visual changes yet.
+
+### Phase 1C — Gameplay truth decision
+
+Resolve deliberately: survival versus timed run (BH-01), authoritative controls, whether to retain/remove header (BH-02), and the intended parry timing model (BH-08). Start larger gameplay/character overhaul only after these decisions and evidence are reviewed.
