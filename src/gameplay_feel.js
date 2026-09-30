@@ -21,7 +21,6 @@ export const GAMEPLAY_FEEL_TUNING = Object.freeze({
   POWER_SHOT_MIN_SPEED: 13.5,
   POWER_SHOT_FULL_SPEED: 22,
   POWER_SHOT_HEADER_MULTIPLIER: 0.8,
-  POWER_SHOT_MIN_CHARGE: 0.25,
   MAX_DOWNWARD_AIM_SLOPE: 0.2,
   BALL_MAX_SPEED: 23.5,
   BALL_DEFORM_NORMAL: 1.05,
@@ -89,9 +88,10 @@ export function computeCameraSmoothingFactor(dt, rate = GAMEPLAY_FEEL_TUNING.CAM
 }
 
 export function computePowerShotStrength(charge) {
+  const minCharge = GAMEPLAY_TUNING.POWER_SHOT_MIN_CHARGE;
   const normalized = clamp(
-    (clamp(charge, 0, 1) - GAMEPLAY_FEEL_TUNING.POWER_SHOT_MIN_CHARGE)
-      / (1 - GAMEPLAY_FEEL_TUNING.POWER_SHOT_MIN_CHARGE),
+    (clamp(charge, 0, 1) - minCharge)
+      / (1 - minCharge),
     0,
     1
   );

@@ -100,7 +100,7 @@ describe('Game Flow & Integration Lifecycle', () => {
     start.mockRestore();
   });
 
-  it('cancels held pointer charge and movement when the page is hidden', () => {
+  it('cancels held charge, movement momentum, and camera impact feedback when hidden', () => {
     game.isPointerDown = true;
     game.pointerDownTime = performance.now() - 5000;
     game.player.powerCharging = true;
@@ -108,6 +108,9 @@ describe('Game Flow & Integration Lifecycle', () => {
     game.player.keys.left = true;
     game.player.keys.right = true;
     game.player.keys.sprint = true;
+    game.player.vx = 480;
+    game.camera.x = 640;
+    game.camera.addTrauma(0.7, 0.06);
 
     game.setPageVisibility(false);
     expect(game.isPointerDown).toBe(false);
@@ -115,6 +118,11 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.player.powerCharging).toBe(false);
     expect(game.player.powerCharge).toBe(0);
     expect(game.player.keys).toEqual({ left: false, right: false, sprint: false, charge: false });
+    expect(game.player.vx).toBe(0);
+    expect(game.camera.x).toBe(640);
+    expect(game.camera.trauma).toBe(0);
+    expect(game.camera.zoomPunch).toBe(0);
+    expect(game.camera.chromaticAberration).toBe(0);
 
     game.setPageVisibility(true);
     const playerX = game.player.x;
@@ -126,6 +134,7 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.player.keys.right).toBe(false);
     expect(game.player.keys.sprint).toBe(false);
     expect(game.player.x).toBe(playerX);
+    expect(game.player.vx).toBe(0);
 
     const foot = game.player.getKickPosition();
     game.ball.position.x = foot.x;
@@ -571,14 +580,85 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.ballDeform).toEqual({ scaleX: 1, scaleY: 1, angle: 0 });
   });
 
+  it('stops the current update after a football contact creates hit-stop', () => {
+    game.engine.gravity.scale = 0;
+    const foot = game.player.getKickPosition();
+    Matter.Body.setPosition(game.ball, { x: foot.x + 80, y: foot.y });
+    Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+    game.score = 0;
+    game.combo = 1;
+    game.trickChain = [];
+    game.player.triggerKick();
+    game.player.kickProgress = 0.29;
+    game.player.kickTimer = game.player.kickDuration * (1 - game.player.kickProgress);
+    game.pendingPrimaryAction = { charge: 0, powerShot: false, aim: { x: foot.x + 100, y: foot.y } };
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+    game.accumulator = 0;
+    const physicsUpdate = vi.spyOn(Matter.Engine, 'update');
+
+    game.update(0.05);
+
+    expect(events.filter(event => event.type === 'BALL_CONTACT')).toHaveLength(1);
+    expect(game.player.hasHitBallThisKick).toBe(true);
+    expect(game.score).toBe(events.find(event => event.type === 'BALL_CONTACT').score);
+    expect(game.particles.hitStopRemainingSeconds).toBe(GAMEPLAY_FEEL_TUNING.HIT_STOP_CONTACT_SECONDS);
+    expect(physicsUpdate).not.toHaveBeenCalled();
+    expect(game.accumulator).toBe(0);
+    physicsUpdate.mockRestore();
+  });
+
+  it('stops later Matter substeps when a collision creates hit-stop', () => {
+    game.engine.gravity.scale = 0;
+    game.player.x = 280;
+    Matter.Body.setPosition(game.ball, { x: 462, y: 300 });
+    Matter.Body.setVelocity(game.ball, { x: 8, y: 0 });
+    const glass = Matter.Bodies.rectangle(500, 300, 50, 50, {
+      label: 'destructible_window', isDestructible: true, isGlass: true, color: '#cbd5e1'
+    });
+    Matter.Composite.add(game.world, glass);
+    const originalUpdate = Matter.Engine.update;
+    let collisionDispatched = false;
+    const physicsUpdate = vi.spyOn(Matter.Engine, 'update').mockImplementation((engine, milliseconds) => {
+      const result = originalUpdate(engine, milliseconds);
+      if (!collisionDispatched) {
+        collisionDispatched = true;
+        Matter.Events.trigger(engine, 'collisionStart', {
+          source: engine,
+          pairs: [{ bodyA: game.ball, bodyB: glass }]
+        });
+      }
+      return result;
+    });
+    game.accumulator = 0;
+
+    game.update(0.05);
+
+    expect(glass.isDestroyed).toBe(true);
+    expect(game.particles.hitStopRemainingSeconds)
+      .toBe(GAMEPLAY_FEEL_TUNING.HIT_STOP_WORLD_IMPACT_SECONDS);
+    expect(collisionDispatched).toBe(true);
+    expect(physicsUpdate).toHaveBeenCalled();
+    expect(physicsUpdate.mock.calls.length).toBeLessThan(game.nSub * 3);
+    expect(game.accumulator).toBe(0);
+    const physicsCallsAtImpact = physicsUpdate.mock.calls.length;
+    game.update(1 / 60);
+    expect(physicsUpdate).toHaveBeenCalledTimes(physicsCallsAtImpact);
+    physicsUpdate.mockRestore();
+  });
+
   it('clears temporary feel state on intro, ending, game over, and run reset', () => {
     const expectFeelReset = () => {
       expect(game.particles.hitStopRemainingSeconds).toBe(0);
       expect(game.ballFeedbackTier).toBe('NORMAL');
       expect(game.ballFeedbackStrength).toBe(0);
       expect(game.ballDeform).toEqual({ scaleX: 1, scaleY: 1, angle: 0 });
+      expect(game.camera.trauma).toBe(0);
+      expect(game.camera.zoomPunch).toBe(0);
+      expect(game.camera.chromaticAberration).toBe(0);
     };
     game.particles.triggerHitStop(0.1);
+    game.camera.addTrauma(0.5, 0.04);
     game.ballFeedbackTier = 'POWER_SHOT';
     game.ballFeedbackStrength = 0.9;
     game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
@@ -586,6 +666,7 @@ describe('Game Flow & Integration Lifecycle', () => {
     expectFeelReset();
 
     game.particles.triggerHitStop(0.1);
+    game.camera.addTrauma(0.5, 0.04);
     game.ballFeedbackTier = 'PERFECT_STRIKE';
     game.ballFeedbackStrength = 0.8;
     game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
@@ -593,6 +674,7 @@ describe('Game Flow & Integration Lifecycle', () => {
     expectFeelReset();
 
     game.particles.triggerHitStop(0.1);
+    game.camera.addTrauma(0.5, 0.04);
     game.ballFeedbackTier = 'POWER_SHOT';
     game.ballFeedbackStrength = 1;
     game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
@@ -600,6 +682,7 @@ describe('Game Flow & Integration Lifecycle', () => {
     expectFeelReset();
 
     game.particles.triggerHitStop(0.1);
+    game.camera.addTrauma(0.5, 0.04);
     game.ballFeedbackTier = 'POWER_SHOT';
     game.ballFeedbackStrength = 1;
     game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };

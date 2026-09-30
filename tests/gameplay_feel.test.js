@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Player } from '../src/player.js';
+import { GAMEPLAY_TUNING } from '../src/gameplay_rules.js';
 import {
   computeBallContactResponse,
   computePowerShotStrength,
@@ -125,13 +126,33 @@ describe('Phase 2 gameplay feel rules', () => {
   });
 
   it('scales power-shot strength monotonically from threshold through full charge', () => {
-    const threshold = computePowerShotStrength(0.25);
-    const half = computePowerShotStrength(0.5);
+    const minimumCharge = GAMEPLAY_TUNING.POWER_SHOT_MIN_CHARGE;
+    const threshold = computePowerShotStrength(minimumCharge);
+    const half = computePowerShotStrength(minimumCharge + (1 - minimumCharge) * 0.5);
     const full = computePowerShotStrength(1);
 
     expect(threshold).toBeLessThan(half);
     expect(half).toBeLessThan(full);
     expect(full).toBeLessThanOrEqual(23.5);
+  });
+
+  it('uses the authoritative Phase 1C power-shot threshold for strength normalization', async () => {
+    vi.resetModules();
+    vi.doMock('../src/gameplay_rules.js', () => ({
+      GAMEPLAY_TUNING: Object.freeze({ ...GAMEPLAY_TUNING, POWER_SHOT_MIN_CHARGE: 0.4 })
+    }));
+
+    try {
+      const feel = await import('../src/gameplay_feel.js');
+      expect(feel.GAMEPLAY_FEEL_TUNING).not.toHaveProperty('POWER_SHOT_MIN_CHARGE');
+      expect(feel.computePowerShotStrength(0.4))
+        .toBeCloseTo(feel.GAMEPLAY_FEEL_TUNING.POWER_SHOT_MIN_SPEED, 10);
+      expect(feel.computePowerShotStrength(0.39))
+        .toBeCloseTo(feel.GAMEPLAY_FEEL_TUNING.POWER_SHOT_MIN_SPEED, 10);
+    } finally {
+      vi.doUnmock('../src/gameplay_rules.js');
+      vi.resetModules();
+    }
   });
 
   it('uses cursor aim for power shots and provides safe finite fallback aim', () => {

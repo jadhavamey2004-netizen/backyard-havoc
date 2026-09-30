@@ -237,6 +237,7 @@ export class GameEngine {
 
   resetTransientFeelState() {
     this.particles.clearHitStop();
+    this.camera.reset();
     this.ballDeform = { scaleX: 1, scaleY: 1, angle: 0 };
     this.ballFeedbackTier = 'NORMAL';
     this.ballFeedbackStrength = 0;
@@ -840,6 +841,7 @@ export class GameEngine {
       this.player.keys.right = false;
       this.player.keys.sprint = false;
       this.player.keys.charge = false;
+      this.player.vx = 0;
     } else if (this.gameState === 'PLAYING' && !this.isGameOver) {
       sounds.startGenerativeMusic();
     }
@@ -1081,6 +1083,11 @@ export class GameEngine {
     this.mapRenderer.update(dt, this.survivalSeconds);
     this.player.update(dt, this.width, this.particles, this.combo);
     this.resolvePendingPrimaryAction();
+    if (this.particles.hitStopRemainingSeconds > 0) {
+      // Contact-created hit-stop discards this frame's unspent simulation budget.
+      this.accumulator = 0;
+      return;
+    }
 
     const playerChunk = this.proceduralWorld.getChunkIndexForX(this.player.x);
     this.npc.x = playerChunk * 960 + 790;
@@ -1182,12 +1189,23 @@ export class GameEngine {
     // Fixed-Timestep Physics Accumulator (1/60s with 4 sub-steps, max 3 ticks/frame)
     this.accumulator = (this.accumulator || 0) + dt;
     let physicsTicks = 0;
+    let hitStopTriggeredDuringPhysics = false;
     while (this.accumulator >= FIXED_STEP_SECONDS && physicsTicks < MAX_PHYSICS_TICKS_PER_UPDATE) {
       for (let s = 0; s < this.nSub; s++) {
         Engine.update(this.engine, this.subDt * 1000);
+        if (this.particles.hitStopRemainingSeconds > 0) {
+          hitStopTriggeredDuringPhysics = true;
+          break;
+        }
       }
+      if (hitStopTriggeredDuringPhysics) break;
       this.accumulator -= FIXED_STEP_SECONDS;
       physicsTicks++;
+    }
+    if (hitStopTriggeredDuringPhysics) {
+      // Drop the partial tick and remaining frame budget; never replay it after hit-stop.
+      this.accumulator = 0;
+      return;
     }
     if (this.accumulator >= FIXED_STEP_SECONDS) {
       this.accumulator = 0;
@@ -1265,7 +1283,6 @@ export class GameEngine {
     this.isGameOver = true;
     this.gameState = 'GAME_OVER';
     this.resetTransientFeelState();
-    this.camera.reset();
     sounds.playExplosion();
     sounds.stopMusic();
     sounds.speakKevinVoice("THAT'LL TEACH YA! Call the ambulance!", 'RAGE', 0);
@@ -1295,7 +1312,6 @@ export class GameEngine {
 
   resetEnvironment() {
     sounds.stopMusic();
-    this.camera.reset();
     this.camera.x = 0;
     this.isGameOver = false;
     this.gameState = 'IDLE';

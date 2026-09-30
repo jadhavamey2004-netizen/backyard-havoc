@@ -3,7 +3,7 @@
 - **Project:** Backyard Havoc (Vite, Canvas 2D, Matter.js)
 - **Phase 2 baseline SHA:** `fc25a4b48887b4112bc168d397ef01c7dcd61553` (`main`, verified Phase 1C merge)
 - **Working branch:** `codex/phase-2-core-gameplay-feel`
-- **Current phase:** Phase 2 — Core Gameplay Feel; local verification PASS, awaiting draft PR CI and external review.
+- **Current phase:** Phase 2 local verification + PR CI PASS; awaiting external review.
 - **Phase 2 scope:** Responsive movement, deterministic kick/header/power-shot physics, time-correct ball damping and hit-stop, tiered contact feedback, time-correct camera tracking, procedural pose synchronization, and velocity-led ball presentation. Phase 1C gameplay rules remain authoritative and unchanged.
 - **Phase 1B predecessor:** Lifecycle/reset/visibility/runtime correctness fixes remain part of the merged baseline. `.ai/INITIAL_AUDIT.md` remains historical evidence.
 
@@ -20,10 +20,10 @@
 
 ## Verification status
 
-- **Vitest:** `npm test` PASS — 20 files, 132 tests.
+- **Vitest:** `npm test` PASS — 20 files, 135 tests.
 - **Production build:** `npm run build` PASS — Vite 5.4.21, 22 modules transformed.
 - **Playwright:** `npm run test:e2e` PASS twice — 8 Chromium scenarios per run at 1280×720. Each run reported zero page errors, console errors/warnings, failed requests, and same-origin failures. The browser smoke suite attaches per-test health JSON and gameplay screenshots; Playwright retains traces/screenshots/videos on failure.
-- **GitHub Actions:** Pending Phase 2 draft PR.
+- **GitHub Actions:** Review the Phase 2 draft PR's latest Quality Gate for unit/build, Chromium browser smoke, browser-health output, and the Playwright evidence artifact.
 - **Known limits:** Baseline Vitest runs print existing headless Web Audio `window is not defined` diagnostics. All subjective feel values require human playtesting. Complete mobile controls, canvas accessibility, reduced-motion support, browser audio/TTS variability, long-session performance, and gameplay balance remain outside this phase.
 
 ## Architecture
