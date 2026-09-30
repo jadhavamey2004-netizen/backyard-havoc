@@ -57,17 +57,30 @@ export async function attachBrowserHealth(testInfo, health) {
     contentType: 'application/json',
   });
 
-  console.info(`[browser-health] ${JSON.stringify({
-    pageErrors: health.pageErrors.length,
-    consoleErrors: health.consoleErrors.length,
-    consoleWarnings: health.consoleWarnings.length,
-    failedRequests: health.failedRequests.length,
-    sameOriginFailures: health.sameOriginFailures.length,
-  })}`);
+  const collections = {
+    pageErrors: health.pageErrors,
+    consoleErrors: health.consoleErrors,
+    consoleWarnings: health.consoleWarnings,
+    failedRequests: health.failedRequests,
+    sameOriginFailures: health.sameOriginFailures,
+  };
+  console.info(`[browser-health] ${JSON.stringify(Object.fromEntries(
+    Object.entries(collections).map(([name, entries]) => [name, entries.length]),
+  ))}`);
 
-  // Console warnings and errors are retained as diagnostics for triage; page
-  // exceptions and same-origin request failures are the initial hard gates.
+  const nonemptyDetails = Object.fromEntries(
+    Object.entries(collections)
+      .filter(([, entries]) => entries.length > 0)
+      .map(([name, entries]) => [name, entries.slice(0, 5)]),
+  );
+  if (Object.keys(nonemptyDetails).length > 0) {
+    console.info(`[browser-health-details] ${JSON.stringify(nonemptyDetails)}`);
+  }
+
+  // Uncaught page errors, console errors, and same-origin request failures
+  // block the smoke suite. Warnings and external request failures stay as diagnostics.
   expect(health.pageErrors, 'uncaught browser exceptions').toEqual([]);
+  expect(health.consoleErrors, 'browser console errors').toEqual([]);
   expect(health.sameOriginFailures, 'same-origin request/HTTP failures').toEqual([]);
 }
 
