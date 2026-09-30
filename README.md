@@ -1,10 +1,10 @@
 # Backyard Havoc
 
 [![Live Demo](https://img.shields.io/badge/Play_Live_Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://backyard-havoc.vercel.app)
-[![Tests Passing](https://img.shields.io/badge/Vitest-60%2F60_Passing-brightgreen?style=for-the-badge&logo=vitest)](https://github.com/jadhavamey2004-netizen/backyard-havoc)
+[![Tests Passing](https://img.shields.io/badge/Vitest-passing-brightgreen?style=for-the-badge&logo=vitest)](https://github.com/jadhavamey2004-netizen/backyard-havoc)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
-A high-octane 2D physics-arcade soccer juggler, destruction sandbox, and comedic combat game. Keep your street football aloft, build explosive combo multipliers, shatter your grumpy neighbor Kevin's conservatory and barbecue, and parry his retaliatory flowerpot volleys right back into his second-story window.
+A 2D physics-arcade football and destruction game. Survive Kevin's attacks, land ball contacts to build combo, and aim shots at backyard targets.
 
 - **Playable Live Web Game (One-Click)**: https://backyard-havoc.vercel.app
 - **GitHub Repository**: https://github.com/jadhavamey2004-netizen/backyard-havoc
@@ -15,12 +15,15 @@ A high-octane 2D physics-arcade soccer juggler, destruction sandbox, and comedic
 
 | Input | Action | Description |
 | :--- | :--- | :--- |
-| **A / D** or **Left / Right** | **Run and Re-position** | Sprint across the yard to get under descending football volleys. |
-| **Left Click / Space** | **Kick / Volley** | Strike the football into the air. Timed near incoming flowerpots to **Parry**. |
-| **Click and Hold (Charge)** | **Power Shot** | Charge an aerodynamic high-velocity flaming strike with laser trajectory guide. |
-| **W / Up (Airborne)** | **Bullet-Time Header** | Slows time down to 0.35x for precision surgical trick shots into high targets. |
-| **Mouse Cursor** | **Aim Guide and Protractor** | Real-time parabolic physics aim trajectory with dynamic launch angle badge. |
-| **M** | **Toggle Sound / Music** | Mute or unmute all audio and procedural background grooves. |
+| **A / D** or **Left / Right** | **Move** | Reposition the footballer. |
+| **Shift** | **Optional sprint** | Advanced movement boost. |
+| **Mouse / pointer** | **Aim** | Point where the football action should aim. |
+| **Primary click** | **Contextual action** | An eligible incoming projectile resolves as a block/parry first. Otherwise, a kick or contextual header can score only on ball contact during the strike phase. |
+| **Hold primary for about 0.41 s** | **Charge a power shot** | A power shot uses the same contact rule and base contact score as a normal kick. A miss does not score. |
+| **Space** | **Skip intro / restart after defeat** | Space is not a gameplay kick. |
+| **M** | **Toggle sound** | Mute or unmute audio. |
+
+Standard runs begin when the intro ends and continue until the player's three health points are lost. There is no run countdown. Elapsed run time is shown in the results. The initial 0.8-second combo grace applies only while the ball stays continuously grounded; a bounce alone does not reset combo.
 
 ---
 
@@ -30,25 +33,24 @@ A high-octane 2D physics-arcade soccer juggler, destruction sandbox, and comedic
 +------------------------------------------------------------------------+
 |                               CORE LOOP                                |
 |                                                                        |
-|   1. JUGGLE & COMBO  --->  2. AIM & SMASH  --->  3. RETALIATION / PARRY|
-|   Keep ball airborne     Release power shot     Neighbor Kevin throws  |
-|   to build score &       at windows, gnomes     pots; time your kick   |
-|   multiplier (1x-12x)    and conservatory       to parry return hits   |
+|   1. LAND CONTACT  --->  2. AIM & SMASH  --->  3. READ & DEFEND      |
+|   Keep skill combo       Kick or header         One action blocks,     |
+|   through ball play      backyard targets       parries or misses      |
 +------------------------------------------------------------------------+
 ```
 
-1. **Juggle and Build Combo (1x - 12x Multiplier)**:
-   - Keeping the ball airborne increases your score multiplier, accelerates the procedural soundtrack tempo, and ignites the football into flaming/plasma visual trails.
+1. **Land ball contacts and build combo**:
+   - Valid kicks, headers, parries and perfect parries advance combo. Blocks, destruction, and Kevin impacts do not. There is no fixed combo cap in the runtime contract.
 2. **Aim and Destroy Backyard Targets**:
    - Aim high into Neighbor Kevin's second-story window, shatter garden gnomes, pop patio lights, and detonate barbecue propane grills with chain-reaction physics.
-3. **Parry Retaliatory Counterattacks**:
-   - As Kevin's rage builds, he hurls flowerpots, old boots, and steel wrenches. Time your kick as the projectile approaches to execute a **Golden Parry Reflection**, blasting the pot back into Kevin's window for massive bonus scores.
+3. **Read and defend against counterattacks**:
+   - An incoming projectile takes priority at primary-action release. Its predicted time to player contact determines BLOCK, PARRY, or PERFECT PARRY. A projectile that has already reached the player is handled as a normal hit.
 
 ---
 
 ## Architecture and Technology Stack
 
-- **Physics Engine (`src/physics.js`)**: Custom continuous Verlet integration with circular-arc restitution, air drag, and velocity clamping.
+- **Physics Engine (`src/game.js`, Matter.js)**: Matter.js drives the game world with 240 Hz sub-stepping; `src/physics.js` also contains standalone physics formula utilities.
 - **Adaptive NPC Behavioral State Machine (`src/ai.js`, `src/npc.js`)**: 6-state dynamic behavior controller tracking player accuracy, distance, and combo level in real time.
 - **Audio and Generative Procedural Music (`src/audio.js`, `src/audio_assets.js`)**:
   - Web Audio API master dynamics compressor and speech presence EQ filter.
@@ -57,11 +59,15 @@ A high-octane 2D physics-arcade soccer juggler, destruction sandbox, and comedic
 - **Visual Effects and Camera Juice (`src/particles.js`, `src/camera.js`)**:
   - Non-linear camera trauma decay formula (`offset = trauma^2 * maxShake`).
   - Concentric impact shockwaves, chromatic hit-freeze frames, speed lines, and wind slashes.
-- **Automated Test Suite (`tests/`)**: 18 test files (60 automated unit and integration tests) running on Vitest.
+- **Automated Test Suite (`tests/`)**: 19 test files (107 automated unit and integration tests) running on Vitest.
 
 ---
 
-# Question #1: Build a Playable Prototype (Design and Strategy)
+## Historical prototype vision (superseded where it differs from the runtime)
+
+The following archived design notes describe earlier concepts. Bullet-time headers, 90-second standard runs, fixed combo caps, daily modes, and other roadmap concepts are not current runtime behavior.
+
+### Question #1: Build a Playable Prototype (Design and Strategy)
 
 ### 1. The Pitch
 - **What it is**: *Backyard Havoc* is a fast-paced physics-arcade soccer juggler and comedic destruction game where you juggle a street football to charge high-velocity trick shots, smash your grumpy neighbor Kevin’s windows and backyard ornaments, and parry his retaliatory flowerpot counterattacks back at him.
@@ -148,8 +154,8 @@ npm install
 # 3. Start local development server
 npm run dev
 
-# 4. Run automated test suite (60 tests)
-npx vitest run
+# 4. Run automated test suite
+npm test
 
 # 5. Build optimized production bundle
 npm run build

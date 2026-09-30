@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-describe('Power Shot Physics & Spacebar Launch Formula (Section 1 & 8)', () => {
+describe('Power Shot Physics & Launch Formula', () => {
   it('should compute upward launch velocity scaling from charge amount', () => {
     // Formula: VY = -10.5 - charge * 8.0
     const calcVy = (charge) => -10.5 - charge * 8.0;

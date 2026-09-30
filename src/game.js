@@ -1,6 +1,6 @@
 /**
  * Core GameEngine for Backyard Havoc
- * Features 240Hz physics sub-stepping, 2nd-story window reach, Spacebar Power Shots,
+ * Features 240Hz physics sub-stepping, 2nd-story window reach, contextual power shots,
  * Trick Chain Cascades, Trampoline Mega-Launches, Ball Speed Power Bars, Chromatic Trauma,
  * High-Visibility Projectile Parries, and Metagame Progression.
  */
@@ -16,8 +16,18 @@ import { COLLISION_CATEGORIES, breakObjectIntoFragments } from './destructibles.
 import { calculateSubStepDt } from './physics.js';
 import { sounds } from './audio.js';
 import { aiService } from './ai.js';
+import {
+  GAMEPLAY_TUNING,
+  classifyDefense,
+  getPowerCharge,
+  getProjectileThreat,
+  selectEarliestThreat
+} from './gameplay_rules.js';
 
 const { Engine, Bodies, Body, Composite, Events } = Matter;
+const FIXED_STEP_SECONDS = 1 / 60;
+const MAX_PHYSICS_TICKS_PER_UPDATE = 3;
+const MAX_SIMULATION_DT = FIXED_STEP_SECONDS * MAX_PHYSICS_TICKS_PER_UPDATE;
 
 export class GameEngine {
   constructor(canvas) {
@@ -28,7 +38,7 @@ export class GameEngine {
 
     // Sub-stepping setup (60Hz / 4 = 240Hz physics)
     this.nSub = 4;
-    this.dt = 1 / 60;
+    this.dt = FIXED_STEP_SECONDS;
     this.subDt = calculateSubStepDt(this.dt, this.nSub);
 
     // Systems
@@ -60,20 +70,18 @@ export class GameEngine {
     this.survivalSeconds = 0;
     this.combo = 1;
     this.peakCombo = 1;
+    this.ballGroundedDuration = 0;
+    this.pendingPrimaryAction = null;
     this.score = 0;
     this.juggleCount = 0;
     this.ballIdleTime = 0;
     this.distanceTraveledMeters = 0;
     this.startX = 340;
-    this.comboGraceTimer = 0; // 0.8s grace before combo resets on ground
     this.kevinBonkTimer = 0;  // 1.2s cooldown to prevent headshot bounce exploit
 
     // Trick Chain Bonus System
     this.trickChain = [];
     this.trickChainTimer = 0;
-
-    // 3-Minute Madness Timer
-    this.timedModeRemaining = 180; // 3 minutes
 
     // Local High Scores
     const storage = typeof localStorage !== 'undefined' ? localStorage : null;
@@ -89,6 +97,7 @@ export class GameEngine {
 
     // Callbacks
     this.onGameOverCallback = null;
+    this.onGameplayEvent = null;
 
     this.initPhysics();
     this.initProceduralWorld();
@@ -255,22 +264,11 @@ export class GameEngine {
 
         this.triggerBallDeform(ball.velocity.x, ball.velocity.y);
 
-        // Ground collision -> Reset combo (after grace timer)
+        // A ground collision begins a grounded interval; bounces preserve combo.
         if (target.label === 'boundary_ground') {
-          if (this.comboGraceTimer > 0) {
-            // Ball bounced again within grace window -> drop combo
-            if (this.combo > 1) {
-              this.particles.spawnPopText(ball.position.x, ball.position.y - 30, 'COMBO DROPPED!', '#ef4444', 18);
-            }
-            this.combo = 1;
-            this.juggleCount = 0;
-            sounds.updateMusicCombo(1);
-          } else {
-            // First ground touch initiates 0.65s grace period
-            this.comboGraceTimer = 0.65;
-            if (this.combo > 2) {
-              this.particles.spawnPopText(ball.position.x, ball.position.y - 25, '⚠️ SAVE IT!', '#facc15', 16);
-            }
+          this.ballGroundedDuration = 0;
+          if (this.combo > 2) {
+            this.particles.spawnPopText(ball.position.x, ball.position.y - 25, 'SAVE IT!', '#facc15', 16);
           }
           sounds.playThud();
           continue;
@@ -316,6 +314,7 @@ export class GameEngine {
 
           const pts = 500 * this.combo;
           this.score += pts;
+          this.emitGameplayEvent('KEVIN_HIT', { score: pts, combo: this.combo, targetId: target.id });
           this.particles.spawnPopText(target.position.x, target.position.y - 45, `🎯 BONKED KEVIN! +${pts}`, '#f43f5e', 26);
 
           // Eject ball decisively out of the window frame into the yard
@@ -395,6 +394,12 @@ export class GameEngine {
 
           const pts = (target.pointValue || 100) * this.combo;
           this.score += pts;
+          this.emitGameplayEvent('OBJECT_DESTROYED', {
+            score: pts,
+            combo: this.combo,
+            targetId: target.id,
+            objectName: target.objectName || target.label
+          });
           this.particles.spawnPopText(target.position.x, target.position.y - 20, `${popText} +${pts}`, '#fbbf24', 22);
 
           Body.setVelocity(ball, {
@@ -432,6 +437,172 @@ export class GameEngine {
       : (Math.sign(ball.velocity.x) || -this.player.facing);
   }
 
+  emitGameplayEvent(type, payload = {}) {
+    if (typeof this.onGameplayEvent === 'function') {
+      this.onGameplayEvent({ ...payload, type });
+    }
+  }
+
+  setCombo(value, reason = 'UNKNOWN', { silent = false } = {}) {
+    const previous = this.combo;
+    const current = Math.max(1, Math.floor(value));
+    if (current === previous) return false;
+    this.combo = current;
+    this.peakCombo = Math.max(this.peakCombo, current);
+    sounds.updateMusicCombo(current);
+    if (!silent) {
+      this.emitGameplayEvent('COMBO_CHANGED', {
+        previous,
+        current,
+        delta: current - previous,
+        reason
+      });
+    }
+    return true;
+  }
+
+  getProjectileThreats() {
+    const gravity = this.engine.gravity;
+    const acceleration = {
+      x: gravity.x * gravity.scale * GAMEPLAY_TUNING.MATTER_GRAVITY_MILLISECONDS_TO_SECONDS,
+      y: gravity.y * gravity.scale * GAMEPLAY_TUNING.MATTER_GRAVITY_MILLISECONDS_TO_SECONDS
+    };
+    const playerPosition = { x: this.player.x, y: this.player.y - 30 };
+    const playerVelocity = { x: this.player.vx, y: 0 };
+
+    return this.thrownProjectiles
+      .filter(projectile => !projectile.isParried)
+      .map(body => {
+        const threat = getProjectileThreat(
+          body.position,
+          {
+            x: body.velocity.x * GAMEPLAY_TUNING.MATTER_BASE_HZ,
+            y: body.velocity.y * GAMEPLAY_TUNING.MATTER_BASE_HZ
+          },
+          acceleration,
+          playerPosition,
+          playerVelocity
+        );
+        return threat ? { ...threat, body } : null;
+      })
+      .filter(Boolean);
+  }
+
+  resolveDefenseAtRelease() {
+    const threat = selectEarliestThreat(this.getProjectileThreats());
+    if (!threat) return false;
+    const tier = classifyDefense(threat.timeToContact);
+    if (tier === 'MISS') return false;
+
+    const projectile = threat.body;
+    const comboAtResolution = this.combo;
+    const reward = {
+      BLOCK: GAMEPLAY_TUNING.BLOCK_REWARD,
+      PARRY: GAMEPLAY_TUNING.PARRY_REWARD,
+      PERFECT_PARRY: GAMEPLAY_TUNING.PERFECT_PARRY_REWARD
+    }[tier];
+    const points = reward * comboAtResolution;
+    this.score += points;
+
+    if (tier === 'BLOCK') {
+      let dx = projectile.position.x - this.player.x;
+      let dy = projectile.position.y - (this.player.y - 30);
+      let length = Math.hypot(dx, dy);
+      if (length === 0) {
+        dx = -this.player.facing;
+        dy = 0;
+        length = 1;
+      }
+      Body.setVelocity(projectile, {
+        x: (dx / length) * GAMEPLAY_TUNING.PROJECTILE_BLOCK_DEFLECTION_SPEED,
+        y: (dy / length) * GAMEPLAY_TUNING.PROJECTILE_BLOCK_DEFLECTION_SPEED
+      });
+      sounds.playParry();
+      this.particles.spawnPopText(projectile.position.x, projectile.position.y - 30, `BLOCK! +${points}`, '#93c5fd', 22);
+    } else {
+      let dx = this.npc.x - projectile.position.x;
+      let dy = this.npc.y - projectile.position.y;
+      let length = Math.hypot(dx, dy);
+      if (length === 0) {
+        dx = -this.player.facing;
+        dy = -1;
+        length = Math.hypot(dx, dy);
+      }
+      Body.setVelocity(projectile, {
+        x: (dx / length) * GAMEPLAY_TUNING.PROJECTILE_RETURN_SPEED,
+        y: (dy / length) * GAMEPLAY_TUNING.PROJECTILE_RETURN_SPEED
+      });
+      projectile.isParried = true;
+      sounds.playParry();
+      this.particles.spawnImpactRings(projectile.position.x, projectile.position.y, 3,
+        tier === 'PERFECT_PARRY' ? '#f97316' : '#facc15');
+      this.particles.spawnPopText(projectile.position.x, projectile.position.y - 30,
+        `${tier === 'PERFECT_PARRY' ? 'PERFECT PARRY' : 'PARRY'}! +${points}`,
+        tier === 'PERFECT_PARRY' ? '#fb923c' : '#facc15', 24);
+      this.recordTrickEvent(tier);
+    }
+
+    this.camera.addTrauma(tier === 'PERFECT_PARRY' ? 0.65 : 0.4);
+    this.emitGameplayEvent(tier, {
+      score: points,
+      combo: comboAtResolution,
+      projectileId: projectile.id,
+      timeToContact: threat.timeToContact
+    });
+    if (tier === 'PARRY') this.setCombo(comboAtResolution + 1, 'PARRY');
+    if (tier === 'PERFECT_PARRY') this.setCombo(comboAtResolution + 2, 'PERFECT_PARRY');
+
+    aiService.dispatchTelemetry({
+      npc_id: 'grumpy_neighbor_kevin',
+      impact_object: 'Parried Projectile',
+      combo_multiplier: comboAtResolution,
+      environmental_tags: [tier],
+      npcRage: this.npc.rageMeter
+    });
+    return true;
+  }
+
+  resolvePendingPrimaryAction() {
+    const action = this.pendingPrimaryAction;
+    if (!action) return;
+    if (this.ball) {
+      const contactType = this.player.getContactCandidate(this.ball.position);
+      if (contactType) {
+        if (contactType === 'HEADER') this.player.triggerHeader();
+        if (action.powerShot) {
+          this.executePowerShot(action.charge, action.aim.x, action.aim.y, contactType);
+        } else {
+          this.executePlayerKick(action.aim.x, action.aim.y, contactType);
+        }
+        this.pendingPrimaryAction = null;
+        return;
+      }
+    }
+    if (this.player.state !== 'KICKING' && this.player.state !== 'HEADING') {
+      this.pendingPrimaryAction = null;
+    }
+  }
+
+  isBallGrounded() {
+    if (!this.ball || !this.ground) return false;
+    return this.ball.bounds.max.y >= this.ground.bounds.min.y - 1
+      && Math.abs(this.ball.velocity.y) <= 1.25;
+  }
+
+  updateComboGroundGrace(dt) {
+    if (this.isBallGrounded()) {
+      this.ballGroundedDuration += dt;
+      if (this.combo > 1 && this.ballGroundedDuration >= GAMEPLAY_TUNING.COMBO_GROUND_GRACE_SECONDS) {
+        this.particles.spawnPopText(this.ball.position.x, this.ball.position.y - 30,
+          'COMBO DROPPED!', '#ef4444', 18);
+        this.setCombo(1, 'GROUNDED_TIMEOUT');
+        this.juggleCount = 0;
+      }
+    } else {
+      this.ballGroundedDuration = 0;
+    }
+  }
+
   recordTrickEvent(event) {
     this.trickChain.push(event);
     this.trickChainTimer = 3.0; // 3 seconds window
@@ -447,23 +618,20 @@ export class GameEngine {
     }
   }
 
-  executePowerShot(charge = 1.0) {
-    if (!this.ball || this.isGameOver) return;
+  executePowerShot(charge = 1.0, targetX = this.camera.x + this.mouseScreenPos.x,
+    targetY = this.mouseScreenPos.y, contactType = null) {
+    if (!this.ball || this.isGameOver) return false;
+    const contactCandidate = this.player.getContactCandidate(this.ball.position);
+    if (!contactCandidate || (contactType && contactType !== contactCandidate)) return false;
+    contactType = contactCandidate;
+    if (!contactType || !this.player.consumeKickContact()) return false;
     this.player.powerCharging = false;
     this.player.powerCharge = 0;
-
-    // Trigger full kicking animation on player model
-    this.player.triggerKick();
+    this.ballIdleTime = 0;
 
     const ballPos = { x: this.ball.position.x, y: this.ball.position.y };
-    const footPos = this.player.getKickPosition();
-    const dist = Math.hypot(ballPos.x - footPos.x, ballPos.y - footPos.y);
-
-    if (dist > 150 || !this.player.canKickBall(ballPos)) return;
-
-    const mouseWorldX = this.camera.x + this.mouseScreenPos.x;
-    let aimDx = mouseWorldX - ballPos.x;
-    let aimDy = this.mouseScreenPos.y - ballPos.y;
+    let aimDx = targetX - ballPos.x;
+    let aimDy = targetY - ballPos.y;
     let aimDist = Math.hypot(aimDx, aimDy);
 
     if (aimDist <= 5) {
@@ -480,7 +648,6 @@ export class GameEngine {
     const launchVx = Math.max(-6.0, Math.min(6.0, unitX * (5.0 + charge * 3.0)));
 
     Body.setVelocity(this.ball, { x: launchVx, y: launchVy });
-    this.player.hasHitBallThisKick = true;
     Body.setAngularVelocity(this.ball, this.player.facing * 0.25);
 
     sounds.playPowerShotFire();
@@ -489,19 +656,29 @@ export class GameEngine {
     this.particles.spawnImpactRings(ballPos.x, ballPos.y, 4, '#f97316');
     this.particles.spawnPopText(ballPos.x, ballPos.y - 40, `💥 POWER SHOT! (${Math.round(charge * 100)}%)`, '#f97316', 26);
 
-    this.combo++;
+    this.ballGroundedDuration = 0;
+    this.setCombo(this.combo + 1, 'BALL_CONTACT');
     this.juggleCount++;
-    sounds.updateMusicCombo(this.combo);
+    const points = GAMEPLAY_TUNING.NORMAL_CONTACT_REWARD * this.combo;
+    this.score += points;
+    this.emitGameplayEvent('BALL_CONTACT', {
+      contactType: 'POWER_SHOT',
+      footballContactType: contactType,
+      score: points,
+      combo: this.combo
+    });
+    this.emitGameplayEvent('POWER_SHOT', { charge, score: points, combo: this.combo });
     this.recordTrickEvent('POWER_SHOT');
+    return true;
   }
 
   handleKeyDown(code) {
-    sounds.init();
     if (this.gameState === 'INTRO_CUTSCENE') {
-      this.skipOrEndIntroCutscene();
+      if (code === 'Space') this.skipOrEndIntroCutscene();
       return;
     }
     if (this.gameState !== 'PLAYING' || !this.pageVisible) return;
+    sounds.init();
     this.player.handleKeyDown(code);
     sounds.startGenerativeMusic();
   }
@@ -516,6 +693,7 @@ export class GameEngine {
     this.cutsceneDuration = 3.6;
     this.letterboxProgress = 1.0;
     this.isPointerDown = false;
+    this.pendingPrimaryAction = null;
     this.player.powerCharging = false;
     this.player.powerCharge = 0;
     this.player.keys.left = false;
@@ -552,6 +730,7 @@ export class GameEngine {
     this.cutsceneDuration = 3.2;
     this.letterboxProgress = 1.0;
     this.isPointerDown = false;
+    this.pendingPrimaryAction = null;
     this.player.powerCharging = false;
     this.player.powerCharge = 0;
     this.player.keys.left = false;
@@ -581,6 +760,7 @@ export class GameEngine {
       return;
     }
     if (this.isGameOver || this.gameState !== 'PLAYING') return;
+    if (this.pendingPrimaryAction || this.player.state === 'KICKING' || this.player.state === 'HEADING') return;
     sounds.init();
     sounds.startGenerativeMusic();
     this.mouseScreenPos = { x: screenX, y: screenY };
@@ -598,6 +778,7 @@ export class GameEngine {
       if (this.isPointerDown) this.ignoreNextPointerUp = true;
       this.isPointerDown = false;
       this.pointerDownTime = 0;
+      this.pendingPrimaryAction = null;
       this.player.powerCharging = false;
       this.player.powerCharge = 0;
       this.player.keys.left = false;
@@ -616,75 +797,38 @@ export class GameEngine {
       return;
     }
     this.mouseScreenPos = { x: screenX, y: screenY };
+    if (!this.isPointerDown) return;
 
-    const wasCharging = this.player.powerCharging;
-    const finalCharge = this.player.powerCharge;
+    const elapsedHold = Math.max(0, (performance.now() - this.pointerDownTime) / 1000);
+    const finalCharge = getPowerCharge(elapsedHold);
+    const aim = { x: this.camera.x + screenX, y: screenY };
 
     this.isPointerDown = false;
+    this.pointerDownTime = 0;
     this.player.powerCharging = false;
     this.player.powerCharge = 0;
 
-    if (wasCharging && finalCharge >= 0.25) {
-      this.executePowerShot(finalCharge);
+    // Defensive outcomes are resolved at the release-time state, before any football action begins.
+    if (this.resolveDefenseAtRelease()) {
+      this.pendingPrimaryAction = null;
+      this.player.triggerKick();
       return;
     }
 
-    // Quick Click: Immediate Directional Kick & Parry
     this.player.triggerKick();
-
-    const targetWorldX = this.camera.x + screenX;
-    const targetWorldY = screenY;
-    const playerFoot = this.player.getKickPosition();
-
-    // Check if player parries any incoming thrown projectile
-    for (let i = this.thrownProjectiles.length - 1; i >= 0; i--) {
-      const proj = this.thrownProjectiles[i];
-      const dx = proj.position.x - playerFoot.x;
-      const dy = proj.position.y - playerFoot.y;
-      const dist = Math.hypot(dx, dy);
-
-      if (dist < 100) {
-        // PARRY SUCCESSFUL! Launch item back up at Kevin's 2nd-story window!
-        sounds.playParry();
-        this.camera.addTrauma(0.45);
-        this.particles.spawnImpactRings(proj.position.x, proj.position.y, 3, '#facc15');
-        this.particles.spawnPopText(proj.position.x, proj.position.y - 30, '⚡ PARRY! +500 PTS', '#facc15', 24);
-
-        this.score += 500;
-
-        Body.setVelocity(proj, {
-          x: (this.npc.x - proj.position.x) * 0.08,
-          y: -14
-        });
-        proj.isParried = true;
-
-        this.recordTrickEvent('PROJECTILE_PARRY');
-        aiService.dispatchTelemetry({
-          npc_id: 'grumpy_neighbor_kevin',
-          impact_object: 'Parried Projectile',
-          combo_multiplier: this.combo,
-          environmental_tags: ['PARRY_RETURN'],
-          npcRage: this.npc.rageMeter
-        });
-        return;
-      }
-    }
-
-    if (!this.ball) return;
-
-    const ballPos = { x: this.ball.position.x, y: this.ball.position.y };
-    const dx = ballPos.x - playerFoot.x;
-    const dy = ballPos.y - playerFoot.y;
-    const distToFoot = Math.hypot(dx, dy);
-
-    if (this.player.canKickBall(ballPos)) {
-      this.executePlayerKick(targetWorldX, targetWorldY, distToFoot);
-    }
+    this.pendingPrimaryAction = {
+      charge: finalCharge,
+      powerShot: finalCharge >= GAMEPLAY_TUNING.POWER_SHOT_MIN_CHARGE,
+      aim
+    };
   }
 
-  executePlayerKick(targetX, targetY, distToFoot = 60) {
-    if (!this.ball || !this.player.canKickBall(this.ball.position)) return false;
-    this.player.hasHitBallThisKick = true;
+  executePlayerKick(targetX, targetY, contactType = null) {
+    if (!this.ball || this.isGameOver) return false;
+    const contactCandidate = this.player.getContactCandidate(this.ball.position);
+    if (!contactCandidate || (contactType && contactType !== contactCandidate)) return false;
+    contactType = contactCandidate;
+    if (!contactType || !this.player.consumeKickContact()) return false;
     this.ballIdleTime = 0;
 
     const ballPos = { x: this.ball.position.x, y: this.ball.position.y };
@@ -702,7 +846,10 @@ export class GameEngine {
     const unitX = aimDx / aimDist;
     const unitY = aimDy / aimDist;
 
-    const isPerfect = distToFoot < 45;
+    const foot = this.player.getKickPosition();
+    const measuredFootDistance = Math.hypot(ballPos.x - foot.x, ballPos.y - foot.y);
+    const isPerfect = contactType === 'KICK'
+      && measuredFootDistance < GAMEPLAY_TUNING.PERFECT_STRIKE_RADIUS;
     const speedBoost = isPerfect ? 1.25 : 1.0;
 
     // Omni-Directional Launch Angles towards aim cursor
@@ -721,16 +868,21 @@ export class GameEngine {
     const spin = (this.player.facing * 0.14) + (unitX * 0.06);
     Body.setAngularVelocity(this.ball, spin);
 
-    this.combo++;
+    this.ballGroundedDuration = 0;
+    this.setCombo(this.combo + 1, 'BALL_CONTACT');
     this.juggleCount++;
-    if (this.combo > this.peakCombo) {
-      this.peakCombo = this.combo;
-    }
 
-    sounds.updateMusicCombo(this.combo);
-
-    const kickPts = (isPerfect ? 150 : 100) * this.combo;
+    const contactBase = isPerfect
+      ? GAMEPLAY_TUNING.PERFECT_STRIKE_REWARD
+      : GAMEPLAY_TUNING.NORMAL_CONTACT_REWARD;
+    const kickPts = contactBase * this.combo;
     this.score += kickPts;
+    this.emitGameplayEvent('BALL_CONTACT', {
+      contactType,
+      score: kickPts,
+      combo: this.combo,
+      perfectStrike: isPerfect
+    });
 
     sounds.playKick(this.combo);
     sounds.playChime(this.combo);
@@ -740,7 +892,9 @@ export class GameEngine {
 
     this.camera.addTrauma(isPerfect ? 0.28 : 0.18);
 
-    const kickPos = this.player.getKickPosition();
+    const kickPos = contactType === 'HEADER'
+      ? this.player.getHeaderPosition()
+      : this.player.getKickPosition();
     this.particles.spawnImpactRings(kickPos.x, kickPos.y, 2, isPerfect ? '#38bdf8' : '#facc15');
     this.particles.spawnDebris(kickPos.x, kickPos.y, isPerfect ? 16 : 10, isPerfect ? '#38bdf8' : '#facc15', 6);
 
@@ -753,12 +907,14 @@ export class GameEngine {
       Math.min(28, 16 + this.combo * 2)
     );
 
-    this.recordTrickEvent('KICK');
+    this.recordTrickEvent(contactType);
     return true;
   }
 
-  update(dt = 1 / 60) {
+  update(frameDt = FIXED_STEP_SECONDS) {
     if (this.pageVisible === false || this.isGameOver || !['PLAYING', 'INTRO_CUTSCENE', 'ENDING_CUTSCENE'].includes(this.gameState)) return;
+    // Keep variable-step gameplay clocks within the same per-frame time budget as capped physics.
+    const dt = Math.min(Math.max(frameDt, 0), MAX_SIMULATION_DT);
     this.camera.decay(dt);
 
     // Check hit-freeze
@@ -824,10 +980,6 @@ export class GameEngine {
     }
 
     this.survivalSeconds += dt;
-    if (this.timedModeRemaining > 0) {
-      this.timedModeRemaining -= dt;
-    }
-
     // Damped elastic spring recovery for ball squash & stretch with NaN protection
     if (this.ballDeform) {
       if (!Number.isFinite(this.ballDeform.scaleX)) this.ballDeform.scaleX = 1.0;
@@ -857,6 +1009,7 @@ export class GameEngine {
 
     this.mapRenderer.update(dt, this.survivalSeconds);
     this.player.update(dt, this.width, this.particles, this.combo);
+    this.resolvePendingPrimaryAction();
 
     const playerChunk = this.proceduralWorld.getChunkIndexForX(this.player.x);
     this.npc.x = playerChunk * 960 + 790;
@@ -898,7 +1051,9 @@ export class GameEngine {
         this.particles.spawnImpactRings(this.npc.x, this.npc.y, 4, '#facc15');
         this.particles.spawnPopText(this.npc.x, this.npc.y - 45, '💥 RETURN TO SENDER BONK! +1,000', '#facc15', 28);
         this.npc.takeDirectHit({ x: 0, y: -10 });
-        this.score += 1000 * this.combo;
+        const points = 1000 * this.combo;
+        this.score += points;
+        this.emitGameplayEvent('KEVIN_HIT', { score: points, combo: this.combo, source: 'PARRIED_PROJECTILE' });
         Composite.remove(this.world, proj);
         this.thrownProjectiles.splice(i, 1);
         continue;
@@ -909,13 +1064,13 @@ export class GameEngine {
       const pdist = Math.hypot(pdx, pdy);
 
       // Hit Player Body (only if not parried)
-      if (!proj.isParried && pdist < 32) {
+      if (!proj.isParried && pdist < GAMEPLAY_TUNING.PROJECTILE_PLAYER_CONTACT_RADIUS) {
         const tookDamage = this.player.takeDamage(1);
         if (tookDamage) {
           sounds.playPlayerHurt();
           this.camera.addTrauma(0.7);
-          this.combo = 1;
-          sounds.updateMusicCombo(1);
+          this.setCombo(1, 'PLAYER_DAMAGED');
+          this.emitGameplayEvent('PLAYER_DAMAGED', { health: this.player.health, damage: 1 });
           this.particles.spawnVignetteFlash('rgba(239, 68, 68, 0.5)', 0.45);
           this.particles.spawnDebris(this.player.x, this.player.y - 30, 25, '#ef4444', 9);
           this.particles.spawnPopText(this.player.x, this.player.y - 65, '💥 DIRECT HIT! -1 ❤️', '#ef4444', 26);
@@ -941,9 +1096,9 @@ export class GameEngine {
     // Update Mouse Hold -> Power Shot Charge Progress
     if (this.isPointerDown && !this.isGameOver) {
       const holdSec = (performance.now() - this.pointerDownTime) / 1000;
-      if (holdSec >= 0.2) {
+      if (holdSec >= GAMEPLAY_TUNING.POWER_CHARGE_START_DELAY) {
         this.player.powerCharging = true;
-        this.player.powerCharge = Math.min(1.0, (holdSec - 0.2) / 0.85);
+        this.player.powerCharge = Math.min(1.0, (holdSec - GAMEPLAY_TUNING.POWER_CHARGE_START_DELAY) / GAMEPLAY_TUNING.POWER_CHARGE_RAMP_DURATION);
       } else {
         this.player.powerCharging = false;
         this.player.powerCharge = 0;
@@ -954,17 +1109,16 @@ export class GameEngine {
     }
 
     // Fixed-Timestep Physics Accumulator (1/60s with 4 sub-steps, max 3 ticks/frame)
-    const FIXED_STEP = 1 / 60;
     this.accumulator = (this.accumulator || 0) + dt;
     let physicsTicks = 0;
-    while (this.accumulator >= FIXED_STEP && physicsTicks < 3) {
+    while (this.accumulator >= FIXED_STEP_SECONDS && physicsTicks < MAX_PHYSICS_TICKS_PER_UPDATE) {
       for (let s = 0; s < this.nSub; s++) {
         Engine.update(this.engine, this.subDt * 1000);
       }
-      this.accumulator -= FIXED_STEP;
+      this.accumulator -= FIXED_STEP_SECONDS;
       physicsTicks++;
     }
-    if (this.accumulator >= FIXED_STEP) {
+    if (this.accumulator >= FIXED_STEP_SECONDS) {
       this.accumulator = 0;
     }
 
@@ -1014,22 +1168,6 @@ export class GameEngine {
         });
       }
 
-      // Combo grace timer: 0.8s before ground touch resets combo
-      if (pos.y >= this.height - 68) {
-        if (this.combo > 1) {
-          this.comboGraceTimer += dt;
-          if (this.comboGraceTimer >= 0.8) {
-            this.particles.spawnPopText(pos.x, pos.y - 30, 'COMBO DROPPED!', '#ef4444', 18);
-            this.combo = 1;
-            this.juggleCount = 0;
-            sounds.updateMusicCombo(1);
-            this.comboGraceTimer = 0;
-          }
-        }
-      } else {
-        this.comboGraceTimer = 0;
-      }
-
       if (pos.y > this.height - 75 && Math.abs(vel.x) < 0.2 && Math.abs(vel.y) < 0.2) {
         this.ballIdleTime += dt;
         // Auto-hop nudge after 3.5s ground idle
@@ -1043,6 +1181,8 @@ export class GameEngine {
         this.ballIdleTime = 0;
       }
     }
+
+    this.updateComboGroundGrace(dt);
 
     this.camera.decay(dt);
 
@@ -1064,6 +1204,7 @@ export class GameEngine {
   }
 
   triggerGameOver() {
+    if (this.gameState === 'GAME_OVER') return;
     this.isGameOver = true;
     this.gameState = 'GAME_OVER';
     this.camera.reset();
@@ -1101,18 +1242,18 @@ export class GameEngine {
     this.isGameOver = false;
     this.gameState = 'IDLE';
     this.survivalSeconds = 0;
-    this.combo = 1;
+    this.setCombo(1, 'RUN_RESET', { silent: true });
     this.peakCombo = 1;
     this.score = 0;
     this.juggleCount = 0;
     this.ballIdleTime = 0;
     this.distanceTraveledMeters = 0;
     this.startX = 340;
-    this.comboGraceTimer = 0;
+    this.ballGroundedDuration = 0;
+    this.pendingPrimaryAction = null;
     this.kevinBonkTimer = 0;
     this.trickChain = [];
     this.trickChainTimer = 0;
-    this.timedModeRemaining = 180;
     this.accumulator = 0;
     this.cutsceneTimer = 0;
     this.cutsceneDuration = 3.6;

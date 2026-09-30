@@ -24,6 +24,7 @@ test('page boot renders the title screen and canvas', async ({ page }, testInfo)
   await expect(page.locator('#game-canvas')).toBeVisible();
   await expect(page.locator('#player-health-display')).toBeVisible();
   await expect(page.locator('#score-display')).toBeVisible();
+  await expect(page.locator('#go-time')).toHaveText('0s');
 
   const dimensions = await page.locator('#game-canvas').evaluate((canvas) => ({
     backingWidth: canvas.width,
@@ -37,6 +38,16 @@ test('page boot renders the title screen and canvas', async ({ page }, testInfo)
   expect(dimensions.displayHeight).toBeGreaterThan(0);
 
   await attachScreenshot(testInfo, page, 'title-screen.png');
+});
+
+test('title screen shows authoritative gameplay controls', async ({ page }) => {
+  await page.goto('/');
+  const instructions = page.locator('.title-controls-card');
+  await expect(instructions).toContainText('Move footballer');
+  await expect(instructions).toContainText('Aim');
+  await expect(instructions).toContainText('Defend or kick/header on contact');
+  await expect(instructions).toContainText('Charge a power shot; contact required');
+  await expect(instructions).not.toContainText(/\b(space|w\/up|bullet.time)\b/i);
 });
 
 test('title run state stays inert until Start is selected', async ({ page }, testInfo) => {
@@ -65,7 +76,7 @@ test('start control leaves the title overlay and keeps the game rendered', async
 test('keyboard input does not interrupt the active browser session', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-start-game').click();
-  await page.keyboard.press('a'); // The existing handler skips the intro.
+  await page.keyboard.press('Space'); // Space explicitly skips the intro.
 
   await page.keyboard.down('d');
   await page.waitForTimeout(150);
@@ -78,14 +89,17 @@ test('keyboard input does not interrupt the active browser session', async ({ pa
 test('pointer aim and click leave the game session alive', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-start-game').click();
-  await page.keyboard.press('a'); // Leave the intro before the pointer smoke action.
+  await page.keyboard.press('Space'); // Leave the intro before the pointer smoke action.
 
   const canvas = page.locator('#game-canvas');
   const bounds = await canvas.boundingBox();
   expect(bounds).not.toBeNull();
 
   await page.mouse.move(bounds.x + bounds.width * 0.65, bounds.y + bounds.height * 0.35);
-  await page.mouse.click(bounds.x + bounds.width * 0.5, bounds.y + bounds.height * 0.75);
+  await page.mouse.move(bounds.x + bounds.width * 0.5, bounds.y + bounds.height * 0.75);
+  await page.mouse.down();
+  await page.waitForTimeout(450);
+  await page.mouse.up();
 
   await expect(canvas).toBeVisible();
   await expectTitleOverlayDismissed(page);

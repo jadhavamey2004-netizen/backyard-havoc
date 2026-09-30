@@ -1,5 +1,7 @@
 # Progress — Backyard Havoc Web Edition (Vite + Canvas + Matter.js + Web Audio API)
 
+> **Historical progress log.** The entries below preserve prior project notes and may describe behavior that has since changed or was never authoritative. Current runtime status is in `.ai/FEATURE_TRUTH.md`; current gameplay rules are in `.ai/GAMEPLAY_TRUTH.md`.
+
 ## Status: 100% POLISHED, ARCHITECTURALLY GROUNDED & PRODUCTION READY
 
 ### 1. Engine, Controls & Animation
