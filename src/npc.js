@@ -107,7 +107,7 @@ export class NeighborKevinNPC {
     sounds.speakKevinVoice(this.dialogue, emotion, priority);
   }
 
-  update(dt, playerX, particles) {
+  update(dt, playerX, particles, allowAttacks = true) {
     this.facing = playerX < this.x ? -1 : 1;
 
     // Smooth spring bounce-in for speech bubble
@@ -140,7 +140,7 @@ export class NeighborKevinNPC {
     }
 
     // Responsive projectile throwing when rage >= 35%
-    if (this.rageMeter >= 35 && this.state !== 'DIZZY_BONK' && this.state !== 'REPAIRING') {
+    if (allowAttacks && this.rageMeter >= 35 && this.state !== 'DIZZY_BONK' && this.state !== 'REPAIRING') {
       this.throwTimer -= dt;
       const currentInterval = this.rageMeter >= 75 ? 1.4 : (this.rageMeter >= 50 ? 2.1 : 2.8);
 
@@ -190,6 +190,27 @@ export class NeighborKevinNPC {
       this.state = 'PEEKING_INSIDE';
       this.fistShakeAngle = 0;
     }
+  }
+
+  resetRunState() {
+    this.state = 'PEEKING_INSIDE';
+    this.stateTimer = 0;
+    this.facing = -1;
+    this.fistShakeAngle = 0;
+    this.pitchArmAngle = 0;
+    this.rageMeter = 0;
+    this.throwTimer = 1.8;
+    this.dizzyAngle = 0;
+    this.stars = [];
+    this.dialogue = '';
+    this.dialogueEmotion = 'RAGE';
+    this.dialogueTimer = 0;
+    this.bubbleScale = 0;
+    this.calmTimer = 0;
+    this.repairTimer = 0;
+    Object.keys(this.lastDialogueTimestamps).forEach((category) => {
+      this.lastDialogueTimestamps[category] = 0;
+    });
   }
 
   executeThrow(targetX) {

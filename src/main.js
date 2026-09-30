@@ -185,16 +185,13 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   // 7. Page Visibility Guard (Pause music/physics when tab hidden)
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      sounds.stopMusic();
-    } else if (!engine.isGameOver) {
-      sounds.startGenerativeMusic();
-    }
-  });
-
   // 8. Main 60Hz Game Render & Telemetry Loop
   let lastTime = performance.now();
+  engine.setPageVisibility(!document.hidden);
+  document.addEventListener('visibilitychange', () => {
+    engine.setPageVisibility(!document.hidden);
+    lastTime = performance.now();
+  });
 
   function gameLoop(currentTime) {
     const dt = Math.min(0.1, (currentTime - lastTime) / 1000);

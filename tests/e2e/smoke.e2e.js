@@ -39,6 +39,18 @@ test('page boot renders the title screen and canvas', async ({ page }, testInfo)
   await attachScreenshot(testInfo, page, 'title-screen.png');
 });
 
+test('title run state stays inert until Start is selected', async ({ page }, testInfo) => {
+  await page.goto('/');
+  const score = page.locator('#score-display');
+  const combo = page.locator('#combo-display');
+  const initial = { score: await score.textContent(), combo: await combo.textContent() };
+  await page.waitForTimeout(1200);
+  expect({ score: await score.textContent(), combo: await combo.textContent() }).toEqual(initial);
+  await attachScreenshot(testInfo, page, 'idle-title-stability.png');
+  await page.locator('#btn-start-game').click();
+  await expectTitleOverlayDismissed(page);
+});
+
 test('start control leaves the title overlay and keeps the game rendered', async ({ page }, testInfo) => {
   await page.goto('/');
   await page.locator('#btn-start-game').click();

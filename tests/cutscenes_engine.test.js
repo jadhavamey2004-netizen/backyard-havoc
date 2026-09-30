@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameEngine } from '../src/game.js';
+import { sounds } from '../src/audio.js';
 
 const createMockCanvas = () => ({
   getContext: () => ({
@@ -44,14 +45,32 @@ describe('Cutscenes Engine State Machine', () => {
     expect(game.player.state).toBe('RUNNING');
     expect(game.player.keys.right).toBe(false);
     expect(game.isPointerDown).toBe(false);
+    expect(game.npc.state).toBe('LEANING_OUT_RAGE');
   });
 
   it('skips intro cutscene on spacebar or click trigger', () => {
     game.startIntroCutscene();
-    game.skipOrEndIntroCutscene();
+    game.handleKeyDown('Space');
     expect(game.gameState).toBe('PLAYING');
     expect(game.player.state).toBe('IDLE');
     expect(game.kickoffBannerTimer).toBeGreaterThan(0);
+  });
+
+  it('uses one active input path and starts music only during visible play', () => {
+    const startMusic = vi.spyOn(sounds, 'startGenerativeMusic').mockImplementation(() => {});
+    game.gameState = 'IDLE';
+    game.handleKeyDown('KeyD');
+    expect(game.player.keys.right).toBe(false);
+    expect(startMusic).not.toHaveBeenCalled();
+    game.gameState = 'INTRO_CUTSCENE';
+    game.handleKeyDown('KeyA');
+    expect(game.gameState).toBe('PLAYING');
+    game.handleKeyDown('KeyD');
+    expect(game.player.keys.right).toBe(true);
+    expect(startMusic).toHaveBeenCalledTimes(2);
+    game.handleKeyUp('KeyD');
+    expect(game.player.keys.right).toBe(false);
+    startMusic.mockRestore();
   });
 
   it('starts ending defeat cutscene on player health zero', () => {
