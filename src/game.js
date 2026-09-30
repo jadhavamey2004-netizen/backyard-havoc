@@ -55,6 +55,7 @@ export class GameEngine {
 
     // Game State
     this.isGameOver = false;
+    this.pageVisible = true;
     this.survivalSeconds = 0;
     this.combo = 1;
     this.peakCombo = 1;
@@ -289,7 +290,10 @@ export class GameEngine {
         // DIRECT HIT ON NEIGHBOR KEVIN IN 2ND-STORY WINDOW
         if (target.label === 'destructible_kevin') {
           // Outward ejection velocity into yard (prevents juggling/resting on head)
-          const ejectDir = ball.position.x < target.position.x ? -1 : -1;
+          const dxFromKevin = ball.position.x - target.position.x;
+          const ejectDir = Math.abs(dxFromKevin) > 1e-6
+            ? Math.sign(dxFromKevin)
+            : (Math.sign(ball.velocity.x) || -this.player.facing);
           const launchVx = ejectDir * (7.5 + Math.random() * 2.5);
           const launchVy = -4.0 - Math.random() * 2.0;
 
@@ -438,16 +442,6 @@ export class GameEngine {
     }
   }
 
-  handleKeyDown(code) {
-    this.player.handleKeyDown(code);
-    sounds.init();
-    sounds.startGenerativeMusic();
-  }
-
-  handleKeyUp(code) {
-    this.player.handleKeyUp(code);
-  }
-
   executePowerShot(charge = 1.0) {
     if (!this.ball || this.isGameOver) return;
     this.player.powerCharging = false;
@@ -460,7 +454,7 @@ export class GameEngine {
     const footPos = this.player.getKickPosition();
     const dist = Math.hypot(ballPos.x - footPos.x, ballPos.y - footPos.y);
 
-    if (dist > 150) return;
+    if (dist > 150 || !this.player.canKickBall(ballPos)) return;
 
     const mouseWorldX = this.camera.x + this.mouseScreenPos.x;
     let aimDx = mouseWorldX - ballPos.x;
@@ -496,15 +490,18 @@ export class GameEngine {
   }
 
   handleKeyDown(code) {
+    sounds.init();
     if (this.gameState === 'INTRO_CUTSCENE') {
       this.skipOrEndIntroCutscene();
       return;
     }
+    if (this.gameState !== 'PLAYING' || !this.pageVisible) return;
     this.player.handleKeyDown(code);
+    sounds.startGenerativeMusic();
   }
 
   handleKeyUp(code) {
-    this.player.handleKeyUp(code);
+    if (this.gameState === 'PLAYING') this.player.handleKeyUp(code);
   }
 
   startIntroCutscene() {
@@ -522,7 +519,8 @@ export class GameEngine {
     this.player.x = 180;
     this.player.state = 'RUNNING';
     this.player.facing = 1;
-    this.npc.state = 'SHOUTING_OUT';
+    this.npc.state = 'LEANING_OUT_RAGE';
+    this.npc.stateTimer = this.cutsceneDuration;
     this.npc.dialogue = "HEY YOU! Keep that filthy football away from my yard!";
     this.npc.dialogueEmotion = 'RAGE';
     this.npc.dialogueTimer = 3.6;
@@ -538,7 +536,7 @@ export class GameEngine {
       this.player.state = 'IDLE';
       this.kickoffBannerTimer = 1.5;
       sounds.playWhistle();
-      sounds.startGenerativeMusic();
+      if (this.pageVisible) sounds.startGenerativeMusic();
     }
   }
 
@@ -557,7 +555,8 @@ export class GameEngine {
     sounds.stopMusic();
     sounds.playDefeatHorn();
     this.player.state = 'HURT';
-    this.npc.state = 'SHOUTING_OUT';
+    this.npc.state = 'LEANING_OUT_RAGE';
+    this.npc.stateTimer = this.cutsceneDuration;
     this.npc.dialogue = "HA! That'll teach you! Now get off my lawn!";
     this.npc.dialogueEmotion = 'SARCASTIC';
     this.npc.dialogueTimer = 3.5;
@@ -573,7 +572,7 @@ export class GameEngine {
       this.skipOrEndIntroCutscene();
       return;
     }
-    if (this.isGameOver || this.gameState === 'ENDING_CUTSCENE') return;
+    if (this.isGameOver || this.gameState !== 'PLAYING' || !this.pageVisible) return;
     sounds.init();
     sounds.startGenerativeMusic();
     this.mouseScreenPos = { x: screenX, y: screenY };
@@ -583,8 +582,18 @@ export class GameEngine {
     this.player.powerCharge = 0;
   }
 
+  setPageVisibility(isVisible) {
+    this.pageVisible = Boolean(isVisible);
+    this.accumulator = 0;
+    if (!this.pageVisible) {
+      sounds.stopMusic();
+    } else if (this.gameState === 'PLAYING' && !this.isGameOver) {
+      sounds.startGenerativeMusic();
+    }
+  }
+
   handlePointerUp(screenX, screenY) {
-    if (this.isGameOver || this.gameState === 'ENDING_CUTSCENE' || this.gameState === 'INTRO_CUTSCENE') return;
+    if (this.isGameOver || this.gameState !== 'PLAYING' || !this.pageVisible) return;
     this.mouseScreenPos = { x: screenX, y: screenY };
 
     const wasCharging = this.player.powerCharging;
@@ -647,13 +656,13 @@ export class GameEngine {
     const dy = ballPos.y - playerFoot.y;
     const distToFoot = Math.hypot(dx, dy);
 
-    if (distToFoot <= 150) {
+    if (this.player.canKickBall(ballPos)) {
       this.executePlayerKick(targetWorldX, targetWorldY, distToFoot);
     }
   }
 
   executePlayerKick(targetX, targetY, distToFoot = 60) {
-    if (!this.ball) return;
+    if (!this.ball || !this.player.canKickBall(this.ball.position)) return false;
     this.player.hasHitBallThisKick = true;
     this.ballIdleTime = 0;
 
@@ -724,11 +733,12 @@ export class GameEngine {
     );
 
     this.recordTrickEvent('KICK');
+    return true;
   }
 
   update(dt = 1 / 60) {
+    if (this.pageVisible === false || this.isGameOver || !['PLAYING', 'INTRO_CUTSCENE', 'ENDING_CUTSCENE'].includes(this.gameState)) return;
     this.camera.decay(dt);
-    if (this.isGameOver) return;
 
     // Check hit-freeze
     if (this.particles.isFrozen()) return;
@@ -759,7 +769,7 @@ export class GameEngine {
       }
 
       this.mapRenderer.update(dt, this.survivalSeconds);
-      this.npc.update(dt, this.player.x, this.particles);
+      this.npc.update(dt, this.player.x, this.particles, false);
       this.particles.update(dt);
 
       if (this.cutsceneTimer <= 0) {
@@ -777,7 +787,7 @@ export class GameEngine {
       this.player.state = 'HURT';
 
       this.mapRenderer.update(dt, this.survivalSeconds);
-      this.npc.update(dt, this.player.x, this.particles);
+      this.npc.update(dt, this.player.x, this.particles, false);
       this.particles.update(dt);
 
       if (this.cutsceneTimer <= 0) {
@@ -1033,6 +1043,7 @@ export class GameEngine {
 
   triggerGameOver() {
     this.isGameOver = true;
+    this.gameState = 'GAME_OVER';
     this.camera.reset();
     sounds.playExplosion();
     sounds.stopMusic();
@@ -1064,16 +1075,30 @@ export class GameEngine {
   resetEnvironment() {
     sounds.stopMusic();
     this.camera.reset();
+    this.camera.x = 0;
     this.isGameOver = false;
+    this.gameState = 'IDLE';
     this.survivalSeconds = 0;
     this.combo = 1;
     this.peakCombo = 1;
     this.score = 0;
     this.juggleCount = 0;
     this.ballIdleTime = 0;
+    this.distanceTraveledMeters = 0;
+    this.startX = 340;
     this.comboGraceTimer = 0;
+    this.kevinBonkTimer = 0;
     this.trickChain = [];
+    this.trickChainTimer = 0;
     this.timedModeRemaining = 180;
+    this.accumulator = 0;
+    this.cutsceneTimer = 0;
+    this.cutsceneDuration = 3.6;
+    this.letterboxProgress = 0;
+    this.kickoffBannerTimer = 0;
+    this.pointerDownTime = 0;
+    this.mouseScreenPos = { x: this.width * 0.5, y: 160 };
+    this.ballDeform = { scaleX: 1, scaleY: 1, angle: 0 };
 
     // Clear thrown projectiles & active shards
     for (const proj of this.thrownProjectiles) {
@@ -1088,24 +1113,13 @@ export class GameEngine {
 
     // Reset input and player state
     this.isPointerDown = false;
-    this.player.powerCharging = false;
-    this.player.powerCharge = 0;
-    this.player.keys.left = false;
-    this.player.keys.right = false;
-    this.player.keys.sprint = false;
-    this.player.keys.charge = false;
     this.particles.clear();
 
-    // Reset player
-    this.player.health = this.player.maxHealth;
-    this.player.x = this.startX;
-    this.player.y = this.height - 55;
-    this.player.vx = 0;
-    this.player.state = 'IDLE';
+    this.player.resetRunState(this.startX, this.height - 55);
+    this.mapRenderer.resetRunState();
 
     // Reset NPC
-    this.npc.rageMeter = 0;
-    this.npc.state = 'PEEKING_INSIDE';
+    this.npc.resetRunState();
 
     // Reset Ball
     if (this.ball) {
@@ -1118,7 +1132,6 @@ export class GameEngine {
     this.initProceduralWorld();
 
     aiService.resetSession();
-    sounds.startGenerativeMusic();
   }
 
   render(currentTime) {

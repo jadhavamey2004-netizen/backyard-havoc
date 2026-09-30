@@ -1,13 +1,14 @@
 # Project State
 
 - **Project:** Backyard Havoc (Vite, Canvas 2D, Matter.js)
-- **Baseline SHA:** `4b4dc968db7272432690811b8ac41ae28d2fbb2e` (Phase 0 merged to `main`)
-- **Current branch:** `codex/phase-1a-quality-gate`
-- **Current phase:** Phase 1A — Quality Gate / Reproducibility; no gameplay changes
-- **Local quality gate:** `npm ci` PASS; `npm test` PASS — 18 files, 60 passed; `npm run build` PASS — Vite 5.4.21, 20 modules, 214.64 kB JS (62.73 kB gzip)
-- **Playwright:** Chromium smoke tests PASS locally in two consecutive runs — 5 scenarios each at 1280×720, one worker. Phase 1A CI has passed both jobs and all 5 browser scenarios; browser-health diagnostics were clean. Scenario screenshots and browser-health diagnostics attach to the HTML report; traces, screenshots and video are retained on failure.
-- **GitHub Actions:** Quality gate implemented; the Phase 1A PR has passed unit/build and Chromium jobs, with `playwright-evidence` uploaded (7-day retention). Check PR #2 for the latest head-specific results.
-- **Known limitations:** Vitest emits existing headless Web Audio `window is not defined` warnings in two test files. `npm ci` reports 5 dependency audit vulnerabilities (3 moderate, 1 high, 1 critical); no automated dependency upgrades were applied. Full gameplay, mobile, and visual regression coverage remain out of scope.
+- **Baseline SHA:** `149fd28e3ddce8e4826ca15f53876de30b2fffba` (merged Phase 1A baseline)
+- **Current branch:** `codex/phase-1b-runtime-correctness`
+- **Current phase:** Phase 1B — Run Lifecycle & Verified Runtime Correctness; implementation complete locally, external review pending
+- **Confirmed runtime fixes:** `IDLE` and `GAME_OVER` no longer simulate; intro/ending remain cinematic and suppress Kevin attacks; duplicate keyboard handlers are consolidated; Kevin uses supported states; reset restores transient engine/player/NPC/map state while keeping records, mute preference, and callbacks; hidden tabs pause simulation/music and rebase frame time; Kevin ejects according to impact side; kick and power-shot consequences require contact and one hit per kick.
+- **Local quality gate:** `npm test` PASS — 18 files, 67 passed; `npm run build` PASS — Vite 5.4.21, 20 modules, 216.50 kB JS (63.04 kB gzip).
+- **Playwright:** `npm run test:e2e` PASS twice locally — 6 Chromium scenarios per run at the configured fixed viewport, one worker. Browser-health reports recorded zero page errors, console errors/warnings, failed requests, and same-origin failures. The new title-idle test attaches a screenshot; browser report artifacts follow the Phase 1A CI retention configuration.
+- **GitHub Actions:** Phase 1B draft PR and head-specific workflow results are pending.
+- **Known limitations:** Vitest continues to emit expected headless Web Audio `window is not defined` warnings in cutscene/input tests. Browser-level visibility emulation is not covered; deterministic engine visibility tests verify the pause/resume contract. Dependency audit findings from Phase 1A remain unchanged and were not remediated here. Full visual, mobile, and performance coverage remain out of scope.
 
 ## Architecture
 
@@ -16,18 +17,18 @@ Single-page Vite app. `src/main.js` wires DOM, keyboard/pointer/touch input and 
 ## Highest-priority findings
 
 - **Critical issues:** None confirmed in baseline audit.
-- **Gameplay:** simulation scores behind title screen; dead 180-second timer; header is not connected; kick/parry gates do not enforce advertised contact/timing; ball can eject left regardless of hit side.
-- **Character:** Kevin behavior is heuristic, with dialogue bubble/TTS clocks unsynchronized, stale singleton listeners on repeated engine creation, and cutscenes assigning unsupported `SHOUTING_OUT` state.
+- **Gameplay:** Phase 1B regression coverage confirms title-time simulation and non-contact kick scoring are fixed. The 180-second timer design, header wiring, and parry timing remain unresolved by design for Phase 1C.
+- **Character:** Kevin still uses heuristic behavior, and dialogue bubble/TTS clocks may be unsynchronized. Phase 1B removed the unsupported cutscene state and suppressed cutscene attacks; other character behavior was not redesigned.
 - **Animation:** procedural Canvas drawings and state-based poses; no independent animation system/blending; cutscene shout pose is not implemented; canvas interpolation may be pixel-art-oriented and needs presentation review.
 - **Voice/audio:** browser TTS dependency; pending music notes may continue after stop; audio/speech lifecycle is not fully reset.
 - **UI:** missing favicon asset; zoom disabled; canvas accessibility and reduced-motion support are limited.
 - **Physics:** Matter.js is the runtime, while docs describe custom Verlet/Swept-AABB; many exported physics formula utilities are not production imports.
 - **Performance:** roughly 1,400-line game module, dynamic body/particle cleanup paths merit long-session profiling; capped fixed-step accumulator can discard simulation time under sustained load.
-- **Testing:** no GitHub Actions checks, browser E2E, screenshot regression, mobile, or performance budget; tests do not verify several production input/render/voice paths. Baseline test/build are local Codex evidence only.
+- **Testing:** Phase 1A GitHub quality checks and Chromium E2E are in place. Screenshot comparisons, mobile coverage, performance budgets, and several production input/render/voice paths remain outside the current suite.
 
 ## Next phases
 
-1. **1B Run lifecycle correctness:** title/IDLE simulation, duplicate input methods, unsupported Kevin state, reset contract, focus/background pause, hit direction/contact and documented input truth.
-2. **1C Gameplay truth:** decide survival vs timed, authoritative controls, header scope and parry timing.
+1. **1B Run lifecycle correctness:** implementation and focused local verification are complete; wait for Phase 1B PR review/CI.
+2. **1C Gameplay truth:** survival vs timed mode, authoritative controls, header scope, and parry timing remain undecided and untouched.
 
 Defer major architecture, gameplay and visual overhaul until those checks and decisions are reviewed.

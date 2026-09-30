@@ -70,6 +70,20 @@ export class MapRenderer {
     }
   }
 
+  resetRunState() {
+    this.time = 0;
+    this.survivalSeconds = 0;
+    const cloudStarts = [
+      { x: 120, y: 35 },
+      { x: 380, y: 20 },
+      { x: 680, y: 45 },
+      { x: 890, y: 25 },
+    ];
+    this.clouds.forEach((cloud, index) => Object.assign(cloud, cloudStarts[index]));
+    Object.assign(this.bird, { x: -50, y: 60, speed: 45, flapTime: 0 });
+    Object.assign(this.cat, { x: 320, y: 195, speed: 12, facing: 1 });
+  }
+
   // 1. Dynamic Time-of-Day Parallax Sky & Distant Mountain Layers
   drawSkyAndSun(ctx, camX = 0) {
     const t = this.survivalSeconds;

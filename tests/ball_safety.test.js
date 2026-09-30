@@ -35,6 +35,7 @@ describe('Ball Safety & Edge Case System', () => {
 
   beforeEach(() => {
     game = new GameEngine(createMockCanvas());
+    game.gameState = 'PLAYING';
   });
 
   it('rescues ball when knocked out of bounds below map', () => {

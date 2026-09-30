@@ -102,6 +102,34 @@ export class Player {
     this.squashTimer = 0.12;
   }
 
+  resetRunState(x = 340, y = 485) {
+    this.x = x;
+    this.y = y;
+    this.baseY = y;
+    this.vx = 0;
+    this.facing = 1;
+    this.state = 'IDLE';
+    this.kickTimer = 0;
+    this.kickDuration = 0.24;
+    this.kickProgress = 0;
+    this.hasHitBallThisKick = false;
+    this.powerCharging = false;
+    this.powerCharge = 0;
+    this.squashY = 1;
+    this.squashTimer = 0;
+    this.health = this.maxHealth;
+    this.invulnerabilityTimer = 0;
+    this.hurtTimer = 0;
+    this.keys.left = false;
+    this.keys.right = false;
+    this.keys.sprint = false;
+    this.keys.charge = false;
+    this.targetX = null;
+    this.runCycle = 0;
+    this.dustTimer = 0;
+    this.idleTime = 0;
+  }
+
   update(dt, boundsWidth = 960, particles = null, combo = 1) {
     this.idleTime += dt;
 
