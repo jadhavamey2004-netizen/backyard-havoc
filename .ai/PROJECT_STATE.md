@@ -1,12 +1,13 @@
 # Project State
 
 - **Project:** Backyard Havoc (Vite, Canvas 2D, Matter.js)
-- **Baseline SHA:** `c46709e1e4f97bcb49954b360cc8c23e34f6ee44`
-- **Current branch:** `codex/overhaul-phase-0-audit`
-- **Current phase:** Phase 0 audit only; no gameplay changes
-- **Baseline build:** PASS locally in Codex — Vite 5.4.21, 20 modules, 214.64 kB JS (62.73 kB gzip); GitHub did not run it
-- **Baseline tests:** PASS locally in Codex — 18 files, 60 passed, 0 failed/skipped; headless Web Audio `window` warnings in two test files; no GitHub CI run/checks
-- **Baseline playtest:** Short desktop production-preview smoke test; title, start, HUD, canvas and initial game visible; no console errors/warnings captured. Full gameplay loop, restart, mobile and failed-network inspection remain unverified.
+- **Baseline SHA:** `4b4dc968db7272432690811b8ac41ae28d2fbb2e` (Phase 0 merged to `main`)
+- **Current branch:** `codex/phase-1a-quality-gate`
+- **Current phase:** Phase 1A — Quality Gate / Reproducibility; no gameplay changes
+- **Local quality gate:** `npm ci` PASS; `npm test` PASS — 18 files, 60 passed; `npm run build` PASS — Vite 5.4.21, 20 modules, 214.64 kB JS (62.73 kB gzip)
+- **Playwright:** Chromium smoke tests PASS locally in two consecutive runs — 5 scenarios each at 1280×720, one worker. Phase 1A CI has passed both jobs and all 5 browser scenarios; browser-health diagnostics were clean. Scenario screenshots and browser-health diagnostics attach to the HTML report; traces, screenshots and video are retained on failure.
+- **GitHub Actions:** Quality gate implemented; the Phase 1A PR has passed unit/build and Chromium jobs, with `playwright-evidence` uploaded (7-day retention). Check PR #2 for the latest head-specific results.
+- **Known limitations:** Vitest emits existing headless Web Audio `window is not defined` warnings in two test files. `npm ci` reports 5 dependency audit vulnerabilities (3 moderate, 1 high, 1 critical); no automated dependency upgrades were applied. Full gameplay, mobile, and visual regression coverage remain out of scope.
 
 ## Architecture
 
@@ -26,8 +27,7 @@ Single-page Vite app. `src/main.js` wires DOM, keyboard/pointer/touch input and 
 
 ## Next phases
 
-1. **1A Quality gate/reproducibility:** GitHub Actions (`npm ci`, `npm test`, `npm run build`), Playwright Chromium smoke tests, console capture, fixed viewport and artifacts.
-2. **1B Run lifecycle correctness:** title/IDLE simulation, duplicate input methods, unsupported Kevin state, reset contract, focus/background pause, hit direction/contact and documented input truth.
-3. **1C Gameplay truth:** decide survival vs timed, authoritative controls, header scope and parry timing.
+1. **1B Run lifecycle correctness:** title/IDLE simulation, duplicate input methods, unsupported Kevin state, reset contract, focus/background pause, hit direction/contact and documented input truth.
+2. **1C Gameplay truth:** decide survival vs timed, authoritative controls, header scope and parry timing.
 
 Defer major architecture, gameplay and visual overhaul until those checks and decisions are reviewed.
