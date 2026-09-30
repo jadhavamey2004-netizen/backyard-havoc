@@ -43,10 +43,11 @@ describe('Game Flow & Integration Lifecycle', () => {
   it('accumulates score and peak combo during player kicks', () => {
     expect(game.score).toBe(0);
     game.player.triggerKick();
+    game.player.kickProgress = 0.5;
     const foot = game.player.getKickPosition();
-    game.ball.position.x = foot.x;
+    game.ball.position.x = foot.x + 90;
     game.ball.position.y = foot.y;
-    game.executePlayerKick(game.player.x + 80, game.player.y - 200, 30);
+    game.executePlayerKick(game.player.x + 180, game.player.y - 80);
     expect(game.score).toBeGreaterThan(0);
     expect(game.combo).toBe(2);
     expect(game.peakCombo).toBe(2);
@@ -62,11 +63,9 @@ describe('Game Flow & Integration Lifecycle', () => {
     game.npc.rageMeter = 100;
     game.startIntroCutscene();
     const initialSurvival = game.survivalSeconds;
-    const initialTimer = game.timedModeRemaining;
     game.update(0.5);
     expect(game.cutsceneTimer).toBeLessThan(3.6);
     expect(game.survivalSeconds).toBe(initialSurvival);
-    expect(game.timedModeRemaining).toBe(initialTimer);
     expect(game.thrownProjectiles).toHaveLength(0);
     expect(['PEEKING_INSIDE', 'LEANING_OUT_RAGE', 'DIZZY_BONK', 'REPAIRING']).toContain(game.npc.state);
 
@@ -74,7 +73,6 @@ describe('Game Flow & Integration Lifecycle', () => {
     game.startEndingCutscene();
     game.update(0.5);
     expect(game.survivalSeconds).toBe(initialSurvival);
-    expect(game.timedModeRemaining).toBe(initialTimer);
     expect(game.thrownProjectiles).toHaveLength(0);
   });
 
@@ -146,9 +144,8 @@ describe('Game Flow & Integration Lifecycle', () => {
     game.peakCombo = 5;
     game.juggleCount = 7;
     game.survivalSeconds = 19;
-    game.timedModeRemaining = 70;
     game.distanceTraveledMeters = 13;
-    game.comboGraceTimer = 1;
+    game.ballGroundedDuration = 0.5;
     game.kevinBonkTimer = 2;
     game.trickChain = ['KICK'];
     game.trickChainTimer = 3;
@@ -193,7 +190,8 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.peakCombo).toBe(1);
     expect(game.juggleCount).toBe(0);
     expect(game.survivalSeconds).toBe(0);
-    expect(game.timedModeRemaining).toBe(180);
+    expect(game.ballGroundedDuration).toBe(0);
+    expect(game.pendingPrimaryAction).toBeNull();
     expect(game.distanceTraveledMeters).toBe(0);
     expect(game.kevinBonkTimer).toBe(0);
     expect(game.trickChain).toEqual([]);
@@ -238,20 +236,16 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.combo).toBe(1);
     expect(game.ball.velocity).toEqual({ x: 2, y: 3 });
     expect(game.trickChain).toEqual(['HEADING']);
-    game.handlePointerUp(700, 100);
-    expect(game.score).toBe(0);
-    expect(game.combo).toBe(1);
-    expect(game.juggleCount).toBe(0);
-    expect(game.ball.velocity).toEqual({ x: 2, y: 3 });
-    expect(game.trickChain).toEqual(['HEADING']);
 
     game.ball.position.x = foot.x + 30;
     game.ball.position.y = foot.y;
-    game.handlePointerUp(700, 100);
+    game.player.triggerKick();
+    game.player.kickProgress = 0.5;
+    game.executePlayerKick(700, 100);
     expect(game.score).toBeGreaterThan(0);
     const score = game.score;
     const velocity = { ...game.ball.velocity };
-    expect(game.executePlayerKick(100, 100, 30)).toBe(false);
+    expect(game.executePlayerKick(100, 100)).toBe(false);
     expect(game.score).toBe(score);
     expect(game.ball.velocity).toEqual(velocity);
     expect(game.juggleCount).toBe(1);
@@ -259,6 +253,8 @@ describe('Game Flow & Integration Lifecycle', () => {
 
   it('consumes the kick contact after a successful power shot', () => {
     const foot = game.player.getKickPosition();
+    game.player.triggerKick();
+    game.player.kickProgress = 0.5;
     game.ball.position.x = foot.x + 30;
     game.ball.position.y = foot.y;
     game.mouseScreenPos = { x: 700, y: 100 };
@@ -268,11 +264,93 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.juggleCount).toBe(1);
     const scoreAfterPowerShot = game.score;
     const velocityAfterPowerShot = { ...game.ball.velocity };
-    expect(game.executePlayerKick(100, 100, 30)).toBe(false);
+    expect(game.executePlayerKick(100, 100)).toBe(false);
     expect(game.score).toBe(scoreAfterPowerShot);
     expect(game.juggleCount).toBe(1);
     expect(game.ball.velocity).toEqual(velocityAfterPowerShot);
   });
+
+  it('missedPrimaryActionHasNoGameplayConsequences', () => {
+    game.engine.gravity.scale = 0;
+    game.ball.position.x = game.player.x + 400;
+    game.ball.position.y = game.player.y - 100;
+    Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+    const before = { ...game.ball.velocity };
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+    game.handlePointerDown(700, 100);
+    game.handlePointerUp(700, 100);
+    expect(game.score).toBe(0);
+    expect(game.combo).toBe(1);
+    expect(game.ball.velocity).toEqual(before);
+    expect(game.pendingPrimaryAction).not.toBeNull();
+    for (let frame = 0; frame < 25; frame += 1) game.update(1 / 60);
+    expect(game.score).toBe(0);
+    expect(game.combo).toBe(1);
+    expect(game.juggleCount).toBe(0);
+    expect(game.ball.velocity).toEqual(before);
+    expect(events.some(event => event.type === 'BALL_CONTACT')).toBe(false);
+  });
+
+  it('normalKickOnlyConnectsDuringStrikeWindow', () => {
+    game.engine.gravity.scale = 0;
+    const foot = game.player.getKickPosition();
+    game.ball.position.x = foot.x;
+    game.ball.position.y = game.player.y + 10;
+    Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+    game.handlePointerDown(700, 100);
+    game.handlePointerUp(700, 100);
+    expect(game.score).toBe(0);
+    expect(game.player.kickProgress).toBe(0);
+    for (let frame = 0; frame < 20 && game.score === 0; frame += 1) game.update(1 / 60);
+    expect(game.score).toBe(300);
+    expect(game.combo).toBe(2);
+    expect(game.player.hasHitBallThisKick).toBe(true);
+  });
+
+  it('consequenceHelpersCannotBypassStrikeContactPhase', () => {
+    const foot = game.player.getKickPosition();
+    Matter.Body.setPosition(game.ball, { x: foot.x + 90, y: foot.y });
+    Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+    expect(game.executePlayerKick(700, 100, 'KICK')).toBe(false);
+    expect(game.executePowerShot(1, 700, 100, 'KICK')).toBe(false);
+    expect(game.score).toBe(0);
+    expect(game.combo).toBe(1);
+    expect(game.player.hasHitBallThisKick).toBe(false);
+  });
+
+  it('primaryActionSelectsHeaderBeforeKick', () => {
+    game.engine.gravity.scale = 0;
+    const head = game.player.getHeaderPosition();
+    game.ball.position.x = head.x;
+    game.ball.position.y = head.y;
+    Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+    game.handlePointerDown(700, 100);
+    game.handlePointerUp(700, 100);
+    for (let frame = 0; frame < 20 && game.score === 0; frame += 1) game.update(1 / 60);
+    expect(events.filter(event => event.type === 'BALL_CONTACT').map(event => event.contactType)).toEqual(['HEADER']);
+    expect(game.score).toBe(200);
+  });
+
+  it('chargedActionUsesReleaseSnapshotAndOnlyScoresOnContact', () => {
+    game.engine.gravity.scale = 0;
+    const foot = game.player.getKickPosition();
+    game.ball.position.x = foot.x;
+    game.ball.position.y = game.player.y + 10;
+    Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+    game.handlePointerDown(700, 100);
+    game.pointerDownTime = performance.now() - 600;
+    game.player.powerCharge = 0;
+    game.handlePointerUp(700, 100);
+    expect(game.score).toBe(0);
+    expect(game.pendingPrimaryAction?.powerShot).toBe(true);
+    for (let frame = 0; frame < 20 && game.score === 0; frame += 1) game.update(1 / 60);
+    expect(game.score).toBe(200);
+    expect(game.player.hasHitBallThisKick).toBe(true);
+  });
+
 
   it('ejects Kevin hits toward their impact side with a centered fallback', () => {
     const kevin = Matter.Bodies.rectangle(790, 110, 70, 70, { label: 'destructible_kevin' });
@@ -297,7 +375,6 @@ describe('Game Flow & Integration Lifecycle', () => {
       score: game.score,
       combo: game.combo,
       survival: game.survivalSeconds,
-      timer: game.timedModeRemaining,
       x: ball.position.x,
       y: ball.position.y,
       vx: ball.velocity.x,
@@ -305,13 +382,136 @@ describe('Game Flow & Integration Lifecycle', () => {
     };
     for (let i = 0; i < 120; i += 1) game.update(1 / 60);
     expect({ score: game.score, combo: game.combo, survival: game.survivalSeconds,
-      timer: game.timedModeRemaining, x: ball.position.x, y: ball.position.y,
+      x: ball.position.x, y: ball.position.y,
       vx: ball.velocity.x, vy: ball.velocity.y }).toEqual(before);
 
     game.gameState = 'GAME_OVER';
     game.isGameOver = false;
     game.update(1);
     expect(game.survivalSeconds).toBe(before.survival);
+  });
+
+  it('survivalTimeAdvancesOnlyInPlayingAndPastFormerTimer', () => {
+    game.survivalSeconds = 180;
+    game.update(1 / 60);
+    expect(game.gameState).toBe('PLAYING');
+    expect(game.survivalSeconds).toBeCloseTo(180 + 1 / 60);
+    expect(game.isGameOver).toBe(false);
+  });
+
+  it('constructorAndRunResetDoNotEmitGameplayComboEvents', () => {
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+    game.combo = 4;
+    game.resetEnvironment();
+    expect(events).toEqual([]);
+    expect(game.combo).toBe(1);
+    expect(game.onGameplayEvent).toBeTypeOf('function');
+  });
+
+  it('comboGroundGraceUsesContinuousGroundedTimeAcrossBounces', () => {
+    const setGrounded = () => {
+      Matter.Body.setPosition(game.ball, {
+        x: game.player.x,
+        y: game.ground.bounds.min.y - game.ball.circleRadius
+      });
+      Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+    };
+    game.combo = 4;
+    game.juggleCount = 5;
+
+    setGrounded();
+    game.updateComboGroundGrace(0.4);
+    expect(game.combo).toBe(4);
+    Matter.Body.setVelocity(game.ball, { x: 0, y: -2 });
+    game.updateComboGroundGrace(0.05);
+    expect(game.ballGroundedDuration).toBe(0);
+    setGrounded();
+    game.updateComboGroundGrace(0.5);
+    expect(game.combo).toBe(4);
+    expect(game.juggleCount).toBe(5);
+  });
+
+  it('comboGroundGraceExpiresAfterOneContinuousGroundedInterval', () => {
+    Matter.Body.setPosition(game.ball, {
+      x: game.player.x,
+      y: game.ground.bounds.min.y - game.ball.circleRadius
+    });
+    Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+    game.combo = 4;
+    game.juggleCount = 5;
+    game.updateComboGroundGrace(0.79);
+    expect(game.combo).toBe(4);
+    game.updateComboGroundGrace(0.02);
+    expect(game.combo).toBe(1);
+    expect(game.juggleCount).toBe(0);
+  });
+
+  it('successfulContactClearsGroundGraceBeforeReset', () => {
+    const foot = game.player.getKickPosition();
+    Matter.Body.setPosition(game.ball, { x: foot.x, y: game.player.y - 9 });
+    Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+    game.combo = 3;
+    game.ballGroundedDuration = 0.79;
+    game.player.triggerKick();
+    game.player.kickProgress = 0.5;
+    expect(game.player.getContactCandidate(game.ball.position)).toBe('KICK');
+    expect(game.executePlayerKick(700, 100)).toBe(true);
+    expect(game.ballGroundedDuration).toBe(0);
+    expect(game.combo).toBe(4);
+  });
+
+  it('healthZeroStartsDefeatExactlyOnceAndEmitsDamageOnce', () => {
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+    game.combo = 3;
+    game.player.health = 1;
+    game.player.invulnerabilityTimer = 0;
+    const point = { x: game.player.x, y: game.player.y - 30 };
+    const projectile = Matter.Bodies.circle(point.x, point.y, 10, { label: 'thrown_projectile' });
+    game.thrownProjectiles.push(projectile);
+    const ending = vi.spyOn(game, 'startEndingCutscene');
+    game.update(1 / 60);
+    game.update(1 / 60);
+    expect(game.player.health).toBe(0);
+    expect(ending).toHaveBeenCalledOnce();
+    expect(events.filter(event => event.type === 'PLAYER_DAMAGED')).toHaveLength(1);
+    expect(game.combo).toBe(1);
+  });
+
+  it('destructionAndKevinImpactsDoNotAdvanceCombo', () => {
+    game.combo = 4;
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+    const ball = game.ball;
+    const prop = Matter.Bodies.rectangle(500, 200, 30, 30, {
+      label: 'destructible_prop', isDestructible: true, pointValue: 100, color: '#888'
+    });
+    game.collisionHandler({ pairs: [{ bodyA: ball, bodyB: prop }] });
+    expect(game.combo).toBe(4);
+    expect(events.filter(event => event.type === 'OBJECT_DESTROYED')).toHaveLength(1);
+
+    const kevin = Matter.Bodies.rectangle(game.npc.x, game.npc.y, 70, 70, { label: 'destructible_kevin' });
+    game.kevinBonkTimer = 0;
+    game.collisionHandler({ pairs: [{ bodyA: ball, bodyB: kevin }] });
+    expect(game.combo).toBe(4);
+    expect(events.filter(event => event.type === 'KEVIN_HIT')).toHaveLength(1);
+  });
+
+  it('powerShotUsesNormalBaseContactScoreWithoutChargeMultiplier', () => {
+    const foot = game.player.getKickPosition();
+    Matter.Body.setPosition(game.ball, { x: foot.x + 90, y: foot.y });
+    Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+    game.player.triggerKick();
+    game.player.kickProgress = 0.5;
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+    expect(game.executePowerShot(0.5, 700, 100)).toBe(true);
+    expect(game.score).toBe(200);
+    expect(events.filter(event => event.type === 'BALL_CONTACT')).toEqual([
+      expect.objectContaining({ contactType: 'POWER_SHOT', score: 200 })
+    ]);
+    expect(events.filter(event => event.type === 'POWER_SHOT')).toHaveLength(1);
   });
 
   it('persists high scores when triggerGameOver is called', () => {

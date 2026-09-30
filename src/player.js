@@ -4,6 +4,8 @@
  * landing squash & stretch, dynamic drop-shadow, Power Shot charging states, and invulnerability flashing.
  */
 
+import { GAMEPLAY_TUNING, getContactPhase } from './gameplay_rules.js';
+
 export class Player {
   constructor(x = 340, y = 485) {
     this.x = x;
@@ -14,11 +16,11 @@ export class Player {
     this.facing = 1;
     this.state = 'IDLE'; // 'IDLE', 'RUNNING', 'KICKING', 'HEADING', 'HURT'
     this.kickTimer = 0;
-    this.kickDuration = 0.24;
+    this.kickDuration = GAMEPLAY_TUNING.KICK_ACTION_DURATION;
     this.kickProgress = 0;
     this.hasHitBallThisKick = false;
 
-    // Power Shot Charging (Spacebar)
+    // Power shot charging state is driven by the contextual pointer action.
     this.powerCharging = false;
     this.powerCharge = 0; // 0 to 1.0
 
@@ -83,18 +85,15 @@ export class Player {
 
   triggerKick() {
     this.state = 'KICKING';
-    this.kickDuration = 0.38;
-    this.kickTimer = 0.38;
+    this.kickDuration = GAMEPLAY_TUNING.KICK_ACTION_DURATION;
+    this.kickTimer = GAMEPLAY_TUNING.KICK_ACTION_DURATION;
     this.kickProgress = 0;
     this.hasHitBallThisKick = false;
   }
 
   triggerHeader() {
+    if (this.state !== 'KICKING' && this.state !== 'HEADING') this.triggerKick();
     this.state = 'HEADING';
-    this.kickDuration = 0.38;
-    this.kickTimer = 0.38;
-    this.kickProgress = 0;
-    this.hasHitBallThisKick = false;
   }
 
   triggerSquash(amount = 0.75) {
@@ -110,7 +109,7 @@ export class Player {
     this.facing = 1;
     this.state = 'IDLE';
     this.kickTimer = 0;
-    this.kickDuration = 0.24;
+    this.kickDuration = GAMEPLAY_TUNING.KICK_ACTION_DURATION;
     this.kickProgress = 0;
     this.hasHitBallThisKick = false;
     this.powerCharging = false;
@@ -191,7 +190,7 @@ export class Player {
       this.kickTimer -= dt;
       this.kickProgress = 1 - Math.max(0, this.kickTimer / this.kickDuration);
 
-      if (this.kickTimer <= 0) {
+      if (this.kickTimer <= 1e-9) {
         this.state = moveDir !== 0 ? 'RUNNING' : 'IDLE';
         this.kickProgress = 0;
       }
@@ -214,15 +213,30 @@ export class Player {
     };
   }
 
-  canKickBall(ballPos) {
-    if ((this.state !== 'KICKING' && this.state !== 'HEADING') || this.hasHitBallThisKick) {
-      return false;
+  getContactCandidate(ballPos) {
+    if ((this.state !== 'KICKING' && this.state !== 'HEADING')
+      || this.hasHitBallThisKick || !getContactPhase(this.kickProgress)) return null;
+
+    const head = this.getHeaderPosition();
+    if (Math.hypot(ballPos.x - head.x, ballPos.y - head.y) <= GAMEPLAY_TUNING.HEADER_CONTACT_RADIUS) {
+      return 'HEADER';
     }
-    const kickPos = this.state === 'HEADING' ? this.getHeaderPosition() : this.getKickPosition();
-    const dx = ballPos.x - kickPos.x;
-    const dy = ballPos.y - kickPos.y;
-    const dist = Math.hypot(dx, dy);
-    return dist < 95;
+
+    const foot = this.getKickPosition();
+    if (Math.hypot(ballPos.x - foot.x, ballPos.y - foot.y) <= GAMEPLAY_TUNING.FOOT_CONTACT_RADIUS) {
+      return 'KICK';
+    }
+    return null;
+  }
+
+  consumeKickContact() {
+    if (this.hasHitBallThisKick) return false;
+    this.hasHitBallThisKick = true;
+    return true;
+  }
+
+  canKickBall(ballPos) {
+    return this.getContactCandidate(ballPos) !== null;
   }
 
   draw(ctx, combo = 1) {

@@ -56,6 +56,14 @@ describe('Cutscenes Engine State Machine', () => {
     expect(game.kickoffBannerTimer).toBeGreaterThan(0);
   });
 
+  it('introDoesNotTreatMovementKeysAsSkipShortcuts', () => {
+    game.startIntroCutscene();
+    game.handleKeyDown('KeyA');
+    expect(game.gameState).toBe('INTRO_CUTSCENE');
+    game.handleKeyDown('Space');
+    expect(game.gameState).toBe('PLAYING');
+  });
+
   it('uses one active input path and starts music only during visible play', () => {
     const startMusic = vi.spyOn(sounds, 'startGenerativeMusic').mockImplementation(() => {});
     game.gameState = 'IDLE';
@@ -63,7 +71,7 @@ describe('Cutscenes Engine State Machine', () => {
     expect(game.player.keys.right).toBe(false);
     expect(startMusic).not.toHaveBeenCalled();
     game.gameState = 'INTRO_CUTSCENE';
-    game.handleKeyDown('KeyA');
+    game.handleKeyDown('Space');
     expect(game.gameState).toBe('PLAYING');
     game.handleKeyDown('KeyD');
     expect(game.player.keys.right).toBe(true);

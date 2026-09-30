@@ -1,34 +1,33 @@
 # Project State
 
 - **Project:** Backyard Havoc (Vite, Canvas 2D, Matter.js)
-- **Baseline SHA:** `149fd28e3ddce8e4826ca15f53876de30b2fffba` (merged Phase 1A baseline)
-- **Current branch:** `codex/phase-1b-runtime-correctness`
-- **Current phase:** Phase 1B — Run Lifecycle & Verified Runtime Correctness; implementation complete locally, external review pending
-- **Confirmed runtime fixes:** `IDLE` and `GAME_OVER` no longer simulate; intro/ending remain cinematic and suppress Kevin attacks; duplicate keyboard handlers are consolidated; Kevin uses supported states; reset restores transient engine/player/NPC/map state while keeping records, mute preference, and callbacks; hidden tabs pause simulation/music and rebase frame time; Kevin ejects according to impact side; kick and power-shot consequences require contact and one hit per kick.
-- **Local quality gate:** `npm test` PASS — 18 files, 67 passed; `npm run build` PASS — Vite 5.4.21, 20 modules, 216.50 kB JS (63.04 kB gzip).
-- **Playwright:** `npm run test:e2e` PASS twice locally — 6 Chromium scenarios per run at the configured fixed viewport, one worker. Browser-health reports recorded zero page errors, console errors/warnings, failed requests, and same-origin failures. The new title-idle test attaches a screenshot; browser report artifacts follow the Phase 1A CI retention configuration.
-- **GitHub Actions:** Draft PR #3 completed both Quality Gate jobs successfully (unit/build and Chromium smoke). CI Chromium health reported 0 page errors, console errors/warnings, failed requests, or same-origin failures. The `playwright-evidence` artifact was uploaded with 7-day retention (expires 2026-10-07).
-- **Known limitations:** Vitest continues to emit expected headless Web Audio `window is not defined` warnings in cutscene/input tests. Browser-level visibility emulation is not covered; deterministic engine visibility tests verify the pause/resume contract. Dependency audit findings from Phase 1A remain unchanged and were not remediated here. Full visual, mobile, and performance coverage remain out of scope.
+- **Phase 1C baseline SHA:** `e383938201825bbc3286c292cdcf35831e8002f4` (`main`)
+- **Working branch:** `codex/phase-1c-gameplay-truth`
+- **Current phase:** Phase 1C gameplay truth implementation; awaiting local verification and external review after draft PR/CI.
+- **Phase 1C scope:** Survival run lifecycle, authoritative contextual controls, timed kick/header contact, immediate threat-first defense, deterministic gravity-aware threat prediction, combo/score/event semantics, current-facing documentation, focused browser smoke coverage.
+- **Phase 1B predecessor:** Lifecycle/reset/visibility/runtime correctness fixes are included in the baseline. `.ai/INITIAL_AUDIT.md` remains the original historical audit.
+
+## Current implementation notes
+
+- Standard run is survival-based; active time does not end it. Health zero starts defeat/results.
+- Football action duration, strike interval, head/foot zones, charge, defense windows, rewards, and grounded grace are named tuning values in `src/gameplay_rules.js`.
+- Pointer release resolves a qualifying projectile defense immediately using release-time charge/aim and threat state; otherwise it starts one football action. Football consequences require a selected real contact in the strike interval and can occur only once.
+- Projectile threat selection uses bounded deterministic fixed steps with Matter gravity and stable tie-breaking. An already-overlapping projectile is not a defense opportunity.
+- Combo increments only on successful ball contacts and parry tiers; Perfect Parry is one atomic +2 transition. Ground grace counts only continuous grounded time. Reset/constructor gameplay events remain silent.
+- Current controls are A/D or arrows, optional Shift, pointer aim, contextual pointer action, and hold-to-charge. Header is contextual with no dedicated key.
+
+## Verification status
+
+- **Vitest:** `npm test` PASS — 19 files, 107 tests.
+- **Production build:** `npm run build` PASS — Vite 5.4.21, 21 modules transformed.
+- **Playwright:** `npm run test:e2e` PASS twice — 7 Chromium scenarios per run at 1280×720. Each run reported zero page errors, console errors/warnings, failed requests, and same-origin failures. The browser smoke suite attaches per-test health JSON and a title screenshot; Playwright retains traces/screenshots/videos on failure.
+- **GitHub Actions:** Pending the Phase 1C draft PR run. Record the final check and uploaded `playwright-evidence` artifact after CI completes.
+- **Known limits:** The passing Vitest run prints existing headless Web Audio `window is not defined` diagnostics. Tuning and visual feel still require playtesting. Complete mobile controls, canvas accessibility, reduced-motion support, browser audio/TTS variability, long-session performance, and gameplay balance remain outside this phase.
 
 ## Architecture
 
-Single-page Vite app. `src/main.js` wires DOM, keyboard/pointer/touch input and the animation loop. A large `src/game.js` `GameEngine` coordinates Matter.js simulation, procedural world, collisions, score/state, camera, particles and rendering; separate modules provide player, Kevin/heuristics, audio, map and effects. Tests are Vitest unit/state tests without browser E2E.
+Single-page Vite app. `src/main.js` wires DOM, keyboard/pointer/touch input and the animation loop. `src/game.js` remains the existing GameEngine coordinator for Matter.js simulation, world/collisions, score/state, camera, particles and rendering. `src/player.js` owns action timing and contact zones; `src/gameplay_rules.js` contains named gameplay tuning and deterministic pure rule helpers. This work does not refactor the engine architecture.
 
-## Highest-priority findings
+## Deferred
 
-- **Critical issues:** None confirmed in baseline audit.
-- **Gameplay:** Phase 1B regression coverage confirms title-time simulation and non-contact kick scoring are fixed. The 180-second timer design, header wiring, and parry timing remain unresolved by design for Phase 1C.
-- **Character:** Kevin still uses heuristic behavior, and dialogue bubble/TTS clocks may be unsynchronized. Phase 1B removed the unsupported cutscene state and suppressed cutscene attacks; other character behavior was not redesigned.
-- **Animation:** procedural Canvas drawings and state-based poses; no independent animation system/blending; cutscene shout pose is not implemented; canvas interpolation may be pixel-art-oriented and needs presentation review.
-- **Voice/audio:** browser TTS dependency; pending music notes may continue after stop; audio/speech lifecycle is not fully reset.
-- **UI:** missing favicon asset; zoom disabled; canvas accessibility and reduced-motion support are limited.
-- **Physics:** Matter.js is the runtime, while docs describe custom Verlet/Swept-AABB; many exported physics formula utilities are not production imports.
-- **Performance:** roughly 1,400-line game module, dynamic body/particle cleanup paths merit long-session profiling; capped fixed-step accumulator can discard simulation time under sustained load.
-- **Testing:** Phase 1A GitHub quality checks and Chromium E2E are in place. Screenshot comparisons, mobile coverage, performance budgets, and several production input/render/voice paths remain outside the current suite.
-
-## Next phases
-
-1. **1B Run lifecycle correctness:** implementation and focused local verification are complete; wait for Phase 1B PR review/CI.
-2. **1C Gameplay truth:** survival vs timed mode, authoritative controls, header scope, and parry timing remain undecided and untouched.
-
-Defer major architecture, gameplay and visual overhaul until those checks and decisions are reviewed.
+Phase 1D and later: Havoc meter and escalation decisions; timed/daily modes; broad score/balance pass; character, animation, UI, destruction, audio, and mobile redesign; progression; visual polish; and broad architecture refactoring. These areas remain untouched unless an approved Phase 1C correctness rule requires a narrow change.

@@ -1,30 +1,39 @@
 # Production Feature Truth
 
-Baseline: `c46709e1e4f97bcb49954b360cc8c23e34f6ee44` (`main`, before audit documents). Status is based on executable source; it does not imply quality or full browser coverage.
+Baseline: `e383938201825bbc3286c292cdcf35831e8002f4` (`main`, before Phase 1C implementation). The status below describes the Phase 1C branch implementation; balance and presentation tuning still require playtesting.
 
 | Feature | Status | Production evidence / limits |
 |---|---|---|
-| Movement | IMPLEMENTED | `src/player.js` handles A/D and arrow movement plus Shift sprint; main wires keyboard events. A held-key movement path exists. |
-| Kick | PARTIAL | `src/game.js` maps pointer/touch release near the player to a kick. `Player.canKickBall()` is not used as the gate; keyboard kick is not wired. |
-| Power shot | PARTIAL | Pointer/touch hold and release charges the kick in `src/game.js`; Spacebar is not wired to charge despite comments/README claims. |
-| Header | DEAD/UNUSED | `Player.triggerHeader()` and heading rendering/state exist, but no runtime caller or airborne header input was found. |
-| Parry | PARTIAL | Pointer/touch release can reflect a nearby projectile; source gate is proximity, not a kick-phase timing window. |
-| Perfect parry | DOCUMENTATION_ONLY | “Golden”/perfect parry language exists in README/design copy; no distinct perfect-parry state or reward gate was found. |
-| Combo | IMPLEMENTED | Score events update combo/peak combo and ground grace resets combo in `src/game.js`. Feel/balance remains unverified. |
-| Kevin | IMPLEMENTED | `src/npc.js` state/rage/timers, drawing and throws are driven from `src/game.js`; physical/visual quality needs further playtesting. |
-| Rage | IMPLEMENTED | Local heuristic response and NPC rage meter drive dialogue and projectile throws; not a learned/adaptive AI. |
-| Voice | PARTIAL | Browser `speechSynthesis` with locally generated voice cues; browser voice, availability and synchronization vary and were not tested. |
-| Destruction | IMPLEMENTED | Matter collision events remove destructible bodies and create rectangular shard bodies/particles. Shard quality is intentionally simple and needs runtime review. |
-| Procedural world | IMPLEMENTED | `src/procedural_world.js` builds chunks and loads adjacent chunks. Repeated chunk/NPC behavior and long-run stability need playtest evidence. |
-| Ball variants | DOCUMENTATION_ONLY | Four profiles are exported from `src/physics.js` and tested as formulas; runtime constructs one fixed ball in `src/game.js`, with no selection/unlock path found. |
-| Timer | PARTIAL | `survivalSeconds` counts up and drives background progression; `timedModeRemaining` counts down from 180 but has no expiry behavior or HUD. |
-| High score | IMPLEMENTED | Best score persists in browser `localStorage`; no account or online leaderboard found. |
-| Mobile | PARTIAL | Touch events map to pointer actions and narrow-screen CSS exists; UI hints remain keyboard/mouse-centric and no device test was run. |
-| AI | PARTIAL | `src/ai.js` locally chooses lines from heuristic event telemetry. No external model/network inference or layout director is in the runtime path. |
-| Cutscenes | IMPLEMENTED | Intro and defeat state/timers/rendering exist; unit-level transitions are covered. Visual/audio synchronization was not verified. |
-| Audio | PARTIAL | Web Audio generated effects/music plus browser TTS; runtime quality, support, and lifecycle cleanup were not comprehensively verified. |
-| Music | IMPLEMENTED | Procedural sequencer runs in Web Audio and combo changes tempo; stop cancels future scheduler ticks but not already scheduled notes. |
-| Replayability | PARTIAL | Restart and persistent high score exist; no daily challenge, unlock progression, replay recording, or seeded deterministic run was found. |
-| Persistence | PARTIAL | High score, best combo and mute preference use local storage; gameplay progression/settings are otherwise absent. |
-| Accessibility | PARTIAL | Some native buttons/HTML text exist, but canvas has no accessible name/fallback description, browser zoom is disabled, and reduced-motion treatment was not found. |
-| Deployment | IMPLEMENTED | Vercel config builds Vite to `dist`; deployment itself was not executed. `/vite.svg` reference resolves to HTML fallback because asset is absent. |
+| Movement | IMPLEMENTED | `src/player.js` handles A/D or arrows plus optional Shift sprint. Page hiding clears held movement/sprint input. |
+| Primary action | IMPLEMENTED | Pointer press/release snapshots aim and charge. An eligible projectile defense resolves immediately at release; otherwise one kick/header action waits for its strike window and requires real contact. |
+| Power shot | IMPLEMENTED | Hold-to-charge pointer action; charge is calculated from elapsed hold on release. Contact is required and base contact reward matches a normal kick. |
+| Header | IMPLEMENTED | Contextual head-zone contact during the strike window, selected ahead of foot contact; no dedicated control. |
+| Defense | IMPLEMENTED | Gravity-aware deterministic short-horizon forecast selects the earliest valid incoming threat. BLOCK, PARRY, and PERFECT_PARRY have distinct timing, impulse, score, and combo outcomes. Tuning requires playtest validation. |
+| Combo | IMPLEMENTED | Valid football contact and successful parry tiers advance combo. Continuous grounded time beyond the grace period and player damage reset it. Blocks, destruction, Kevin impacts, and returned-projectile aftermath do not advance it. |
+| Trick chain | IMPLEMENTED | Separate short-window chain records selected destruction, Kevin, and skill events; it is not the combo multiplier. |
+| Run | IMPLEMENTED | Intro transitions to survival play; health zero triggers defeat/results. Active survival time is non-terminal. Restart resets run state while preserving local records and mute preference. |
+| Kevin / rage | IMPLEMENTED | Local heuristic state/rage and projectile throws remain the existing runtime. No character or AI redesign is part of Phase 1C. |
+| Voice | PARTIAL | Browser speech synthesis availability and timing vary; not comprehensively tested. |
+| Destruction | IMPLEMENTED | Matter collision paths remove destructible bodies and produce the existing debris effects. Presentation/balance are unchanged. |
+| Procedural world | IMPLEMENTED | Existing chunk/world generation remains in place; long-run behavior requires broader playtesting. |
+| Ball variants | DOCUMENTATION_ONLY | Physics profiles are exported/tested as formulas; runtime still constructs one fixed ball and has no selection/unlock path. |
+| High score | IMPLEMENTED | Best score and combo persist locally through browser `localStorage`; no account or online leaderboard. |
+| Mobile | DEFERRED | Existing touch listeners remain; complete mobile controls and device coverage are not implemented. |
+| AI | PARTIAL | `src/ai.js` selects dialogue from local heuristic telemetry; no external inference service is used. |
+| Cutscenes | IMPLEMENTED | Intro and defeat lifecycle remain; visual/audio synchronization is not fully verified. |
+| Audio / music | PARTIAL | Existing generated Web Audio and browser TTS remain; audio lifecycle and device quality need dedicated review. |
+| Accessibility | PARTIAL | Native buttons and DOM text exist, but the canvas lacks a complete accessible gameplay alternative; zoom/reduced-motion issues remain. |
+| Deployment | IMPLEMENTED | Vite production build is configured; deployment is not part of this implementation task. |
+
+## Authoritative current controls and rules
+
+- A/D or arrows move; Shift is optional/advanced sprint; pointer movement aims.
+- Primary pointer press/release is contextual. Eligible projectile defense resolves at release; otherwise football contact can occur only during the action strike phase.
+- Hold primary pointer to charge a power shot. Charge alone has no score effect; a ball contact is required.
+- Header is a contextual head contact, not a dedicated W/Up ability.
+- Standard run has no countdown. Player health reaching zero ends it through the existing defeat/results flow.
+- See `.ai/GAMEPLAY_TRUTH.md` for exact tuning, event and contact contracts. Numeric timing/radius/reward values require playtest validation.
+
+## Deferred
+
+Phase 1D and later work: gameplay balance, Havoc meter/escalation, daily/timed modes, character/animation/audio/destruction redesign, progression, mobile-control implementation, performance budgets, and broader architecture changes.

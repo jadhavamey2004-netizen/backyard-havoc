@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Player } from '../src/player.js';
+import { GAMEPLAY_TUNING } from '../src/gameplay_rules.js';
 
 describe('Player Model & Mechanics (Section 7)', () => {
   it('should initialize with 3 hearts and correct base coordinates', () => {
@@ -58,5 +59,75 @@ describe('Player Model & Mechanics (Section 7)', () => {
     player.powerCharge = 0;
     expect(player.powerCharging).toBe(false);
     expect(player.powerCharge).toBe(0);
+  });
+
+  it('kickActionRunsForConfiguredTotalDuration', () => {
+    const player = new Player();
+    player.triggerKick();
+    expect(player.kickDuration).toBe(GAMEPLAY_TUNING.KICK_ACTION_DURATION);
+    player.update(GAMEPLAY_TUNING.KICK_ACTION_DURATION - 0.001);
+    expect(player.state).toBe('KICKING');
+    player.update(0.001);
+    expect(player.state).toBe('IDLE');
+  });
+
+  it('contactCandidateRequiresStrikePhase', () => {
+    const player = new Player();
+    player.triggerKick();
+    player.kickProgress = 0.299;
+    let footEdge = player.getKickPosition();
+    const kickBall = { x: footEdge.x + 90, y: footEdge.y };
+    expect(player.getContactCandidate(kickBall)).toBeNull();
+    player.kickProgress = 0.3;
+    expect(player.getContactCandidate(kickBall)).toBe('KICK');
+    player.kickProgress = 0.7;
+    expect(player.getContactCandidate(kickBall)).toBe('KICK');
+    player.kickProgress = 0.701;
+    expect(player.getContactCandidate(kickBall)).toBeNull();
+  });
+
+  it('contactCandidateUsesSeparateFootAndHeadZones', () => {
+    const player = new Player();
+    player.triggerKick();
+    player.kickProgress = 0.5;
+    const foot = player.getKickPosition();
+    const head = player.getHeaderPosition();
+    expect(player.getContactCandidate({ x: foot.x + 95, y: foot.y })).toBe('KICK');
+    expect(player.getContactCandidate({ x: foot.x + 95.01, y: foot.y })).toBeNull();
+    expect(player.getContactCandidate({ x: head.x + 60, y: head.y })).toBe('HEADER');
+    expect(player.getContactCandidate({ x: head.x - 60.01, y: head.y })).toBeNull();
+  });
+
+  it('headContactWinsWhenZonesOverlap', () => {
+    const player = new Player();
+    player.triggerKick();
+    player.kickProgress = 0.5;
+    expect(player.getContactCandidate(player.getHeaderPosition())).toBe('HEADER');
+  });
+
+  it('eachActionConsumesAtMostOneContactAndResetClearsIt', () => {
+    const player = new Player();
+    player.triggerKick();
+    player.kickProgress = 0.5;
+    const foot = player.getKickPosition();
+    const ball = { x: foot.x + 90, y: foot.y };
+    expect(player.getContactCandidate(ball)).toBe('KICK');
+    player.consumeKickContact();
+    expect(player.getContactCandidate(ball)).toBeNull();
+    player.resetRunState();
+    player.triggerKick();
+    player.kickProgress = 0.5;
+    expect(player.getContactCandidate(ball)).toBe('KICK');
+  });
+
+  it('contextualHeaderPoseDoesNotRestartActionClock', () => {
+    const player = new Player();
+    player.triggerKick();
+    player.update(0.12);
+    const timer = player.kickTimer;
+    player.triggerHeader();
+    expect(player.state).toBe('HEADING');
+    expect(player.kickTimer).toBe(timer);
+    expect(player.kickProgress).toBeCloseTo(0.12 / 0.38, 8);
   });
 });

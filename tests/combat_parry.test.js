@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GameEngine } from '../src/game.js';
-import { Bodies } from 'matter-js';
+import { Bodies, Body, Composite, Engine } from 'matter-js';
 
 const createMockCanvas = () => ({
   getContext: () => ({
@@ -48,16 +48,171 @@ describe('Combat & Parry Mechanics', () => {
   });
 
   it('parries projectile when player kicks near incoming projectile', () => {
-    const kickPos = game.player.getKickPosition();
-    const proj = Bodies.circle(kickPos.x + 10, kickPos.y, 10);
+    const combatPoint = { x: game.player.x, y: game.player.y - 30 };
+    const proj = Bodies.circle(combatPoint.x + 80, combatPoint.y - 20, 10);
+    Body.setVelocity(proj, { x: -3, y: 0 });
     game.thrownProjectiles.push(proj);
 
-    const screenX = kickPos.x - game.camera.x;
-    const screenY = kickPos.y;
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+    const screenX = game.player.x - game.camera.x;
+    const screenY = game.player.y;
     game.handlePointerDown(screenX, screenY);
     game.handlePointerUp(screenX, screenY);
     expect(proj.isParried).toBe(true);
-    expect(proj.velocity.x).toBeGreaterThan(0);
+    expect(game.score).toBe(500);
+    expect(game.combo).toBe(2);
+    expect(events.filter(event => event.type === 'PARRY')).toHaveLength(1);
+    expect(game.pendingPrimaryAction).toBeNull();
+  });
+
+  it('convertsMatterSubstepVelocityToWorldUnitsPerSecondForThreatForecast', () => {
+    game.engine.gravity.scale = 0;
+    const point = { x: game.player.x, y: game.player.y - 30 };
+    const projectile = Bodies.circle(point.x + 100, point.y, 10);
+    Composite.add(game.world, projectile);
+    Body.setVelocity(projectile, { x: -3, y: 0 });
+    Engine.update(game.engine, game.subDt * 1000);
+    game.thrownProjectiles.push(projectile);
+
+    const [threat] = game.getProjectileThreats();
+    expect(threat?.timeToContact).toBeCloseTo(1 / 3, 2);
+  });
+
+  it('defenseResolvesAtPointerReleaseWithoutWaitingForKickStrike', () => {
+    const point = { x: game.player.x, y: game.player.y - 30 };
+    const proj = Bodies.circle(point.x + 50, point.y - 5, 10);
+    Body.setVelocity(proj, { x: -3, y: 0 });
+    game.thrownProjectiles.push(proj);
+    game.handlePointerDown(point.x - game.camera.x, point.y);
+    game.handlePointerUp(point.x - game.camera.x, point.y);
+    expect(game.score).toBe(1000);
+    expect(game.combo).toBe(3);
+    expect(game.player.kickProgress).toBe(0);
+    expect(game.pendingPrimaryAction).toBeNull();
+  });
+
+  it('projectileAlreadyInsideContactRadiusCannotBeParriedAtRelease', () => {
+    const point = { x: game.player.x, y: game.player.y - 30 };
+    const proj = Bodies.circle(point.x + 20, point.y, 10);
+    Body.setVelocity(proj, { x: -3, y: 0 });
+    game.thrownProjectiles.push(proj);
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+    game.handlePointerDown(point.x - game.camera.x, point.y);
+    game.handlePointerUp(point.x - game.camera.x, point.y);
+    expect(proj.isParried).not.toBe(true);
+    expect(game.score).toBe(0);
+    expect(events.some(event => ['BLOCK', 'PARRY', 'PERFECT_PARRY'].includes(event.type))).toBe(false);
+    expect(game.pendingPrimaryAction).not.toBeNull();
+  });
+
+  it('defenseClassifiesBlockAndDoesNotAdvanceCombo', () => {
+    game.engine.gravity.scale = 0;
+    const point = { x: game.player.x, y: game.player.y - 30 };
+    const projectile = Bodies.circle(point.x + 100, point.y, 10);
+    Body.setVelocity(projectile, { x: -3, y: 0 });
+    game.thrownProjectiles.push(projectile);
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+
+    game.handlePointerDown(point.x - game.camera.x, point.y);
+    game.handlePointerUp(point.x - game.camera.x, point.y);
+
+    expect(game.score).toBe(100);
+    expect(game.combo).toBe(1);
+    expect(projectile.isParried).not.toBe(true);
+    expect(projectile.velocity.x).toBeGreaterThan(0);
+    expect(events.filter(event => event.type === 'BLOCK')).toHaveLength(1);
+    expect(events.some(event => event.type === 'COMBO_CHANGED')).toBe(false);
+  });
+
+  it('perfectParryScoresAtPreIncrementComboAndAdvancesAtomicallyByTwo', () => {
+    game.engine.gravity.scale = 0;
+    game.combo = 4;
+    game.peakCombo = 4;
+    const point = { x: game.player.x, y: game.player.y - 30 };
+    const projectile = Bodies.circle(point.x + 50, point.y, 10);
+    Body.setVelocity(projectile, { x: -3, y: 0 });
+    game.thrownProjectiles.push(projectile);
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+
+    game.handlePointerDown(point.x - game.camera.x, point.y);
+    game.handlePointerUp(point.x - game.camera.x, point.y);
+
+    expect(game.score).toBe(4000);
+    expect(game.combo).toBe(6);
+    expect(events.filter(event => event.type === 'COMBO_CHANGED')).toEqual([
+      expect.objectContaining({ previous: 4, current: 6, delta: 2, reason: 'PERFECT_PARRY' })
+    ]);
+    expect(events.filter(event => event.type === 'PERFECT_PARRY')).toHaveLength(1);
+  });
+
+  it('defenseSelectsEarliestThreatRegardlessOfArrayOrderAndConsumesItOnce', () => {
+    game.engine.gravity.scale = 0;
+    const point = { x: game.player.x, y: game.player.y - 30 };
+    const later = Bodies.circle(point.x + 100, point.y, 10);
+    const earlier = Bodies.circle(point.x + 60, point.y, 10);
+    Body.setVelocity(later, { x: -3, y: 0 });
+    Body.setVelocity(earlier, { x: -3, y: 0 });
+    game.thrownProjectiles.push(later, earlier);
+
+    game.handlePointerDown(point.x - game.camera.x, point.y);
+    game.handlePointerUp(point.x - game.camera.x, point.y);
+    const score = game.score;
+    expect(earlier.isParried).toBe(true);
+    expect(later.isParried).not.toBe(true);
+    game.thrownProjectiles = [earlier];
+    expect(game.resolveDefenseAtRelease()).toBe(false);
+    expect(game.score).toBe(score);
+  });
+
+  it('eligibleThreatOverridesBallAndChargedAction', () => {
+    game.engine.gravity.scale = 0;
+    const foot = game.player.getKickPosition();
+    game.ball.position.x = foot.x;
+    game.ball.position.y = game.player.y + 10;
+    Body.setVelocity(game.ball, { x: 0, y: 0 });
+    const ballVelocity = { ...game.ball.velocity };
+    const point = { x: game.player.x, y: game.player.y - 30 };
+    const projectile = Bodies.circle(point.x + 50, point.y, 10);
+    Body.setVelocity(projectile, { x: -3, y: 0 });
+    game.thrownProjectiles.push(projectile);
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+    game.handlePointerDown(700, 100);
+    game.pointerDownTime = performance.now() - 700;
+    game.handlePointerUp(700, 100);
+
+    expect(game.score).toBe(1000);
+    expect(game.combo).toBe(3);
+    expect(game.ball.velocity).toEqual(ballVelocity);
+    expect(game.pendingPrimaryAction).toBeNull();
+    expect(events.some(event => event.type === 'BALL_CONTACT')).toBe(false);
+    expect(events.filter(event => event.type === 'PERFECT_PARRY')).toHaveLength(1);
+  });
+
+  it('deflectionAndReturnVelocitiesStayBoundedAndPointInTheRequiredDirections', () => {
+    game.engine.gravity.scale = 0;
+    const point = { x: game.player.x, y: game.player.y - 30 };
+    const blocker = Bodies.circle(point.x + 100, point.y, 10);
+    Body.setVelocity(blocker, { x: -3, y: 0 });
+    game.thrownProjectiles.push(blocker);
+    game.handlePointerDown(point.x - game.camera.x, point.y);
+    game.handlePointerUp(point.x - game.camera.x, point.y);
+    expect(blocker.velocity.x).toBeGreaterThan(0);
+    expect(Math.hypot(blocker.velocity.x, blocker.velocity.y)).toBeLessThanOrEqual(10);
+
+    game.thrownProjectiles = [];
+    const returner = Bodies.circle(point.x + 50, point.y, 10);
+    Body.setVelocity(returner, { x: -3, y: 0 });
+    game.thrownProjectiles.push(returner);
+    game.player.state = 'IDLE';
+    game.handlePointerDown(point.x - game.camera.x, point.y);
+    game.handlePointerUp(point.x - game.camera.x, point.y);
+    expect(returner.velocity.x).toBeGreaterThan(0);
+    expect(Math.hypot(returner.velocity.x, returner.velocity.y)).toBeCloseTo(14, 10);
   });
 
   it('applies player damage and triggers invulnerability window on direct hit', () => {

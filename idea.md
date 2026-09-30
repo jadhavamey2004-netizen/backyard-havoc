@@ -1,5 +1,7 @@
 # Question #1: Build a Playable Prototype (Design and Strategy)
 
+> **Historical vision document (2025 prototype planning).** Some controls, pacing, monetization, and feature descriptions below are aspirations or superseded concepts, not current runtime truth. For current behavior, see `.ai/FEATURE_TRUTH.md` and the approved `.ai/GAMEPLAY_TRUTH.md`. Phase 1C supersedes the dedicated bullet-time header, fixed 90-second standard run, and assumed combo cap described here.
+
 - **Live Web Play**: https://backyard-havoc.vercel.app
 - **Source Code**: https://github.com/jadhavamey2004-netizen/backyard-havoc
 
