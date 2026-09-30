@@ -25,6 +25,9 @@ import {
 } from './gameplay_rules.js';
 
 const { Engine, Bodies, Body, Composite, Events } = Matter;
+const FIXED_STEP_SECONDS = 1 / 60;
+const MAX_PHYSICS_TICKS_PER_UPDATE = 3;
+const MAX_SIMULATION_DT = FIXED_STEP_SECONDS * MAX_PHYSICS_TICKS_PER_UPDATE;
 
 export class GameEngine {
   constructor(canvas) {
@@ -35,7 +38,7 @@ export class GameEngine {
 
     // Sub-stepping setup (60Hz / 4 = 240Hz physics)
     this.nSub = 4;
-    this.dt = 1 / 60;
+    this.dt = FIXED_STEP_SECONDS;
     this.subDt = calculateSubStepDt(this.dt, this.nSub);
 
     // Systems
@@ -908,8 +911,10 @@ export class GameEngine {
     return true;
   }
 
-  update(dt = 1 / 60) {
+  update(frameDt = FIXED_STEP_SECONDS) {
     if (this.pageVisible === false || this.isGameOver || !['PLAYING', 'INTRO_CUTSCENE', 'ENDING_CUTSCENE'].includes(this.gameState)) return;
+    // Keep variable-step gameplay clocks within the same per-frame time budget as capped physics.
+    const dt = Math.min(Math.max(frameDt, 0), MAX_SIMULATION_DT);
     this.camera.decay(dt);
 
     // Check hit-freeze
@@ -1104,17 +1109,16 @@ export class GameEngine {
     }
 
     // Fixed-Timestep Physics Accumulator (1/60s with 4 sub-steps, max 3 ticks/frame)
-    const FIXED_STEP = 1 / 60;
     this.accumulator = (this.accumulator || 0) + dt;
     let physicsTicks = 0;
-    while (this.accumulator >= FIXED_STEP && physicsTicks < 3) {
+    while (this.accumulator >= FIXED_STEP_SECONDS && physicsTicks < MAX_PHYSICS_TICKS_PER_UPDATE) {
       for (let s = 0; s < this.nSub; s++) {
         Engine.update(this.engine, this.subDt * 1000);
       }
-      this.accumulator -= FIXED_STEP;
+      this.accumulator -= FIXED_STEP_SECONDS;
       physicsTicks++;
     }
-    if (this.accumulator >= FIXED_STEP) {
+    if (this.accumulator >= FIXED_STEP_SECONDS) {
       this.accumulator = 0;
     }
 

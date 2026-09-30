@@ -3,7 +3,7 @@
 - **Project:** Backyard Havoc (Vite, Canvas 2D, Matter.js)
 - **Phase 1C baseline SHA:** `e383938201825bbc3286c292cdcf35831e8002f4` (`main`)
 - **Working branch:** `codex/phase-1c-gameplay-truth`
-- **Current phase:** Phase 1C gameplay truth implementation; awaiting local verification and external review after draft PR/CI.
+- **Current phase:** Phase 1C local verification + PR CI PASS; awaiting external review.
 - **Phase 1C scope:** Survival run lifecycle, authoritative contextual controls, timed kick/header contact, immediate threat-first defense, deterministic gravity-aware threat prediction, combo/score/event semantics, current-facing documentation, focused browser smoke coverage.
 - **Phase 1B predecessor:** Lifecycle/reset/visibility/runtime correctness fixes are included in the baseline. `.ai/INITIAL_AUDIT.md` remains the original historical audit.
 
@@ -11,6 +11,7 @@
 
 - Standard run is survival-based; active time does not end it. Health zero starts defeat/results.
 - Football action duration, strike interval, head/foot zones, charge, defense windows, rewards, and grounded grace are named tuning values in `src/gameplay_rules.js`.
+- Variable-step simulation time is capped to the physics budget of three fixed 1/60-second ticks per update, keeping player/action clocks from outpacing the capped world simulation.
 - Pointer release resolves a qualifying projectile defense immediately using release-time charge/aim and threat state; otherwise it starts one football action. Football consequences require a selected real contact in the strike interval and can occur only once.
 - Projectile threat selection uses bounded deterministic fixed steps with Matter gravity and stable tie-breaking. An already-overlapping projectile is not a defense opportunity.
 - Combo increments only on successful ball contacts and parry tiers; Perfect Parry is one atomic +2 transition. Ground grace counts only continuous grounded time. Reset/constructor gameplay events remain silent.

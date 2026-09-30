@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import Matter from 'matter-js';
 import { GameEngine } from '../src/game.js';
 import { sounds } from '../src/audio.js';
+import { GAMEPLAY_TUNING } from '../src/gameplay_rules.js';
 
 const createMockCanvas = () => ({
   getContext: () => ({
@@ -294,10 +295,11 @@ describe('Game Flow & Integration Lifecycle', () => {
 
   it('normalKickOnlyConnectsDuringStrikeWindow', () => {
     game.engine.gravity.scale = 0;
-    const foot = game.player.getKickPosition();
-    game.ball.position.x = foot.x;
-    game.ball.position.y = game.player.y + 10;
+    game.ball.position.x = game.player.x + 30;
+    game.ball.position.y = game.ground.bounds.min.y - game.ball.circleRadius;
     Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
     game.handlePointerDown(700, 100);
     game.handlePointerUp(700, 100);
     expect(game.score).toBe(0);
@@ -306,6 +308,37 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.score).toBe(300);
     expect(game.combo).toBe(2);
     expect(game.player.hasHitBallThisKick).toBe(true);
+    expect(events.filter(event => event.type === 'BALL_CONTACT').map(event => event.contactType)).toEqual(['KICK']);
+  });
+
+  it('capsActionAndWorldTimeToTheSamePhysicsBudgetOnLongFrames', () => {
+    game.engine.gravity.scale = 0;
+    const foot = game.player.getKickPosition();
+    Matter.Body.setPosition(game.ball, {
+      x: foot.x,
+      y: game.ground.bounds.min.y - game.ball.circleRadius
+    });
+    Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+    game.player.triggerKick();
+    game.pendingPrimaryAction = {
+      charge: 0,
+      powerShot: false,
+      aim: { x: foot.x + 100, y: foot.y }
+    };
+
+    const playerUpdate = vi.spyOn(game.player, 'update');
+    const worldTimestamp = game.engine.timing.timestamp;
+    const survivalBefore = game.survivalSeconds;
+    game.update(0.1);
+
+    const playerDt = playerUpdate.mock.calls.at(-1)[0];
+    const actionElapsed = game.player.kickDuration - game.player.kickTimer;
+    const worldElapsed = (game.engine.timing.timestamp - worldTimestamp) / 1000;
+    expect(playerDt).toBeCloseTo(0.05, 8);
+    expect(actionElapsed).toBeCloseTo(worldElapsed, 8);
+    expect(worldElapsed).toBeCloseTo(0.05, 8);
+    expect(game.survivalSeconds - survivalBefore).toBeCloseTo(worldElapsed, 8);
+    expect(game.player.kickProgress).toBeCloseTo(worldElapsed / GAMEPLAY_TUNING.KICK_ACTION_DURATION, 8);
   });
 
   it('consequenceHelpersCannotBypassStrikeContactPhase', () => {
@@ -332,6 +365,8 @@ describe('Game Flow & Integration Lifecycle', () => {
     for (let frame = 0; frame < 20 && game.score === 0; frame += 1) game.update(1 / 60);
     expect(events.filter(event => event.type === 'BALL_CONTACT').map(event => event.contactType)).toEqual(['HEADER']);
     expect(game.score).toBe(200);
+    expect(game.combo).toBe(2);
+    expect(game.player.hasHitBallThisKick).toBe(true);
   });
 
   it('chargedActionUsesReleaseSnapshotAndOnlyScoresOnContact', () => {

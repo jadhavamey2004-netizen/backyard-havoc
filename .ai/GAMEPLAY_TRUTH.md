@@ -34,12 +34,12 @@
 
 Resolve one primary action beginning at pointer release, using this order:
 
-1. Find eligible incoming projectiles whose predicted path threatens the player. Select the earliest valid threat by predicted time-to-contact/closest approach, not array order. A projectile moving away is ineligible.
+1. Find eligible projectiles whose gravity-aware predicted ballistic path intersects or re-enters the player contact region within the forecast horizon. Select the earliest valid threat by predicted time-to-contact/closest approach, not array order. Instantaneous moving-away velocity alone does not disqualify a projectile if gravity curves its trajectory back into danger.
 2. If an eligible threat is within the defensive envelope, resolve exactly one defensive result. A held power action is canceled by this defense.
 3. Otherwise start the 0.38 s kick action. Check the ball only during its narrower strike/contact phase, in separate head and foot zones. Prefer HEAD when the ball is inside its valid zone; otherwise use KICK if it is inside the foot zone. A charged release uses power-shot impulse. At most one contact consequence may occur.
 4. If the strike/contact phase ends without a valid contact, the result is MISS. A miss cannot score, advance combo/juggle count, add a successful-contact trick event, or change ball velocity.
 
-**INITIAL TUNING — REQUIRES PLAYTEST VALIDATION:** represent action phase by normalized progress `0..1`; start with `KICK_ACTION_DURATION = 0.38 s`, `KICK_CONTACT_START = 0.30`, and `KICK_CONTACT_END = 0.70` (about 0.152 s of strike/contact). Use named constants, not scattered millisecond checks. Start with `FOOT_CONTACT_RADIUS = 95 px` and a distinct `HEADER_CONTACT_RADIUS = 60 px`, measured from `getKickPosition()` and `getHeaderPosition()` respectively. Head-zone contact wins if both zones overlap.
+**INITIAL TUNING — REQUIRES PLAYTEST VALIDATION:** represent action phase by normalized progress `0..1`; start with `KICK_ACTION_DURATION = 0.38 s`, `KICK_CONTACT_START = 0.30`, and `KICK_CONTACT_END = 0.70` (about 0.152 s of strike/contact). Use named constants, not scattered millisecond checks. Start with `FOOT_CONTACT_RADIUS = 95 px` and a distinct `HEADER_CONTACT_RADIUS = 45 px`, measured from `getKickPosition()` and `getHeaderPosition()` respectively. This keeps the canonical foot point semantically a KICK while retaining an overlap region; head-zone contact wins deterministically in that overlap.
 
 **INITIAL TUNING — REQUIRES PLAYTEST VALIDATION:** for a valid defensive opportunity, classify by estimated time remaining until body contact, measured at action resolution:
 
@@ -50,7 +50,7 @@ Resolve one primary action beginning at pointer release, using this order:
 | **PERFECT PARRY** | At most 0.08 s | Precise return toward Kevin; initial proposal +1,000 × combo at action resolution; then advance combo twice; emit a distinct perfect-parry event. | Microfreeze, camera snap, signature SFX/VFX, clear “Perfect” text, and Kevin reaction. |
 | **MISS** | No eligible threat/envelope, or no action before impact | No defensive effect/reward; ordinary projectile collision may damage the player. | No success feedback; damage feedback remains clear on impact. |
 
-**INITIAL TUNING — REQUIRES PLAYTEST VALIDATION:** name all thresholds, initially `DEFENSE_ENVELOPE_RADIUS = 120 px` centered on the player combat point (`{ x: player.x, y: player.y - 30 }`), `PROJECTILE_PLAYER_CONTACT_RADIUS = 40 px`, `BLOCK_MAX_TIME_TO_CONTACT = 0.60 s`, `PARRY_MAX_TIME_TO_CONTACT = 0.25 s`, and `PERFECT_PARRY_MAX_TIME_TO_CONTACT = 0.08 s`. The projectile must be within the envelope and have a predicted path intersecting the player contact radius within the block window. Calculate relative player/projectile motion in common world-units-per-second; a moving-away projectile or a path that misses the player is ineligible. Timing determines the tier. Resolve one projectile at most. Deflection velocity points away from the player; parry tiers return it toward Kevin with bounded speed. Example rewards are tunable and are not a score rebalance.
+**INITIAL TUNING — REQUIRES PLAYTEST VALIDATION:** name all thresholds, initially `DEFENSE_ENVELOPE_RADIUS = 120 px` centered on the player combat point (`{ x: player.x, y: player.y - 30 }`), `PROJECTILE_PLAYER_CONTACT_RADIUS = 40 px`, `BLOCK_MAX_TIME_TO_CONTACT = 0.60 s`, `PARRY_MAX_TIME_TO_CONTACT = 0.25 s`, and `PERFECT_PARRY_MAX_TIME_TO_CONTACT = 0.08 s`. The projectile must be within the envelope and its gravity-aware predicted path must intersect/re-enter the player contact region within the block window. Instantaneous moving-away velocity alone does not disqualify a projectile if its ballistic path curves back into danger; trajectories that do not intersect within the horizon are ineligible. Timing determines the tier. Resolve one projectile at most. Deflection velocity points away from the player; parry tiers return it toward Kevin with bounded speed. Example rewards are tunable and are not a score rebalance.
 
 When multiple projectiles qualify, select the earliest valid threat by smallest nonnegative predicted time-to-contact; break exact ties by smaller predicted closest distance, then stable Matter body ID. Do not use array iteration order as the selection rule. **INITIAL TUNING — REQUIRES PLAYTEST VALIDATION:** use lexicographic ordering by `(timeToContact, closestDistance, body.id)`.
 
@@ -93,7 +93,7 @@ When multiple projectiles qualify, select the earliest valid threat by smallest 
 - **Decision:** Use one primary action, deterministic threat-first arbitration, bounded spatial eligibility, and predicted time-to-contact tiers above. Blocks are safe with the smallest reward; normal/perfect tiers return the projectile with distinct rewards. A charged release yields to an eligible projectile; otherwise its pending action may power-kick a valid ball. Resolve the earliest valid threat only.
 - **Rationale:** Makes timing and projectile readability the mastery signal while preserving physical plausibility and one learnable action. The explicit priority avoids silently kicking when the player intends defense.
 - **Implementation impact:** `src/game.js` threat prediction, result classification, deterministic multi-projectile selection, and score/event dispatch; `src/player.js` shared action timing/contact; later `src/npc.js` reaction dispatch; future audio/camera/VFX; HUD instruction text and dedicated deterministic parry tests. No new parry button.
-- **Test requirements:** Incoming versus moving-away/non-intersecting trajectory; envelope boundary; miss/block/parry/perfect timing edges; returned velocity and one-time resolution; earliest-threat selection and deterministic ties independent of array order; defense wins over kickable ball; charged release cancellation; one damage maximum on a miss; each tier's points/combo/event hook.
+- **Test requirements:** Ballistic paths that do and do not intersect, including upward then descending and paths with instantaneous moving-away velocity that still curve back; envelope boundary; miss/block/parry/perfect timing edges; returned velocity and one-time resolution; earliest-threat selection and deterministic ties independent of array order; defense wins over kickable ball; charged release cancellation; one damage maximum on a miss; each tier's points/combo/event hook.
 
 ### Combo, score, and future Havoc events
 
@@ -135,7 +135,7 @@ Do not add a large instruction card to teach these steps. Tune projectile readab
 ## Open design risks
 
 - Contact zones and parry timing/reward values are initial tuning and require playtest validation.
-- The threat forecast is short-horizon and must account for the existing Matter projectile motion closely enough to reject moving-away and non-intersecting paths.
+- The threat forecast is short-horizon and must account for existing Matter projectile motion closely enough to reject ballistic paths that do not intersect/re-enter while allowing initially moving-away paths that gravity curves back into danger.
 - The proposed narrow gameplay-event callback's payload shape should stay minimal and support only the listed future Havoc events.
 - The 0–90-second flow describes target pacing; exact tutorial staging and endless-run pressure remain future Kevin/Havoc decisions.
 

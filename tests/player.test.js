@@ -94,8 +94,9 @@ describe('Player Model & Mechanics (Section 7)', () => {
     const head = player.getHeaderPosition();
     expect(player.getContactCandidate({ x: foot.x + 95, y: foot.y })).toBe('KICK');
     expect(player.getContactCandidate({ x: foot.x + 95.01, y: foot.y })).toBeNull();
-    expect(player.getContactCandidate({ x: head.x + 60, y: head.y })).toBe('HEADER');
-    expect(player.getContactCandidate({ x: head.x - 60.01, y: head.y })).toBeNull();
+    const headerRadius = GAMEPLAY_TUNING.HEADER_CONTACT_RADIUS;
+    expect(player.getContactCandidate({ x: head.x + headerRadius, y: head.y })).toBe('HEADER');
+    expect(player.getContactCandidate({ x: head.x - headerRadius - 60, y: head.y })).toBeNull();
   });
 
   it('headContactWinsWhenZonesOverlap', () => {
@@ -103,6 +104,29 @@ describe('Player Model & Mechanics (Section 7)', () => {
     player.triggerKick();
     player.kickProgress = 0.5;
     expect(player.getContactCandidate(player.getHeaderPosition())).toBe('HEADER');
+  });
+
+  it('canonicalFootAndHeadPointsResolveToTheirSemanticContacts', () => {
+    const player = new Player();
+    player.triggerKick();
+    player.kickProgress = 0.5;
+    expect(player.getContactCandidate(player.getKickPosition())).toBe('KICK');
+    expect(player.getContactCandidate(player.getHeaderPosition())).toBe('HEADER');
+  });
+
+  it('groundedLowBallResolvesAsKickWhileTrueZoneOverlapRemainsHeaderFirst', () => {
+    const player = new Player();
+    player.triggerKick();
+    player.kickProgress = 0.5;
+    const foot = player.getKickPosition();
+    const groundedBall = { x: player.x + 30, y: 476 };
+    expect(player.getContactCandidate(groundedBall)).toBe('KICK');
+
+    const head = player.getHeaderPosition();
+    const overlap = { x: (head.x + foot.x) / 2, y: (head.y + foot.y) / 2 };
+    expect(player.getContactCandidate(overlap)).toBe('HEADER');
+    expect(player.consumeKickContact()).toBe(true);
+    expect(player.getContactCandidate(overlap)).toBeNull();
   });
 
   it('eachActionConsumesAtMostOneContactAndResetClearsIt', () => {

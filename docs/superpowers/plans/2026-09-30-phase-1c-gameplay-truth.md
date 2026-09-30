@@ -19,7 +19,7 @@
 - Desktop controls remain A/D or Left/Right movement, optional/advanced Shift sprint, pointer aim, contextual primary pointer action, and hold-to-charge power shot.
 - Keep kick action total duration at the initial 0.38 seconds; ball contact is limited to the normalized strike window.
 - Header and kick use separate spatial contact zones; header is contextual and has no dedicated control.
-- Defensive eligibility requires both spatial envelope and predicted incoming threat; moving-away projectiles cannot qualify.
+- Defensive eligibility requires both spatial envelope and a gravity-aware predicted path that intersects/re-enters the player contact region; instantaneous moving-away velocity alone does not disqualify a trajectory that curves back into danger.
 - Select the earliest valid projectile threat; one action resolves at most one gameplay outcome and one projectile.
 - Combo advances only on valid ball contacts and successful parry tiers; block, destruction, and Kevin impacts do not advance it.
 - Keep `COMBO`, `TRICK CHAIN`, and future `HAVOC` distinct.
@@ -35,7 +35,7 @@
 
 ## Review Focus
 
-1. A projectile moving away or passing outside the predicted contact radius must not be classified as a defensive opportunity; cover with pure threat-prediction tests.
+1. A projectile whose predicted ballistic path does not intersect/re-enter the predicted contact radius must not be classified as a defensive opportunity; instantaneous moving-away velocity alone does not disqualify it if gravity curves it back into danger. Cover with pure threat-prediction tests.
 2. The 0.38-second animation must accept ball contact only inside the normalized strike interval, exactly once; cover phase edges and one-contact behavior in `Player` and engine tests.
 3. Head/foot overlap and action timing must deterministically select one contact type; cover head priority, radius boundaries, and miss behavior.
 4. Simultaneous projectile threats and a kickable ball must select the earliest threat independent of array order and must never also kick; cover sorting and action-arbitration tests.
@@ -55,9 +55,9 @@
 
 ## Interfaces to Establish
 
-- `GAMEPLAY_TUNING` exports named seconds/progress/radius/reward constants from `src/gameplay_rules.js`, including `KICK_ACTION_DURATION = 0.38`, `KICK_CONTACT_START = 0.30`, `KICK_CONTACT_END = 0.70`, `FOOT_CONTACT_RADIUS = 95`, `HEADER_CONTACT_RADIUS = 60`, `POWER_CHARGE_START_DELAY = 0.20`, `POWER_CHARGE_RAMP_DURATION = 0.85`, `POWER_SHOT_MIN_CHARGE = 0.25`, `COMBO_GROUND_GRACE_SECONDS = 0.8`, defense envelope/body radius, block/parry/perfect timing limits, and initial rewards (`BLOCK = 100`, `PARRY = 500`, `PERFECT_PARRY = 1000`, normal kick/power contact = 100, kick perfect-contact = 150). Values remain tunable; contact/parry values require playtest validation.
+- `GAMEPLAY_TUNING` exports named seconds/progress/radius/reward constants from `src/gameplay_rules.js`, including `KICK_ACTION_DURATION = 0.38`, `KICK_CONTACT_START = 0.30`, `KICK_CONTACT_END = 0.70`, `FOOT_CONTACT_RADIUS = 95`, `HEADER_CONTACT_RADIUS = 45`, `POWER_CHARGE_START_DELAY = 0.20`, `POWER_CHARGE_RAMP_DURATION = 0.85`, `POWER_SHOT_MIN_CHARGE = 0.25`, `COMBO_GROUND_GRACE_SECONDS = 0.8`, defense envelope/body radius, block/parry/perfect timing limits, and initial rewards (`BLOCK = 100`, `PARRY = 500`, `PERFECT_PARRY = 1000`, normal kick/power contact = 100, kick perfect-contact = 150). Values remain tunable; contact/parry values require playtest validation.
 - `getContactPhase(progress)` returns `true` only for inclusive normalized strike bounds from the spec.
-- `getProjectileThreat(projectilePosition, projectileVelocityPerSecond, projectileAccelerationPerSecondSquared, playerPosition, playerVelocityPerSecond, tuning)` returns either `null` or `{ timeToContact, closestDistance }`; use deterministic fixed-step gravity-aware prediction no farther than `BLOCK_MAX_TIME_TO_CONTACT`, reject moving-away, non-intersecting, and already-overlapping trajectories, and require strictly positive time-to-contact. Convert Matter's per-step body velocity and gravity to common world units per second before calling; predict against player combat point `{ x: player.x, y: player.y - 30 }`.
+- `getProjectileThreat(projectilePosition, projectileVelocityPerSecond, projectileAccelerationPerSecondSquared, playerPosition, playerVelocityPerSecond, tuning)` returns either `null` or `{ timeToContact, closestDistance }`; use deterministic fixed-step gravity-aware prediction no farther than `BLOCK_MAX_TIME_TO_CONTACT`, reject non-intersecting and already-overlapping trajectories, and require strictly positive time-to-contact. Instantaneous moving-away velocity does not disqualify a projectile if gravity curves it back into the contact region. Convert Matter's per-step body velocity and gravity to common world units per second before calling; predict against player combat point `{ x: player.x, y: player.y - 30 }`.
 - `selectEarliestThreat(threats)` returns one threat ordered by time-to-contact, closest distance, then Matter body ID. Array ordering must not decide between different threats.
 - `classifyDefense(timeToContact, tuning)` returns `BLOCK`, `PARRY`, `PERFECT_PARRY`, or `MISS` at documented inclusive/exclusive boundaries.
 - `Player.getContactCandidate(ballPosition)` returns `HEADER`, `KICK`, or `null`, and returns `null` outside strike progress or after the action contact is consumed. Header has priority if both zones contain the ball; setting the head-contact pose must not restart the action clock.
