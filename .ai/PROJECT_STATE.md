@@ -21,7 +21,7 @@
 - **Vitest:** `npm test` PASS — 19 files, 107 tests.
 - **Production build:** `npm run build` PASS — Vite 5.4.21, 21 modules transformed.
 - **Playwright:** `npm run test:e2e` PASS twice — 7 Chromium scenarios per run at 1280×720. Each run reported zero page errors, console errors/warnings, failed requests, and same-origin failures. The browser smoke suite attaches per-test health JSON and a title screenshot; Playwright retains traces/screenshots/videos on failure.
-- **GitHub Actions:** Pending the Phase 1C draft PR run. Record the final check and uploaded `playwright-evidence` artifact after CI completes.
+- **GitHub Actions:** See draft PR #4's latest Quality Gate run for the unit/build and Chromium results, browser-health logs, and uploaded `playwright-evidence` artifact.
 - **Known limits:** The passing Vitest run prints existing headless Web Audio `window is not defined` diagnostics. Tuning and visual feel still require playtesting. Complete mobile controls, canvas accessibility, reduced-motion support, browser audio/TTS variability, long-session performance, and gameplay balance remain outside this phase.
 
 ## Architecture
