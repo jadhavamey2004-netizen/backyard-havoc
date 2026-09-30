@@ -59,10 +59,19 @@ describe('Ball Safety & Edge Case System', () => {
   });
 
   it('ejects ball hovering near Kevin window sill', () => {
-    game.ball.position.x = game.npc.x;
+    game.ball.position.x = game.npc.x - 24;
     game.ball.position.y = game.npc.y - 10;
     game.update(1 / 60);
     expect(game.ball.velocity.x).toBeLessThan(0);
+  });
+
+  it('ejects a stuck ball on Kevin’s right side toward the right', () => {
+    game.ball.position.x = game.npc.x + 24;
+    game.ball.position.y = game.npc.y - 10;
+    game.ball.velocity.x = 0.5;
+    game.ball.velocity.y = 0;
+    game.update(1 / 60);
+    expect(game.ball.velocity.x).toBeGreaterThan(0);
   });
 
   it('prevents spring scale overshoot during lag spikes', () => {

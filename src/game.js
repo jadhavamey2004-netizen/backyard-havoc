@@ -56,6 +56,7 @@ export class GameEngine {
     // Game State
     this.isGameOver = false;
     this.pageVisible = true;
+    this.ignoreNextPointerUp = false;
     this.survivalSeconds = 0;
     this.combo = 1;
     this.peakCombo = 1;
@@ -290,10 +291,7 @@ export class GameEngine {
         // DIRECT HIT ON NEIGHBOR KEVIN IN 2ND-STORY WINDOW
         if (target.label === 'destructible_kevin') {
           // Outward ejection velocity into yard (prevents juggling/resting on head)
-          const dxFromKevin = ball.position.x - target.position.x;
-          const ejectDir = Math.abs(dxFromKevin) > 1e-6
-            ? Math.sign(dxFromKevin)
-            : (Math.sign(ball.velocity.x) || -this.player.facing);
+          const ejectDir = this.getKevinEjectionDirection(ball, target.position.x);
           const launchVx = ejectDir * (7.5 + Math.random() * 2.5);
           const launchVy = -4.0 - Math.random() * 2.0;
 
@@ -427,6 +425,13 @@ export class GameEngine {
     Events.on(this.engine, 'collisionStart', this.collisionHandler);
   }
 
+  getKevinEjectionDirection(ball, kevinX = this.npc.x) {
+    const dxFromKevin = ball.position.x - kevinX;
+    return Math.abs(dxFromKevin) > 1e-6
+      ? Math.sign(dxFromKevin)
+      : (Math.sign(ball.velocity.x) || -this.player.facing);
+  }
+
   recordTrickEvent(event) {
     this.trickChain.push(event);
     this.trickChainTimer = 3.0; // 3 seconds window
@@ -475,6 +480,7 @@ export class GameEngine {
     const launchVx = Math.max(-6.0, Math.min(6.0, unitX * (5.0 + charge * 3.0)));
 
     Body.setVelocity(this.ball, { x: launchVx, y: launchVy });
+    this.player.hasHitBallThisKick = true;
     Body.setAngularVelocity(this.ball, this.player.facing * 0.25);
 
     sounds.playPowerShotFire();
@@ -568,11 +574,13 @@ export class GameEngine {
   }
 
   handlePointerDown(screenX, screenY) {
+    if (!this.pageVisible) return;
+    this.ignoreNextPointerUp = false;
     if (this.gameState === 'INTRO_CUTSCENE') {
       this.skipOrEndIntroCutscene();
       return;
     }
-    if (this.isGameOver || this.gameState !== 'PLAYING' || !this.pageVisible) return;
+    if (this.isGameOver || this.gameState !== 'PLAYING') return;
     sounds.init();
     sounds.startGenerativeMusic();
     this.mouseScreenPos = { x: screenX, y: screenY };
@@ -587,6 +595,15 @@ export class GameEngine {
     this.accumulator = 0;
     if (!this.pageVisible) {
       sounds.stopMusic();
+      if (this.isPointerDown) this.ignoreNextPointerUp = true;
+      this.isPointerDown = false;
+      this.pointerDownTime = 0;
+      this.player.powerCharging = false;
+      this.player.powerCharge = 0;
+      this.player.keys.left = false;
+      this.player.keys.right = false;
+      this.player.keys.sprint = false;
+      this.player.keys.charge = false;
     } else if (this.gameState === 'PLAYING' && !this.isGameOver) {
       sounds.startGenerativeMusic();
     }
@@ -594,6 +611,10 @@ export class GameEngine {
 
   handlePointerUp(screenX, screenY) {
     if (this.isGameOver || this.gameState !== 'PLAYING' || !this.pageVisible) return;
+    if (this.ignoreNextPointerUp) {
+      this.ignoreNextPointerUp = false;
+      return;
+    }
     this.mouseScreenPos = { x: screenX, y: screenY };
 
     const wasCharging = this.player.powerCharging;
@@ -854,7 +875,8 @@ export class GameEngine {
       if (Math.abs(kdx) < 42 && Math.abs(kdy) < 38) {
         const spd = Math.hypot(this.ball.velocity.x, this.ball.velocity.y);
         if (spd < 3.5 || this.ball.position.y < this.npc.y) {
-          Body.setVelocity(this.ball, { x: -8.0, y: -2.5 });
+          const ejectDir = this.getKevinEjectionDirection(this.ball, this.npc.x);
+          Body.setVelocity(this.ball, { x: ejectDir * 8.0, y: -2.5 });
         }
       }
     }
@@ -1097,6 +1119,7 @@ export class GameEngine {
     this.letterboxProgress = 0;
     this.kickoffBannerTimer = 0;
     this.pointerDownTime = 0;
+    this.ignoreNextPointerUp = false;
     this.mouseScreenPos = { x: this.width * 0.5, y: 160 };
     this.ballDeform = { scaleX: 1, scaleY: 1, angle: 0 };
 

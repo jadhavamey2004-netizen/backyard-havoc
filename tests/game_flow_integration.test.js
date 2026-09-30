@@ -100,6 +100,41 @@ describe('Game Flow & Integration Lifecycle', () => {
     start.mockRestore();
   });
 
+  it('cancels held pointer charge and movement when the page is hidden', () => {
+    game.isPointerDown = true;
+    game.pointerDownTime = performance.now() - 5000;
+    game.player.powerCharging = true;
+    game.player.powerCharge = 0.9;
+    game.player.keys.left = true;
+    game.player.keys.right = true;
+    game.player.keys.sprint = true;
+
+    game.setPageVisibility(false);
+    expect(game.isPointerDown).toBe(false);
+    expect(game.pointerDownTime).toBe(0);
+    expect(game.player.powerCharging).toBe(false);
+    expect(game.player.powerCharge).toBe(0);
+    expect(game.player.keys).toEqual({ left: false, right: false, sprint: false, charge: false });
+
+    game.setPageVisibility(true);
+    const playerX = game.player.x;
+    game.update(1 / 60);
+    expect(game.isPointerDown).toBe(false);
+    expect(game.player.powerCharging).toBe(false);
+    expect(game.player.powerCharge).toBe(0);
+    expect(game.player.keys.left).toBe(false);
+    expect(game.player.keys.right).toBe(false);
+    expect(game.player.keys.sprint).toBe(false);
+    expect(game.player.x).toBe(playerX);
+
+    const foot = game.player.getKickPosition();
+    game.ball.position.x = foot.x;
+    game.ball.position.y = foot.y;
+    game.handlePointerUp(700, 100);
+    expect(game.score).toBe(0);
+    expect(game.player.hasHitBallThisKick).toBe(false);
+  });
+
   it('restores transient run state while preserving records, audio preference, and callbacks', () => {
     game.highScore = 900;
     game.bestCombo = 8;
@@ -220,6 +255,23 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.score).toBe(score);
     expect(game.ball.velocity).toEqual(velocity);
     expect(game.juggleCount).toBe(1);
+  });
+
+  it('consumes the kick contact after a successful power shot', () => {
+    const foot = game.player.getKickPosition();
+    game.ball.position.x = foot.x + 30;
+    game.ball.position.y = foot.y;
+    game.mouseScreenPos = { x: 700, y: 100 };
+    game.executePowerShot(0.8);
+
+    expect(game.player.hasHitBallThisKick).toBe(true);
+    expect(game.juggleCount).toBe(1);
+    const scoreAfterPowerShot = game.score;
+    const velocityAfterPowerShot = { ...game.ball.velocity };
+    expect(game.executePlayerKick(100, 100, 30)).toBe(false);
+    expect(game.score).toBe(scoreAfterPowerShot);
+    expect(game.juggleCount).toBe(1);
+    expect(game.ball.velocity).toEqual(velocityAfterPowerShot);
   });
 
   it('ejects Kevin hits toward their impact side with a centered fallback', () => {
