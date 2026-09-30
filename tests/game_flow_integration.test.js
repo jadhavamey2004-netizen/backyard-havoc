@@ -3,6 +3,7 @@ import Matter from 'matter-js';
 import { GameEngine } from '../src/game.js';
 import { sounds } from '../src/audio.js';
 import { GAMEPLAY_TUNING } from '../src/gameplay_rules.js';
+import { GAMEPLAY_FEEL_TUNING } from '../src/gameplay_feel.js';
 
 const createMockCanvas = () => ({
   getContext: () => ({
@@ -547,6 +548,131 @@ describe('Game Flow & Integration Lifecycle', () => {
       expect.objectContaining({ contactType: 'POWER_SHOT', score: 200 })
     ]);
     expect(events.filter(event => event.type === 'POWER_SHOT')).toHaveLength(1);
+  });
+
+  it('simulates only the frame remainder after elapsed-time hit-stop expires', () => {
+    game.player.triggerKick();
+    const initialKickTime = game.player.kickTimer;
+    game.particles.triggerHitStop(0.02);
+    game.update(0.05);
+
+    expect(game.survivalSeconds).toBeCloseTo(0.03, 10);
+    expect(game.player.kickTimer).toBeCloseTo(initialKickTime - 0.03, 10);
+    expect(game.particles.hitStopRemainingSeconds).toBe(0);
+
+    game.particles.triggerHitStop(0.05);
+    game.ballFeedbackTier = 'POWER_SHOT';
+    game.ballFeedbackStrength = 1;
+    game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
+    game.setPageVisibility(false);
+    expect(game.particles.hitStopRemainingSeconds).toBe(0);
+    expect(game.ballFeedbackTier).toBe('NORMAL');
+    expect(game.ballFeedbackStrength).toBe(0);
+    expect(game.ballDeform).toEqual({ scaleX: 1, scaleY: 1, angle: 0 });
+  });
+
+  it('clears temporary feel state on intro, ending, game over, and run reset', () => {
+    const expectFeelReset = () => {
+      expect(game.particles.hitStopRemainingSeconds).toBe(0);
+      expect(game.ballFeedbackTier).toBe('NORMAL');
+      expect(game.ballFeedbackStrength).toBe(0);
+      expect(game.ballDeform).toEqual({ scaleX: 1, scaleY: 1, angle: 0 });
+    };
+    game.particles.triggerHitStop(0.1);
+    game.ballFeedbackTier = 'POWER_SHOT';
+    game.ballFeedbackStrength = 0.9;
+    game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
+    game.startIntroCutscene();
+    expectFeelReset();
+
+    game.particles.triggerHitStop(0.1);
+    game.ballFeedbackTier = 'PERFECT_STRIKE';
+    game.ballFeedbackStrength = 0.8;
+    game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
+    game.startEndingCutscene();
+    expectFeelReset();
+
+    game.particles.triggerHitStop(0.1);
+    game.ballFeedbackTier = 'POWER_SHOT';
+    game.ballFeedbackStrength = 1;
+    game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
+    game.triggerGameOver();
+    expectFeelReset();
+
+    game.particles.triggerHitStop(0.1);
+    game.ballFeedbackTier = 'POWER_SHOT';
+    game.ballFeedbackStrength = 1;
+    game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
+    game.resetEnvironment();
+    expectFeelReset();
+  });
+
+  it('identical kick inputs produce identical physics at different combo levels', () => {
+    const launchAtCombo = (combo) => {
+      game.combo = combo;
+      game.player.resetRunState(game.startX, game.height - 55);
+      game.player.triggerKick();
+      game.player.kickProgress = 0.5;
+      const foot = game.player.getKickPosition();
+      Matter.Body.setPosition(game.ball, foot);
+      Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+      expect(game.executePlayerKick(700, 100)).toBe(true);
+      return { velocity: { ...game.ball.velocity }, angularVelocity: game.ball.angularVelocity };
+    };
+
+    expect(launchAtCombo(20)).toEqual(launchAtCombo(1));
+  });
+
+  it('power-shot contact strength rises with charge without changing contact score', () => {
+    const launchAtCharge = (charge) => {
+      game.score = 0;
+      game.combo = 1;
+      game.trickChain = [];
+      game.trickChainTimer = 0;
+      game.player.resetRunState(game.startX, game.height - 55);
+      game.player.triggerKick();
+      game.player.kickProgress = 0.5;
+      Matter.Body.setPosition(game.ball, game.player.getKickPosition());
+      Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+      expect(game.executePowerShot(charge, 700, 100)).toBe(true);
+      return { speed: Math.hypot(game.ball.velocity.x, game.ball.velocity.y), score: game.score };
+    };
+
+    const threshold = launchAtCharge(0.25);
+    const half = launchAtCharge(0.5);
+    const full = launchAtCharge(1);
+    expect(threshold.speed).toBeLessThan(half.speed);
+    expect(half.speed).toBeLessThan(full.speed);
+    expect([threshold.score, half.score, full.score]).toEqual([200, 200, 200]);
+  });
+
+  it('keeps the post-update ball safety cap above the full-charge launch', () => {
+    game.engine.gravity.scale = 0;
+    Matter.Body.setPosition(game.ball, { x: 450, y: 300 });
+    Matter.Body.setVelocity(game.ball, { x: 30, y: 0 });
+    game.update(1 / 60);
+
+    expect(Math.hypot(game.ball.velocity.x, game.ball.velocity.y))
+      .toBeLessThanOrEqual(GAMEPLAY_FEEL_TUNING.BALL_MAX_SPEED);
+    expect(GAMEPLAY_FEEL_TUNING.BALL_MAX_SPEED)
+      .toBeGreaterThan(GAMEPLAY_FEEL_TUNING.POWER_SHOT_FULL_SPEED);
+  });
+
+  it('uses Matter air friction consistently across equivalent frame subdivisions', () => {
+    const velocityAfter = (frameDt, frames) => {
+      game.engine.gravity.scale = 0;
+      game.player.x = 280;
+      game.accumulator = 0;
+      Matter.Body.setPosition(game.ball, { x: 450, y: 300 });
+      Matter.Body.setVelocity(game.ball, { x: 8, y: 0 });
+      for (let i = 0; i < frames; i += 1) game.update(frameDt);
+      return { x: game.ball.velocity.x, y: game.ball.velocity.y };
+    };
+
+    const at60Hz = velocityAfter(1 / 60, 60);
+    const at120Hz = velocityAfter(1 / 120, 120);
+    expect(at120Hz.x).toBeCloseTo(at60Hz.x, 5);
+    expect(at120Hz.y).toBeCloseTo(at60Hz.y, 5);
   });
 
   it('persists high scores when triggerGameOver is called', () => {

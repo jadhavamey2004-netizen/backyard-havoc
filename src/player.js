@@ -5,6 +5,7 @@
  */
 
 import { GAMEPLAY_TUNING, getContactPhase } from './gameplay_rules.js';
+import { GAMEPLAY_FEEL_TUNING, getKickPosePhase, moveToward } from './gameplay_feel.js';
 
 export class Player {
   constructor(x = 340, y = 485) {
@@ -12,7 +13,7 @@ export class Player {
     this.y = y;
     this.baseY = y;
     this.vx = 0;
-    this.speed = 480;
+    this.speed = GAMEPLAY_FEEL_TUNING.PLAYER_MAX_SPEED;
     this.facing = 1;
     this.state = 'IDLE'; // 'IDLE', 'RUNNING', 'KICKING', 'HEADING', 'HURT'
     this.kickTimer = 0;
@@ -162,36 +163,43 @@ export class Player {
       this.facing = 1;
     }
 
-    if (moveDir !== 0) {
-      const sprintMultiplier = this.keys.sprint ? 1.6 : 1.0;
-      this.vx = moveDir * this.speed * sprintMultiplier;
-      if (this.state !== 'KICKING' && this.state !== 'HEADING' && this.state !== 'HURT') {
+    const previousVx = this.vx;
+    const sprintMultiplier = this.keys.sprint ? GAMEPLAY_FEEL_TUNING.PLAYER_SPRINT_MULTIPLIER : 1;
+    const targetVx = moveDir * this.speed * sprintMultiplier;
+    const isReversing = targetVx !== 0 && previousVx * targetVx < 0;
+    const isSlowing = targetVx === 0 || Math.abs(targetVx) < Math.abs(previousVx);
+    const acceleration = isReversing
+      ? GAMEPLAY_FEEL_TUNING.PLAYER_REVERSAL_ACCELERATION
+      : (isSlowing ? GAMEPLAY_FEEL_TUNING.PLAYER_DECELERATION : GAMEPLAY_FEEL_TUNING.PLAYER_ACCELERATION);
+    this.vx = moveToward(previousVx, targetVx, acceleration * dt);
+    // Average endpoint velocity integrates the constant-acceleration step consistently
+    // when the same elapsed time arrives in smaller browser updates.
+    this.x += (previousVx + this.vx) * 0.5 * dt;
+
+    if (this.state !== 'KICKING' && this.state !== 'HEADING' && this.state !== 'HURT') {
+      if (Math.abs(this.vx) > 1) {
         this.state = 'RUNNING';
         this.runCycle += dt * (this.keys.sprint ? 24 : 16);
-
-        this.dustTimer += dt;
-        if (this.dustTimer > (this.keys.sprint ? 0.05 : 0.09) && particles) {
-          this.dustTimer = 0;
-          const dustX = this.x - this.facing * 16;
-          particles.spawnDust(dustX, this.y + 4, this.keys.sprint ? 3 : 2);
+        if (moveDir !== 0) {
+          this.dustTimer += dt;
+          if (this.dustTimer > (this.keys.sprint ? 0.05 : 0.09) && particles) {
+            this.dustTimer = 0;
+            const dustX = this.x - this.facing * 16;
+            particles.spawnDust(dustX, this.y + 4, this.keys.sprint ? 3 : 2);
+          }
         }
-      }
-    } else {
-      this.vx = 0;
-      if (this.state !== 'KICKING' && this.state !== 'HEADING' && this.state !== 'HURT') {
+      } else {
         this.state = 'IDLE';
         this.runCycle = 0;
       }
     }
-
-    this.x += this.vx * dt;
 
     if (this.state === 'KICKING' || this.state === 'HEADING') {
       this.kickTimer -= dt;
       this.kickProgress = 1 - Math.max(0, this.kickTimer / this.kickDuration);
 
       if (this.kickTimer <= 1e-9) {
-        this.state = moveDir !== 0 ? 'RUNNING' : 'IDLE';
+        this.state = Math.abs(this.vx) > 1 ? 'RUNNING' : 'IDLE';
         this.kickProgress = 0;
       }
     }
@@ -307,19 +315,22 @@ export class Player {
       frontShinAngle = Math.max(0, Math.sin(this.runCycle) * 0.6);
     } else if (isKicking) {
       const p = this.kickProgress;
+      const posePhase = getKickPosePhase(p);
       // 4-Phase Dynamic Kicking Arc: Anticipation Chamber -> Explosive Snap -> Extension -> Recovery
-      if (p < 0.25) {
-        const windP = p / 0.25;
+      if (posePhase === 'ANTICIPATION') {
+        const windP = p / GAMEPLAY_TUNING.KICK_CONTACT_START;
         frontThighAngle = -0.9 * windP;
         frontShinAngle = -1.3 * windP;
         backLegAngle = 0.3;
-      } else if (p < 0.65) {
-        const strikeP = (p - 0.25) / 0.40;
+      } else if (posePhase === 'STRIKE') {
+        const strikeP = (p - GAMEPLAY_TUNING.KICK_CONTACT_START)
+          / (GAMEPLAY_TUNING.KICK_CONTACT_END - GAMEPLAY_TUNING.KICK_CONTACT_START);
         frontThighAngle = -0.9 + strikeP * 2.3;
         frontShinAngle = -1.3 + strikeP * 1.6;
         backLegAngle = 0.35;
       } else {
-        const recoveryP = (p - 0.65) / 0.35;
+        const recoveryP = (p - GAMEPLAY_TUNING.KICK_CONTACT_END)
+          / (1 - GAMEPLAY_TUNING.KICK_CONTACT_END);
         frontThighAngle = 1.4 - recoveryP * 1.4;
         frontShinAngle = 0.3 - recoveryP * 0.3;
         backLegAngle = 0.15;
@@ -539,11 +550,12 @@ export class Player {
     } else if (isKicking) {
       // Dynamic kicking head motion: Lean back during windup, snap forward aggressively on follow-through!
       const kickPhase = this.kickProgress;
-      if (kickPhase < 0.45) {
-        headTilt = -0.35 * Math.sin((kickPhase / 0.45) * (Math.PI / 2)); // Windup back-lean
-        headOffsetX = -5 * Math.sin((kickPhase / 0.45) * (Math.PI / 2));
+      if (kickPhase < GAMEPLAY_TUNING.KICK_CONTACT_START) {
+        headTilt = -0.35 * Math.sin((kickPhase / GAMEPLAY_TUNING.KICK_CONTACT_START) * (Math.PI / 2)); // Windup back-lean
+        headOffsetX = -5 * Math.sin((kickPhase / GAMEPLAY_TUNING.KICK_CONTACT_START) * (Math.PI / 2));
       } else {
-        const snap = (kickPhase - 0.45) / 0.55;
+        const snap = (kickPhase - GAMEPLAY_TUNING.KICK_CONTACT_START)
+          / (1 - GAMEPLAY_TUNING.KICK_CONTACT_START);
         headTilt = 0.30 * Math.sin(snap * Math.PI); // Forward follow-through snap
         headOffsetX = 6 * Math.sin(snap * Math.PI);
         headOffsetY = -68 + 2 * Math.sin(snap * Math.PI);

@@ -18,20 +18,24 @@ export class ParticleSystem {
     this.powerBeams = [];
     this.maxParticles = maxParticles;
 
-    // Hit-freeze frame counter
-    this.hitFreezeFrames = 0;
+    // Hit-stop is measured in simulation seconds rather than render-frame count.
+    this.hitStopRemainingSeconds = 0;
   }
 
-  triggerHitFreeze(frames = 2) {
-    this.hitFreezeFrames = frames;
+  triggerHitStop(durationSeconds = 0) {
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return;
+    this.hitStopRemainingSeconds = Math.max(this.hitStopRemainingSeconds, durationSeconds);
   }
 
-  isFrozen() {
-    if (this.hitFreezeFrames > 0) {
-      this.hitFreezeFrames--;
-      return true;
-    }
-    return false;
+  consumeHitStop(frameSeconds) {
+    const elapsed = Math.max(0, Number.isFinite(frameSeconds) ? frameSeconds : 0);
+    const stopped = Math.min(elapsed, this.hitStopRemainingSeconds);
+    this.hitStopRemainingSeconds = Math.max(0, this.hitStopRemainingSeconds - stopped);
+    return elapsed - stopped;
+  }
+
+  clearHitStop() {
+    this.hitStopRemainingSeconds = 0;
   }
 
   spawnImpactRings(x, y, count = 3, color = '#facc15') {
@@ -259,7 +263,7 @@ export class ParticleSystem {
     this.impactRings = [];
     this.vignettes = [];
     this.powerBeams = [];
-    this.hitFreezeFrames = 0;
+    this.clearHitStop();
   }
 
   addTrailPoint(pos, color = '#38bdf8', size = 6, combo = 1) {

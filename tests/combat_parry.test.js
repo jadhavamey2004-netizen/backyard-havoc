@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameEngine } from '../src/game.js';
 import { Bodies, Body, Composite, Engine } from 'matter-js';
+import { GAMEPLAY_FEEL_TUNING } from '../src/gameplay_feel.js';
 
 const createMockCanvas = () => ({
   getContext: () => ({
@@ -213,6 +214,46 @@ describe('Combat & Parry Mechanics', () => {
     game.handlePointerUp(point.x - game.camera.x, point.y);
     expect(returner.velocity.x).toBeGreaterThan(0);
     expect(Math.hypot(returner.velocity.x, returner.velocity.y)).toBeCloseTo(14, 10);
+  });
+
+  it('scales camera, hit-stop, and existing impact feedback from Block through Perfect Parry', () => {
+    const resolveAtDistance = (distance) => {
+      const engine = new GameEngine(createMockCanvas());
+      engine.gameState = 'PLAYING';
+      engine.engine.gravity.scale = 0;
+      const point = { x: engine.player.x, y: engine.player.y - 30 };
+      const projectile = Bodies.circle(point.x + distance, point.y, 10);
+      Body.setVelocity(projectile, { x: -3, y: 0 });
+      engine.thrownProjectiles.push(projectile);
+      const cameraFeedback = vi.spyOn(engine.camera, 'addTrauma');
+      const hitStop = vi.spyOn(engine.particles, 'triggerHitStop');
+      const rings = vi.spyOn(engine.particles, 'spawnImpactRings');
+      const shockwaves = vi.spyOn(engine.particles, 'spawnShockwave');
+      expect(engine.resolveDefenseAtRelease()).toBe(true);
+      return { cameraFeedback, hitStop, rings, shockwaves };
+    };
+
+    const block = resolveAtDistance(112);
+    const parry = resolveAtDistance(76);
+    const perfect = resolveAtDistance(50);
+    const blockTrauma = block.cameraFeedback.mock.calls[0][0];
+    const parryTrauma = parry.cameraFeedback.mock.calls[0][0];
+    const perfectTrauma = perfect.cameraFeedback.mock.calls[0][0];
+    const blockStop = block.hitStop.mock.calls[0][0];
+    const parryStop = parry.hitStop.mock.calls[0][0];
+    const perfectStop = perfect.hitStop.mock.calls[0][0];
+
+    expect(blockTrauma).toBe(GAMEPLAY_FEEL_TUNING.CAMERA_BLOCK_TRAUMA);
+    expect(blockTrauma).toBeLessThan(parryTrauma);
+    expect(parryTrauma).toBeLessThan(perfectTrauma);
+    expect(blockStop).toBeLessThan(parryStop);
+    expect(parryStop).toBeLessThan(perfectStop);
+    expect(block.rings.mock.calls[0][2]).toBe(1);
+    expect(parry.rings.mock.calls[0][2]).toBe(3);
+    expect(perfect.rings.mock.calls[0][2]).toBe(6);
+    expect(block.shockwaves).not.toHaveBeenCalled();
+    expect(parry.shockwaves).toHaveBeenCalledOnce();
+    expect(perfect.shockwaves).toHaveBeenCalledOnce();
   });
 
   it('applies player damage and triggers invulnerability window on direct hit', () => {

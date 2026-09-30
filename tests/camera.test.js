@@ -33,4 +33,31 @@ describe('Camera Trauma & Screen Shake Dynamics', () => {
     expect(typeof transform.y).toBe('number');
     expect(typeof transform.angle).toBe('number');
   });
+
+  it('tracks to the same camera target across 60 Hz and 120 Hz subdivisions', () => {
+    const simulate = (dt, frames) => {
+      const camera = new CameraTrauma();
+      for (let i = 0; i < frames; i += 1) camera.setTargetX(800, dt);
+      return camera.x;
+    };
+    expect(simulate(1 / 60, 60)).toBeCloseTo(simulate(1 / 120, 120), 8);
+  });
+
+  it('keeps tracking and resets all transient camera feel state', () => {
+    const camera = new CameraTrauma();
+    camera.setTargetX(500, 1 / 60);
+    expect(camera.x).toBeGreaterThan(0);
+    camera.addTrauma(2, 2);
+    camera.reset();
+    expect(camera.trauma).toBe(0);
+    expect(camera.zoomPunch).toBe(0);
+    expect(camera.chromaticAberration).toBe(0);
+  });
+
+  it('bounds repeated trauma and zoom inputs', () => {
+    const camera = new CameraTrauma();
+    camera.addTrauma(4, 4);
+    expect(camera.trauma).toBe(1);
+    expect(camera.zoomPunch).toBe(0.08);
+  });
 });
