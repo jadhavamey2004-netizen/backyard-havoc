@@ -647,6 +647,36 @@ describe('Game Flow & Integration Lifecycle', () => {
     physicsUpdate.mockRestore();
   });
 
+  it('stops before physics when a parried projectile hits Kevin', () => {
+    const projectile = Matter.Bodies.circle(game.npc.x, game.npc.y, 10, { label: 'thrown_projectile' });
+    projectile.isParried = true;
+    Matter.Composite.add(game.world, projectile);
+    game.thrownProjectiles.push(projectile);
+    game.accumulator = 0.003;
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+    const kevinHit = vi.spyOn(game.npc, 'takeDirectHit');
+    const physicsUpdate = vi.spyOn(Matter.Engine, 'update');
+
+    game.update(0.05);
+
+    expect(events.filter(event => event.type === 'KEVIN_HIT')).toHaveLength(1);
+    expect(game.score).toBe(1000);
+    expect(kevinHit).toHaveBeenCalledOnce();
+    expect(game.thrownProjectiles).not.toContain(projectile);
+    expect(Matter.Composite.allBodies(game.world)).not.toContain(projectile);
+    expect(game.particles.hitStopRemainingSeconds)
+      .toBe(GAMEPLAY_FEEL_TUNING.HIT_STOP_KEVIN_HIT_SECONDS);
+    expect(physicsUpdate).not.toHaveBeenCalled();
+    expect(game.accumulator).toBe(0);
+
+    game.update(0.01);
+    expect(physicsUpdate).not.toHaveBeenCalled();
+    expect(game.accumulator).toBe(0);
+    expect(events.filter(event => event.type === 'KEVIN_HIT')).toHaveLength(1);
+    physicsUpdate.mockRestore();
+  });
+
   it('clears temporary feel state on intro, ending, game over, and run reset', () => {
     const expectFeelReset = () => {
       expect(game.particles.hitStopRemainingSeconds).toBe(0);

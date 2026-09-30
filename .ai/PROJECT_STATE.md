@@ -20,7 +20,7 @@
 
 ## Verification status
 
-- **Vitest:** `npm test` PASS — 20 files, 135 tests.
+- **Vitest:** `npm test` PASS — 20 files, 136 tests.
 - **Production build:** `npm run build` PASS — Vite 5.4.21, 22 modules transformed.
 - **Playwright:** `npm run test:e2e` PASS twice — 8 Chromium scenarios per run at 1280×720. Each run reported zero page errors, console errors/warnings, failed requests, and same-origin failures. The browser smoke suite attaches per-test health JSON and gameplay screenshots; Playwright retains traces/screenshots/videos on failure.
 - **GitHub Actions:** Review the Phase 2 draft PR's latest Quality Gate for unit/build, Chromium browser smoke, browser-health output, and the Playwright evidence artifact.

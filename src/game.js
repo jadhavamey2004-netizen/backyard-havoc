@@ -1171,6 +1171,12 @@ export class GameEngine {
       }
     }
 
+    if (this.particles.hitStopRemainingSeconds > 0) {
+      // Pre-physics impacts discard this frame's remaining simulation budget.
+      this.accumulator = 0;
+      return;
+    }
+
     // Update Mouse Hold -> Power Shot Charge Progress
     if (this.isPointerDown && !this.isGameOver) {
       const holdSec = (performance.now() - this.pointerDownTime) / 1000;
