@@ -1,7 +1,6 @@
 /**
- * Real-Time Edge AI Telemetry and Emotional NPC Dialogue Service for Backyard Havoc
- * Features 80+ context-aware reactive voice lines, rage-gated line selection,
- * session memory (count tracking), rampage detection, ball-type reactions, and priority levels.
+ * Local, rule-based cosmetic dialogue and telemetry simulation for Backyard Havoc.
+ * This module has no network client and is not gameplay AI: rage only selects dialogue text.
  */
 
 export const KEVIN_DIALOGUE_POOL = {
@@ -176,7 +175,7 @@ export class EdgeAIService {
   }
 
   /**
-   * Dispatch telemetry payload to simulated edge worker and select best dialogue
+   * Dispatch local telemetry and schedule cosmetic dialogue selection.
    */
   dispatchTelemetry(event) {
     const now = Date.now();
@@ -227,7 +226,7 @@ export class EdgeAIService {
     // Skip dispatching duplicate dialogue for headshots (already voiced immediately by takeDirectHit)
     if (isHeadshot) return;
 
-    // Process dialogue with simulated edge worker latency
+    // Preserve the local cosmetic response delay; it cannot affect gameplay state.
     setTimeout(() => {
       this.handleEdgeResponse(payload);
     }, payload.edge_latency_ms);

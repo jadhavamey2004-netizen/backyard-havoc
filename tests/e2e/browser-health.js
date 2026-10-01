@@ -1,4 +1,6 @@
 import { expect } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 
 export function monitorBrowserHealth(page) {
   const health = {
@@ -52,8 +54,12 @@ export function monitorBrowserHealth(page) {
 }
 
 export async function attachBrowserHealth(testInfo, health) {
+  const body = JSON.stringify(health, null, 2);
+  const evidencePath = testInfo.outputPath('browser-health.json');
+  await mkdir(dirname(evidencePath), { recursive: true });
+  await writeFile(evidencePath, `${body}\n`);
   await testInfo.attach('browser-health.json', {
-    body: Buffer.from(JSON.stringify(health, null, 2)),
+    body: Buffer.from(body),
     contentType: 'application/json',
   });
 
@@ -77,10 +83,11 @@ export async function attachBrowserHealth(testInfo, health) {
     console.info(`[browser-health-details] ${JSON.stringify(nonemptyDetails)}`);
   }
 
-  // Uncaught page errors, console errors, and same-origin request failures
-  // block the smoke suite. Warnings and external request failures stay as diagnostics.
+  // Phase 5 requires every recorded browser-health category to remain clean.
   expect(health.pageErrors, 'uncaught browser exceptions').toEqual([]);
   expect(health.consoleErrors, 'browser console errors').toEqual([]);
+  expect(health.consoleWarnings, 'browser console warnings').toEqual([]);
+  expect(health.failedRequests, 'failed browser requests').toEqual([]);
   expect(health.sameOriginFailures, 'same-origin request/HTTP failures').toEqual([]);
 }
 

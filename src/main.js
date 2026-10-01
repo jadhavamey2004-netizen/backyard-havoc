@@ -36,6 +36,16 @@ window.addEventListener('DOMContentLoaded', async () => {
   const yardsDisplay = document.getElementById('yards-display');
   const comboDisplay = document.getElementById('combo-display');
   const comboBarFill = document.getElementById('combo-bar-fill');
+  const kevinStateDisplay = document.getElementById('kevin-state-display');
+  const havocValueDisplay = document.getElementById('havoc-value-display');
+  const havocBarFill = document.getElementById('havoc-bar-fill');
+  const havocModeDisplay = document.getElementById('havoc-mode-display');
+  const havocCard = document.getElementById('havoc-card');
+
+  // A deterministic engine bridge exists only in the local E2E build, never production.
+  if (import.meta.env.MODE === 'e2e' && window.location.hostname === '127.0.0.1') {
+    window.__BACKYARD_TEST_ENGINE__ = engine;
+  }
 
   // Title Screen
   const titleScreen = document.getElementById('title-screen');
@@ -239,7 +249,33 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     if (comboBarFill) {
       const fillPct = Math.min(100, Math.max(8, (engine.combo / 10) * 100));
-      comboBarFill.style.width = `${fillPct}%`;
+      if (comboBarFill.dataset.fillPct !== String(fillPct)) {
+        comboBarFill.style.width = `${fillPct}%`;
+        comboBarFill.dataset.fillPct = String(fillPct);
+      }
+    }
+
+    if (kevinStateDisplay) {
+      const label = `KEVIN: ${engine.kevinDirector.state}`;
+      if (kevinStateDisplay.textContent !== label) kevinStateDisplay.textContent = label;
+    }
+
+    const havocPercent = Math.round(engine.havocSystem.meter);
+    if (havocValueDisplay) {
+      const value = `${havocPercent}%`;
+      if (havocValueDisplay.textContent !== value) havocValueDisplay.textContent = value;
+    }
+    if (havocBarFill) {
+      const fillPct = `${havocPercent}%`;
+      if (havocBarFill.style.width !== fillPct) havocBarFill.style.width = fillPct;
+      if (havocBarFill.parentElement?.getAttribute('aria-valuenow') !== String(havocPercent)) {
+        havocBarFill.parentElement?.setAttribute('aria-valuenow', String(havocPercent));
+      }
+    }
+    if (havocModeDisplay && havocCard) {
+      const active = engine.havocSystem.active;
+      if (havocModeDisplay.hidden === active) havocModeDisplay.hidden = !active;
+      havocCard.classList.toggle('havoc-active', active);
     }
 
     requestAnimationFrame(gameLoop);

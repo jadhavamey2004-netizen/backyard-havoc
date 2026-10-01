@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import Matter from 'matter-js';
 import { GameEngine } from '../src/game.js';
 import { sounds } from '../src/audio.js';
+import { aiService } from '../src/ai.js';
 import { GAMEPLAY_TUNING } from '../src/gameplay_rules.js';
 import { GAMEPLAY_FEEL_TUNING } from '../src/gameplay_feel.js';
 
@@ -41,6 +42,12 @@ describe('Game Flow & Integration Lifecycle', () => {
     game = new GameEngine(createMockCanvas());
     game.gameState = 'PLAYING';
   });
+
+  const primeKevinAtCap = (calmTimer = 5) => {
+    game.kevinDirector.syncRage(100, 'TEST');
+    game.npc.setRage(100);
+    game.npc.calmTimer = calmTimer;
+  };
 
   it('accumulates score and peak combo during player kicks', () => {
     expect(game.score).toBe(0);
@@ -538,8 +545,19 @@ describe('Game Flow & Integration Lifecycle', () => {
 
     const kevin = Matter.Bodies.rectangle(game.npc.x, game.npc.y, 70, 70, { label: 'destructible_kevin' });
     game.kevinBonkTimer = 0;
+    const scoreBeforeKevin = game.score;
+    const havocBeforeKevin = game.havocSystem.meter;
     game.collisionHandler({ pairs: [{ bodyA: ball, bodyB: kevin }] });
     expect(game.combo).toBe(4);
+    expect(events.filter(event => event.type === 'KEVIN_HIT')).toHaveLength(1);
+    expect(game.score - scoreBeforeKevin).toBe(500 * game.combo);
+    expect(game.npc.rageMeter).toBe(100);
+    expect(game.kevinDirector.state).toBe('RAMPAGE');
+    expect(game.havocSystem.meter - havocBeforeKevin).toBe(20);
+
+    const scoreAfterFirstHit = game.score;
+    game.collisionHandler({ pairs: [{ bodyA: ball, bodyB: kevin }] });
+    expect(game.score).toBe(scoreAfterFirstHit);
     expect(events.filter(event => event.type === 'KEVIN_HIT')).toHaveLength(1);
   });
 
@@ -667,6 +685,9 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(Matter.Composite.allBodies(game.world)).not.toContain(projectile);
     expect(game.particles.hitStopRemainingSeconds)
       .toBe(GAMEPLAY_FEEL_TUNING.HIT_STOP_KEVIN_HIT_SECONDS);
+    expect(game.npc.rageMeter).toBe(100);
+    expect(game.kevinDirector.state).toBe('RAMPAGE');
+    expect(game.havocSystem.meter).toBe(20);
     expect(physicsUpdate).not.toHaveBeenCalled();
     expect(game.accumulator).toBe(0);
 
@@ -806,5 +827,274 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.score).toBe(0);
     expect(game.combo).toBe(1);
     expect(game.player.health).toBe(3);
+  });
+
+  it('routes gameplay events through Kevin escalation and Havoc without recursive system events', () => {
+    const published = [];
+    game.onGameplayEvent = event => published.push(event);
+
+    game.emitGameplayEvent('OBJECT_DESTROYED', { score: 100, combo: 1, distanceToKevin: 100 });
+    expect(game.npc.rageMeter).toBe(12);
+    expect(game.kevinDirector.state).toBe('SUSPICIOUS');
+    expect(game.havocSystem.meter).toBe(8);
+    expect(published.map(event => event.type)).toEqual([
+      'OBJECT_DESTROYED', 'KEVIN_ESCALATION_CHANGED', 'HAVOC_CHANGED'
+    ]);
+    expect(published[1]).toMatchObject({ previous: 'CALM', current: 'SUSPICIOUS', rage: 12, reason: 'OBJECT_DESTROYED' });
+  });
+
+  it('refreshes capped rage grace after a new positive gameplay provocation', () => {
+    primeKevinAtCap(5.9);
+    const applyGameplayRage = vi.spyOn(game.npc, 'applyGameplayRage');
+
+    game.emitGameplayEvent('PERFECT_PARRY');
+
+    expect(game.kevinDirector.state).toBe('RAMPAGE');
+    expect(game.kevinDirector.rage).toBe(100);
+    expect(game.npc.rageMeter).toBe(100);
+    expect(game.npc.calmTimer).toBe(0);
+    expect(applyGameplayRage).toHaveBeenCalledOnce();
+    expect(applyGameplayRage).toHaveBeenCalledWith(100, { provoked: true });
+  });
+
+  it('preserves the full six-second grace after a capped provocation before normal decay', () => {
+    primeKevinAtCap(5.9);
+    game.emitGameplayEvent('PERFECT_PARRY');
+    const updateKevin = dt => game.npc.update(dt, game.player.x, game.particles, false, rage => {
+      game.kevinDirector.syncRage(rage, 'RAGE_DECAY');
+      return game.kevinDirector.getAttackProfile();
+    });
+
+    updateKevin(5.9);
+    expect(game.npc.calmTimer).toBeCloseTo(5.9);
+    expect(game.npc.rageMeter).toBe(100);
+
+    updateKevin(0.1);
+    expect(game.npc.calmTimer).toBeCloseTo(6);
+    expect(game.npc.rageMeter).toBe(100);
+
+    updateKevin(0.1);
+    expect(game.npc.calmTimer).toBeCloseTo(6.1);
+    expect(game.npc.rageMeter).toBeCloseTo(99.65);
+    expect(game.kevinDirector.rage).toBeCloseTo(99.65);
+  });
+
+  it('does not refresh capped rage grace for BLOCK', () => {
+    primeKevinAtCap(5);
+    game.emitGameplayEvent('BLOCK');
+    expect(game.npc.calmTimer).toBe(5);
+  });
+
+  it('does not refresh capped rage grace for ordinary ball contact', () => {
+    primeKevinAtCap(5);
+    game.emitGameplayEvent('BALL_CONTACT', { contactType: 'KICK', perfectStrike: false });
+    expect(game.npc.calmTimer).toBe(5);
+  });
+
+  it('ignores the Power Shot companion contact but refreshes once for canonical Power Shot', () => {
+    primeKevinAtCap(5);
+    const applyGameplayRage = vi.spyOn(game.npc, 'applyGameplayRage');
+
+    game.emitGameplayEvent('BALL_CONTACT', { contactType: 'POWER_SHOT', perfectStrike: true });
+    expect(game.npc.calmTimer).toBe(5);
+    expect(applyGameplayRage).not.toHaveBeenCalled();
+
+    game.emitGameplayEvent('POWER_SHOT');
+    expect(game.npc.calmTimer).toBe(0);
+    expect(applyGameplayRage).toHaveBeenCalledOnce();
+    expect(applyGameplayRage).toHaveBeenCalledWith(100, { provoked: true });
+  });
+
+  it('refreshes capped calm grace through production Havoc activation and reaction', () => {
+    primeKevinAtCap(5);
+    game.havocSystem.meter = 94;
+    const applyGameplayRage = vi.spyOn(game.npc, 'applyGameplayRage');
+
+    game.emitGameplayEvent('POWER_SHOT');
+
+    expect(game.havocSystem.active).toBe(true);
+    expect(game.kevinDirector.rage).toBe(100);
+    expect(game.kevinDirector.getRecentContext()).toMatchObject({
+      lastProvocationType: 'HAVOC_STARTED', recentEventCount: 2
+    });
+    expect(game.npc.calmTimer).toBe(0);
+    expect(applyGameplayRage).toHaveBeenCalledTimes(2);
+    expect(applyGameplayRage).toHaveBeenNthCalledWith(1, 100, { provoked: true });
+    expect(applyGameplayRage).toHaveBeenNthCalledWith(2, 100, { provoked: true });
+  });
+
+  it('refreshes capped calm grace when KEVIN_HIT is processed', () => {
+    primeKevinAtCap(5);
+    game.emitGameplayEvent('KEVIN_HIT');
+    expect(game.kevinDirector.state).toBe('RAMPAGE');
+    expect(game.npc.rageMeter).toBe(100);
+    expect(game.npc.calmTimer).toBe(0);
+  });
+
+  it('keeps local delayed dialogue cosmetic and unable to alter rage, escalation, or attack timing', () => {
+    const speak = vi.spyOn(sounds, 'speakKevinVoice').mockImplementation(() => {});
+    primeKevinAtCap(5);
+    const initial = {
+      rage: game.npc.rageMeter,
+      state: game.kevinDirector.state,
+      throwTimer: game.npc.throwTimer,
+      lowLevel: game.npc.state,
+      calmTimer: game.npc.calmTimer
+    };
+
+    aiService.handleEdgeResponse({
+      impact_object: 'window',
+      combo_multiplier: 1,
+      ball_type: 'Standard Match Ball',
+      environmental_tags: ['DESTRUCTION'],
+      npcRage: 0,
+      isHeadshot: false,
+      isParry: false,
+      isRampage: false,
+      isFirstHit: false
+    });
+
+    expect(game.npc.dialogue).not.toBe('');
+    expect(game.npc.rageMeter).toBe(initial.rage);
+    expect(game.kevinDirector.state).toBe(initial.state);
+    expect(game.npc.throwTimer).toBe(initial.throwTimer);
+    expect(game.npc.state).toBe(initial.lowLevel);
+    expect(game.npc.calmTimer).toBe(initial.calmTimer);
+    expect(speak).toHaveBeenCalled();
+    speak.mockRestore();
+  });
+
+  it('applies canonical Power Shot score, combo, rage, and Havoc exactly once', () => {
+    const published = [];
+    game.onGameplayEvent = event => published.push(event);
+    game.player.triggerKick();
+    game.player.kickProgress = 0.5;
+    Matter.Body.setPosition(game.ball, game.player.getKickPosition());
+    Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+
+    expect(game.executePowerShot(0.5, 700, 100)).toBe(true);
+
+    expect(game.score).toBe(GAMEPLAY_TUNING.NORMAL_CONTACT_REWARD * 2);
+    expect(game.combo).toBe(2);
+    expect(game.npc.rageMeter).toBe(5);
+    expect(game.havocSystem.meter).toBe(6);
+    expect(published.filter(event => event.type === 'BALL_CONTACT')).toHaveLength(1);
+    expect(published.filter(event => event.type === 'POWER_SHOT')).toHaveLength(1);
+    expect(published.some(event => event.type === 'HAVOC_SCORE_BONUS')).toBe(false);
+  });
+
+  it('awards one Havoc bonus for a Power Shot without double-counting its companion contact', () => {
+    const published = [];
+    game.onGameplayEvent = event => published.push(event);
+    game.havocSystem.meter = 100;
+    game.havocSystem.active = true;
+    game.havocSystem.havocActivations = 1;
+    game.player.triggerKick();
+    game.player.kickProgress = 0.5;
+    Matter.Body.setPosition(game.ball, game.player.getKickPosition());
+    Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+
+    expect(game.executePowerShot(0.5, 700, 100)).toBe(true);
+    expect(game.player.hasHitBallThisKick).toBe(true);
+    expect(game.executePowerShot(0.5, 700, 100)).toBe(false);
+    expect(game.score).toBe(GAMEPLAY_TUNING.NORMAL_CONTACT_REWARD * 2 * 1.5);
+    expect(game.combo).toBe(2);
+    expect(published.filter(event => event.type === 'BALL_CONTACT')).toHaveLength(1);
+    expect(published.filter(event => event.type === 'POWER_SHOT')).toHaveLength(1);
+    expect(published.filter(event => event.type === 'HAVOC_SCORE_BONUS')).toEqual([
+      expect.objectContaining({ source: 'POWER_SHOT', baseScore: 200, bonus: 100, currentCombo: 2 })
+    ]);
+    expect(game.havocSystem.meter).toBe(100);
+  });
+
+  it('does not bonus the Havoc-filling event and adds one bonus to a later eligible base score', () => {
+    const published = [];
+    game.onGameplayEvent = event => published.push(event);
+    game.havocSystem.meter = 96;
+    game.score = 50;
+
+    game.emitGameplayEvent('OBJECT_DESTROYED', { score: 50, combo: 1, nearKevin: false });
+    expect(game.score).toBe(50);
+    expect(game.havocSystem.active).toBe(true);
+    expect(published.filter(event => event.type === 'HAVOC_SCORE_BONUS')).toHaveLength(0);
+
+    game.score += 50;
+    game.emitGameplayEvent('OBJECT_DESTROYED', { score: 50, combo: 1, nearKevin: false });
+    expect(game.score).toBe(125);
+    expect(published.filter(event => event.type === 'HAVOC_SCORE_BONUS')).toEqual([
+      expect.objectContaining({ source: 'OBJECT_DESTROYED', baseScore: 50, bonus: 25, currentCombo: 1 })
+    ]);
+    expect(game.havocSystem.meter).toBe(100);
+  });
+
+  it('publishes the existing three-event trick bonus once as a completed chain', () => {
+    const published = [];
+    game.combo = 4;
+    game.onGameplayEvent = event => published.push(event);
+
+    game.recordTrickEvent('KICK');
+    expect(game.trickChainTimer).toBe(3);
+    expect(published.filter(event => event.type === 'TRICK_CHAIN_COMPLETED')).toHaveLength(0);
+    game.recordTrickEvent('WINDOW_SHATTER');
+    game.recordTrickEvent('GNOME_BONK');
+
+    const completionEvents = published.filter(event => event.type === 'TRICK_CHAIN_COMPLETED');
+    expect(completionEvents).toHaveLength(1);
+    expect(completionEvents[0]).toMatchObject({
+      completedEvents: ['KICK', 'WINDOW_SHATTER', 'GNOME_BONK'],
+      combo: 4,
+      score: 4000,
+      bonusScore: 4000
+    });
+    expect(game.score).toBe(4000);
+    expect(game.trickChain).toEqual([]);
+    expect(game.havocSystem.meter).toBe(18);
+  });
+
+  it('freezes Kevin memory and Havoc timers during hidden time, hit-stop, cutscenes, and game over', () => {
+    game.emitGameplayEvent('OBJECT_DESTROYED', { nearKevin: true });
+    const memory = game.kevinDirector.getSnapshot();
+    const havoc = game.havocSystem.getSnapshot();
+    const rage = game.npc.rageMeter;
+
+    game.particles.triggerHitStop(1);
+    game.update(0.2);
+    expect(game.kevinDirector.getSnapshot()).toEqual(memory);
+    expect(game.havocSystem.getSnapshot()).toEqual(havoc);
+    expect(game.npc.rageMeter).toBe(rage);
+
+    game.setPageVisibility(false);
+    game.update(5);
+    expect(game.kevinDirector.getSnapshot()).toEqual(memory);
+    expect(game.havocSystem.getSnapshot()).toEqual(havoc);
+    game.setPageVisibility(true);
+
+    game.gameState = 'INTRO_CUTSCENE';
+    game.update(0.1);
+    expect(game.kevinDirector.getSnapshot().simulationTime).toBe(memory.simulationTime);
+    expect(game.havocSystem.getSnapshot()).toEqual(havoc);
+    expect(game.npc.rageMeter).toBe(rage);
+
+    game.gameState = 'GAME_OVER';
+    game.isGameOver = true;
+    game.update(5);
+    expect(game.kevinDirector.getSnapshot()).toEqual(memory);
+    expect(game.havocSystem.getSnapshot()).toEqual(havoc);
+  });
+
+  it('resets director memory, projectile policy, rage, and Havoc on run and intro restart', () => {
+    game.emitGameplayEvent('OBJECT_DESTROYED', { nearKevin: true });
+    game.havocSystem.processEvent({ type: 'OBJECT_DESTROYED' });
+    game.startIntroCutscene();
+    expect(game.kevinDirector.getSnapshot()).toMatchObject({ state: 'CALM', rage: 0, recentContext: { recentEventCount: 0 } });
+    expect(game.havocSystem.getSnapshot()).toMatchObject({ meter: 0, active: false, havocActivations: 0 });
+    expect(game.npc.rageMeter).toBe(0);
+
+    game.emitGameplayEvent('KEVIN_HIT');
+    game.havocSystem.processEvent({ type: 'OBJECT_DESTROYED' });
+    game.resetEnvironment();
+    expect(game.kevinDirector.getSnapshot()).toMatchObject({ state: 'CALM', rage: 0, recentContext: { recentEventCount: 0 } });
+    expect(game.havocSystem.getSnapshot()).toMatchObject({ meter: 0, active: false, havocActivations: 0 });
+    expect(game.npc.rageMeter).toBe(0);
   });
 });
