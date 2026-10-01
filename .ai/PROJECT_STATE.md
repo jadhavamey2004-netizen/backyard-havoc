@@ -1,11 +1,11 @@
 # Project State
 
 - **Project:** Backyard Havoc (Vite, Canvas 2D, Matter.js)
-- **Phase 1C baseline SHA:** `e383938201825bbc3286c292cdcf35831e8002f4` (`main`)
-- **Working branch:** `codex/phase-1c-gameplay-truth`
-- **Current phase:** Phase 1C local verification + PR CI PASS; awaiting external review.
-- **Phase 1C scope:** Survival run lifecycle, authoritative contextual controls, timed kick/header contact, immediate threat-first defense, deterministic gravity-aware threat prediction, combo/score/event semantics, current-facing documentation, focused browser smoke coverage.
-- **Phase 1B predecessor:** Lifecycle/reset/visibility/runtime correctness fixes are included in the baseline. `.ai/INITIAL_AUDIT.md` remains the original historical audit.
+- **Phase 2 baseline SHA:** `fc25a4b48887b4112bc168d397ef01c7dcd61553` (`main`, verified Phase 1C merge)
+- **Working branch:** `codex/phase-2-core-gameplay-feel`
+- **Current phase:** Phase 2 local verification + PR CI PASS; awaiting external review.
+- **Phase 2 scope:** Responsive movement, deterministic kick/header/power-shot physics, time-correct ball damping and hit-stop, tiered contact feedback, time-correct camera tracking, procedural pose synchronization, and velocity-led ball presentation. Phase 1C gameplay rules remain authoritative and unchanged.
+- **Phase 1B predecessor:** Lifecycle/reset/visibility/runtime correctness fixes remain part of the merged baseline. `.ai/INITIAL_AUDIT.md` remains historical evidence.
 
 ## Current implementation notes
 
@@ -16,19 +16,20 @@
 - Projectile threat selection uses bounded deterministic fixed steps with Matter gravity and stable tie-breaking. An already-overlapping projectile is not a defense opportunity.
 - Combo increments only on successful ball contacts and parry tiers; Perfect Parry is one atomic +2 transition. Ground grace counts only continuous grounded time. Reset/constructor gameplay events remain silent.
 - Current controls are A/D or arrows, optional Shift, pointer aim, contextual pointer action, and hold-to-charge. Header is contextual with no dedicated key.
+- `.ai/GAMEPLAY_FEEL.md` records initial feel tuning and the human playtest checklist; automated test results do not claim that subjective feel has passed.
 
 ## Verification status
 
-- **Vitest:** `npm test` PASS — 19 files, 110 tests.
-- **Production build:** `npm run build` PASS — Vite 5.4.21, 21 modules transformed.
-- **Playwright:** `npm run test:e2e` PASS twice — 7 Chromium scenarios per run at 1280×720. Each run reported zero page errors, console errors/warnings, failed requests, and same-origin failures. The browser smoke suite attaches per-test health JSON and a title screenshot; Playwright retains traces/screenshots/videos on failure.
-- **GitHub Actions:** See draft PR #4's latest Quality Gate run for the unit/build and Chromium results, browser-health logs, and uploaded `playwright-evidence` artifact.
-- **Known limits:** The passing Vitest run prints existing headless Web Audio `window is not defined` diagnostics. Tuning and visual feel still require playtesting. Complete mobile controls, canvas accessibility, reduced-motion support, browser audio/TTS variability, long-session performance, and gameplay balance remain outside this phase.
+- **Vitest:** `npm test` PASS — 20 files, 136 tests.
+- **Production build:** `npm run build` PASS — Vite 5.4.21, 22 modules transformed.
+- **Playwright:** `npm run test:e2e` PASS twice — 8 Chromium scenarios per run at 1280×720. Each run reported zero page errors, console errors/warnings, failed requests, and same-origin failures. The browser smoke suite attaches per-test health JSON and gameplay screenshots; Playwright retains traces/screenshots/videos on failure.
+- **GitHub Actions:** Review the Phase 2 draft PR's latest Quality Gate for unit/build, Chromium browser smoke, browser-health output, and the Playwright evidence artifact.
+- **Known limits:** Baseline Vitest runs print existing headless Web Audio `window is not defined` diagnostics. All subjective feel values require human playtesting. Complete mobile controls, canvas accessibility, reduced-motion support, browser audio/TTS variability, long-session performance, and gameplay balance remain outside this phase.
 
 ## Architecture
 
-Single-page Vite app. `src/main.js` wires DOM, keyboard/pointer/touch input and the animation loop. `src/game.js` remains the existing GameEngine coordinator for Matter.js simulation, world/collisions, score/state, camera, particles and rendering. `src/player.js` owns action timing and contact zones; `src/gameplay_rules.js` contains named gameplay tuning and deterministic pure rule helpers. This work does not refactor the engine architecture.
+Single-page Vite app. `src/main.js` wires DOM, keyboard/pointer/touch input and the animation loop. `src/game.js` remains the existing GameEngine coordinator for Matter.js simulation, world/collisions, score/state, camera, particles and rendering. `src/player.js` owns action timing/contact zones and locomotion. `src/gameplay_rules.js` contains authoritative Phase 1C rules; `src/gameplay_feel.js` contains deterministic feel tuning and pure response helpers. This work does not refactor the engine architecture.
 
 ## Deferred
 
-Phase 1D and later: Havoc meter and escalation decisions; timed/daily modes; broad score/balance pass; character, animation, UI, destruction, audio, and mobile redesign; progression; visual polish; and broad architecture refactoring. These areas remain untouched unless an approved Phase 1C correctness rule requires a narrow change.
+Later overhaul phases: Havoc meter and escalation decisions; timed/daily modes; broad score/balance pass; character design, full animation, UI, destruction, audio, voice, world art, and mobile redesign; progression; performance profiling; and broad architecture refactoring. Human playtesting of core feel remains required before subjective tuning can be treated as validated.

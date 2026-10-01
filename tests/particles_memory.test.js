@@ -24,11 +24,12 @@ describe('Particle System & Memory Lifecycle', () => {
     expect(particles.trailPoints.length).toBe(0);
   });
 
-  it('handles hit-freeze frame decrements correctly', () => {
-    particles.triggerHitFreeze(2);
-    expect(particles.isFrozen()).toBe(true);
-    expect(particles.isFrozen()).toBe(true);
-    expect(particles.isFrozen()).toBe(false);
+  it('consumes hit-stop by elapsed simulation seconds including partial-frame remainder', () => {
+    particles.triggerHitStop(0.05);
+    expect(particles.consumeHitStop(0.02)).toBe(0);
+    expect(particles.consumeHitStop(0.02)).toBe(0);
+    expect(particles.consumeHitStop(0.02)).toBeCloseTo(0.01, 10);
+    expect(particles.hitStopRemainingSeconds).toBe(0);
   });
 
   it('ignores invalid NaN coordinates in addTrailPoint', () => {

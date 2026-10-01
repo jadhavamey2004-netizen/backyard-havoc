@@ -1,14 +1,14 @@
 # Production Feature Truth
 
-Baseline: `e383938201825bbc3286c292cdcf35831e8002f4` (`main`, before Phase 1C implementation). The status below describes the Phase 1C branch implementation; balance and presentation tuning still require playtesting.
+Baseline: `fc25a4b48887b4112bc168d397ef01c7dcd61553` (`main`, verified Phase 1C merge). The status below describes the Phase 2 core gameplay feel implementation; subjective tuning remains subject to human playtesting.
 
 | Feature | Status | Production evidence / limits |
 |---|---|---|
-| Movement | IMPLEMENTED | `src/player.js` handles A/D or arrows plus optional Shift sprint. Page hiding clears held movement/sprint input. |
+| Movement | IMPLEMENTED | `src/player.js` handles A/D or arrows plus optional Shift sprint with bounded acceleration, braking, reversal, and time-subdivision-consistent position integration. Page hiding clears held movement/sprint input. Numeric feel needs human playtesting. |
 | Primary action | IMPLEMENTED | Pointer press/release snapshots aim and charge. An eligible projectile defense resolves immediately at release; otherwise one kick/header action waits for its strike window and requires real contact. |
-| Power shot | IMPLEMENTED | Hold-to-charge pointer action; charge is calculated from elapsed hold on release. Contact is required and base contact reward matches a normal kick. |
-| Header | IMPLEMENTED | Contextual head-zone contact during the strike window, selected ahead of foot contact; no dedicated control. |
-| Defense | IMPLEMENTED | Gravity-aware deterministic short-horizon forecast selects the earliest valid incoming threat. BLOCK, PARRY, and PERFECT_PARRY have distinct timing, impulse, score, and combo outcomes. Tuning requires playtest validation. |
+| Power shot | IMPLEMENTED | Hold-to-charge pointer action; charge is calculated from elapsed hold on release. Contact is required, charge monotonically changes physical launch/presentation, and base contact reward matches a normal kick. |
+| Header | IMPLEMENTED | Contextual head-zone contact during the strike window, selected ahead of foot contact; no dedicated control. Header has distinct lower-power physics and lighter feedback. |
+| Defense | IMPLEMENTED | Gravity-aware deterministic short-horizon forecast selects the earliest valid incoming threat. BLOCK, PARRY, and PERFECT_PARRY retain distinct timing, impulse, score, and combo outcomes with increasing camera/impact feedback. Tuning requires human playtest validation. |
 | Combo | IMPLEMENTED | Valid football contact and successful parry tiers advance combo. Continuous grounded time beyond the grace period and player damage reset it. Blocks, destruction, Kevin impacts, and returned-projectile aftermath do not advance it. |
 | Trick chain | IMPLEMENTED | Separate short-window chain records selected destruction, Kevin, and skill events; it is not the combo multiplier. |
 | Run | IMPLEMENTED | Intro transitions to survival play; health zero triggers defeat/results. Active survival time is non-terminal. Restart resets run state while preserving local records and mute preference. |
@@ -21,7 +21,9 @@ Baseline: `e383938201825bbc3286c292cdcf35831e8002f4` (`main`, before Phase 1C im
 | Mobile | DEFERRED | Existing touch listeners remain; complete mobile controls and device coverage are not implemented. |
 | AI | PARTIAL | `src/ai.js` selects dialogue from local heuristic telemetry; no external inference service is used. |
 | Cutscenes | IMPLEMENTED | Intro and defeat lifecycle remain; visual/audio synchronization is not fully verified. |
-| Audio / music | PARTIAL | Existing generated Web Audio and browser TTS remain; audio lifecycle and device quality need dedicated review. |
+| Camera / hit-stop | IMPLEMENTED | Horizontal tracking uses dt-aware exponential smoothing; impact stop is measured in elapsed simulation seconds. Numerical shake/pause tuning needs human playtesting. |
+| Ball physics / presentation | IMPLEMENTED | Pure deterministic contact response removes combo from physical trajectory, uses Matter air drag without per-update damping, applies a 23.5 speed safety cap, and scales visible stretch/trail from velocity. Tuning needs human playtesting. |
+| Audio / music | PARTIAL | Existing generated Web Audio and browser TTS remain; audio lifecycle and device quality need dedicated review. No new sound assets are part of Phase 2. |
 | Accessibility | PARTIAL | Native buttons and DOM text exist, but the canvas lacks a complete accessible gameplay alternative; zoom/reduced-motion issues remain. |
 | Deployment | IMPLEMENTED | Vite production build is configured; deployment is not part of this implementation task. |
 
@@ -36,4 +38,4 @@ Baseline: `e383938201825bbc3286c292cdcf35831e8002f4` (`main`, before Phase 1C im
 
 ## Deferred
 
-Phase 1D and later work: gameplay balance, Havoc meter/escalation, daily/timed modes, character/animation/audio/destruction redesign, progression, mobile-control implementation, performance budgets, and broader architecture changes.
+Later overhaul work remains deferred: Havoc meter/escalation, daily/timed modes, character/animation/audio/destruction redesign, progression, mobile-control implementation, performance budgets, world art, and broader architecture changes. Human validation of `.ai/GAMEPLAY_FEEL.md` remains outstanding.

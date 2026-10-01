@@ -14,6 +14,7 @@ import { NeighborKevinNPC } from './npc.js';
 import { ProceduralWorld } from './procedural_world.js';
 import { COLLISION_CATEGORIES, breakObjectIntoFragments } from './destructibles.js';
 import { calculateSubStepDt } from './physics.js';
+import { clampBallVelocity, computeBallContactResponse, GAMEPLAY_FEEL_TUNING } from './gameplay_feel.js';
 import { sounds } from './audio.js';
 import { aiService } from './ai.js';
 import {
@@ -59,6 +60,8 @@ export class GameEngine {
       scaleY: 1.0,
       angle: 0
     };
+    this.ballFeedbackTier = 'NORMAL';
+    this.ballFeedbackStrength = 0;
 
     // Mouse Aim Tracking in Screen Space
     this.mouseScreenPos = { x: this.width * 0.5, y: 160 };
@@ -232,6 +235,14 @@ export class GameEngine {
     };
   }
 
+  resetTransientFeelState() {
+    this.particles.clearHitStop();
+    this.camera.reset();
+    this.ballDeform = { scaleX: 1, scaleY: 1, angle: 0 };
+    this.ballFeedbackTier = 'NORMAL';
+    this.ballFeedbackStrength = 0;
+  }
+
   setupCollisionHandlers() {
     this.collisionHandler = (event) => {
       const pairs = event.pairs;
@@ -305,8 +316,8 @@ export class GameEngine {
           const impactVel = { x: ball.velocity.x, y: ball.velocity.y };
           this.npc.takeDirectHit(impactVel);
 
-          this.camera.addTrauma(0.65);
-          this.particles.triggerHitFreeze(2);
+          this.camera.addTrauma(0.72, 0.045);
+          this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_KEVIN_HIT_SECONDS);
           sounds.playKevinHit();
           sounds.playGlassShatter();
           this.particles.spawnDebris(target.position.x, target.position.y, 28, '#0284c7', 9);
@@ -355,7 +366,7 @@ export class GameEngine {
           }
 
           if (isGlass) {
-            this.particles.triggerHitFreeze(2);
+            this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_WORLD_IMPACT_SECONDS);
           }
 
           if (isGrill) {
@@ -518,6 +529,9 @@ export class GameEngine {
         y: (dy / length) * GAMEPLAY_TUNING.PROJECTILE_BLOCK_DEFLECTION_SPEED
       });
       sounds.playParry();
+      this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_BLOCK_SECONDS);
+      this.particles.spawnImpactRings(projectile.position.x, projectile.position.y,
+        GAMEPLAY_FEEL_TUNING.BLOCK_IMPACT_RING_COUNT, '#93c5fd');
       this.particles.spawnPopText(projectile.position.x, projectile.position.y - 30, `BLOCK! +${points}`, '#93c5fd', 22);
     } else {
       let dx = this.npc.x - projectile.position.x;
@@ -534,15 +548,34 @@ export class GameEngine {
       });
       projectile.isParried = true;
       sounds.playParry();
-      this.particles.spawnImpactRings(projectile.position.x, projectile.position.y, 3,
-        tier === 'PERFECT_PARRY' ? '#f97316' : '#facc15');
+      const isPerfectParry = tier === 'PERFECT_PARRY';
+      this.particles.triggerHitStop(isPerfectParry
+        ? GAMEPLAY_FEEL_TUNING.HIT_STOP_PERFECT_PARRY_SECONDS
+        : GAMEPLAY_FEEL_TUNING.HIT_STOP_PARRY_SECONDS);
+      this.particles.spawnImpactRings(projectile.position.x, projectile.position.y,
+        isPerfectParry ? GAMEPLAY_FEEL_TUNING.PERFECT_PARRY_IMPACT_RING_COUNT
+          : GAMEPLAY_FEEL_TUNING.PARRY_IMPACT_RING_COUNT,
+        isPerfectParry ? '#f97316' : '#facc15');
+      if (isPerfectParry) {
+        this.particles.spawnShockwave(projectile.position.x, projectile.position.y, 105, '#f97316', 7);
+        this.particles.spawnLightningArc(projectile.position.x, projectile.position.y, 34, 4);
+        this.particles.spawnVignetteFlash('rgba(249, 115, 22, 0.22)', 0.2);
+      } else {
+        this.particles.spawnShockwave(projectile.position.x, projectile.position.y, 68, '#facc15', 4.5);
+      }
       this.particles.spawnPopText(projectile.position.x, projectile.position.y - 30,
         `${tier === 'PERFECT_PARRY' ? 'PERFECT PARRY' : 'PARRY'}! +${points}`,
-        tier === 'PERFECT_PARRY' ? '#fb923c' : '#facc15', 24);
+        tier === 'PERFECT_PARRY' ? '#fb923c' : '#facc15', isPerfectParry ? 30 : 24);
       this.recordTrickEvent(tier);
     }
 
-    this.camera.addTrauma(tier === 'PERFECT_PARRY' ? 0.65 : 0.4);
+    const feedback = {
+      BLOCK: [GAMEPLAY_FEEL_TUNING.CAMERA_BLOCK_TRAUMA, GAMEPLAY_FEEL_TUNING.CAMERA_BLOCK_ZOOM],
+      PARRY: [GAMEPLAY_FEEL_TUNING.CAMERA_PARRY_TRAUMA, GAMEPLAY_FEEL_TUNING.CAMERA_PARRY_ZOOM],
+      PERFECT_PARRY: [GAMEPLAY_FEEL_TUNING.CAMERA_PERFECT_PARRY_TRAUMA,
+        GAMEPLAY_FEEL_TUNING.CAMERA_PERFECT_PARRY_ZOOM]
+    }[tier];
+    this.camera.addTrauma(...feedback);
     this.emitGameplayEvent(tier, {
       score: points,
       combo: comboAtResolution,
@@ -625,6 +658,7 @@ export class GameEngine {
     if (!contactCandidate || (contactType && contactType !== contactCandidate)) return false;
     contactType = contactCandidate;
     if (!contactType || !this.player.consumeKickContact()) return false;
+    charge = Number.isFinite(charge) ? Math.max(0, Math.min(1, charge)) : 0;
     this.player.powerCharging = false;
     this.player.powerCharge = 0;
     this.ballIdleTime = 0;
@@ -640,20 +674,39 @@ export class GameEngine {
       aimDist = Math.hypot(aimDx, aimDy);
     }
 
-    const unitX = aimDx / aimDist;
-    const unitY = aimDy / aimDist;
-
-    // Power Shot upward velocity: -10.5 to -18.0 (guaranteed 2nd-story reach)
-    const launchVy = -10.5 - charge * 8.0;
-    const launchVx = Math.max(-6.0, Math.min(6.0, unitX * (5.0 + charge * 3.0)));
-
-    Body.setVelocity(this.ball, { x: launchVx, y: launchVy });
-    Body.setAngularVelocity(this.ball, this.player.facing * 0.25);
+    const response = computeBallContactResponse({
+      contactType,
+      aim: { x: aimDx, y: aimDy },
+      charge,
+      powerShot: true,
+      facing: this.player.facing
+    });
+    const { x: launchVx, y: launchVy } = response.velocity;
+    Body.setVelocity(this.ball, response.velocity);
+    Body.setAngularVelocity(this.ball, response.angularVelocity);
+    this.triggerBallDeform(launchVx, launchVy, GAMEPLAY_FEEL_TUNING.BALL_DEFORM_POWER_BASE
+      + charge * GAMEPLAY_FEEL_TUNING.BALL_DEFORM_POWER_CHARGE);
+    this.ballFeedbackTier = response.tier;
+    this.ballFeedbackStrength = Math.max(0, Math.min(1, charge));
 
     sounds.playPowerShotFire();
-    this.camera.addTrauma(0.35 + charge * 0.2);
+    this.camera.addTrauma(
+      GAMEPLAY_FEEL_TUNING.CAMERA_POWER_SHOT_TRAUMA_BASE
+        + charge * GAMEPLAY_FEEL_TUNING.CAMERA_POWER_SHOT_TRAUMA_CHARGE,
+      GAMEPLAY_FEEL_TUNING.CAMERA_POWER_SHOT_ZOOM_BASE
+        + charge * GAMEPLAY_FEEL_TUNING.CAMERA_POWER_SHOT_ZOOM_CHARGE
+    );
     this.particles.spawnPowerBeam(this.player.x, this.player.y, charge);
-    this.particles.spawnImpactRings(ballPos.x, ballPos.y, 4, '#f97316');
+    this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_POWER_SHOT_BASE_SECONDS
+      + charge * GAMEPLAY_FEEL_TUNING.HIT_STOP_POWER_SHOT_CHARGE_SECONDS);
+    this.particles.spawnImpactRings(ballPos.x, ballPos.y,
+      GAMEPLAY_FEEL_TUNING.POWER_SHOT_RING_BASE_COUNT
+        + Math.round(charge * GAMEPLAY_FEEL_TUNING.POWER_SHOT_RING_CHARGE_COUNT), '#f97316');
+    this.particles.spawnShockwave(ballPos.x, ballPos.y,
+      GAMEPLAY_FEEL_TUNING.POWER_SHOT_SHOCKWAVE_BASE_RADIUS
+        + charge * GAMEPLAY_FEEL_TUNING.POWER_SHOT_SHOCKWAVE_CHARGE_RADIUS,
+      '#f97316', GAMEPLAY_FEEL_TUNING.POWER_SHOT_SHOCKWAVE_BASE_WIDTH
+        + charge * GAMEPLAY_FEEL_TUNING.POWER_SHOT_SHOCKWAVE_CHARGE_WIDTH);
     this.particles.spawnPopText(ballPos.x, ballPos.y - 40, `💥 POWER SHOT! (${Math.round(charge * 100)}%)`, '#f97316', 26);
 
     this.ballGroundedDuration = 0;
@@ -688,6 +741,7 @@ export class GameEngine {
   }
 
   startIntroCutscene() {
+    this.resetTransientFeelState();
     this.gameState = 'INTRO_CUTSCENE';
     this.cutsceneTimer = 3.6;
     this.cutsceneDuration = 3.6;
@@ -725,6 +779,7 @@ export class GameEngine {
   }
 
   startEndingCutscene() {
+    this.resetTransientFeelState();
     this.gameState = 'ENDING_CUTSCENE';
     this.cutsceneTimer = 3.2;
     this.cutsceneDuration = 3.2;
@@ -774,6 +829,7 @@ export class GameEngine {
     this.pageVisible = Boolean(isVisible);
     this.accumulator = 0;
     if (!this.pageVisible) {
+      this.resetTransientFeelState();
       sounds.stopMusic();
       if (this.isPointerDown) this.ignoreNextPointerUp = true;
       this.isPointerDown = false;
@@ -785,6 +841,7 @@ export class GameEngine {
       this.player.keys.right = false;
       this.player.keys.sprint = false;
       this.player.keys.charge = false;
+      this.player.vx = 0;
     } else if (this.gameState === 'PLAYING' && !this.isGameOver) {
       sounds.startGenerativeMusic();
     }
@@ -843,30 +900,33 @@ export class GameEngine {
       aimDist = Math.hypot(aimDx, aimDy);
     }
 
-    const unitX = aimDx / aimDist;
-    const unitY = aimDy / aimDist;
-
     const foot = this.player.getKickPosition();
     const measuredFootDistance = Math.hypot(ballPos.x - foot.x, ballPos.y - foot.y);
     const isPerfect = contactType === 'KICK'
       && measuredFootDistance < GAMEPLAY_TUNING.PERFECT_STRIKE_RADIUS;
-    const speedBoost = isPerfect ? 1.25 : 1.0;
-
-    // Omni-Directional Launch Angles towards aim cursor
-    const launchSpeed = Math.min(18.0, (10.5 + (this.combo - 1) * 0.3) * speedBoost);
-    const launchVx = unitX * launchSpeed;
-    const launchVy = Math.min(-3.5, unitY * launchSpeed);
-
-    Body.setVelocity(this.ball, {
-      x: launchVx,
-      y: launchVy
+    const response = computeBallContactResponse({
+      contactType,
+      aim: { x: aimDx, y: aimDy },
+      perfectStrike: isPerfect,
+      facing: this.player.facing
     });
+    const { x: launchVx, y: launchVy } = response.velocity;
+    Body.setVelocity(this.ball, response.velocity);
 
     // Dynamic Ball Squash & Stretch Deformation along kick vector
-    this.triggerBallDeform(launchVx, launchVy, 1.4);
-
-    const spin = (this.player.facing * 0.14) + (unitX * 0.06);
-    Body.setAngularVelocity(this.ball, spin);
+    this.triggerBallDeform(launchVx, launchVy, isPerfect
+      ? GAMEPLAY_FEEL_TUNING.BALL_DEFORM_PERFECT_STRIKE
+      : (contactType === 'HEADER' ? GAMEPLAY_FEEL_TUNING.BALL_DEFORM_HEADER
+        : GAMEPLAY_FEEL_TUNING.BALL_DEFORM_NORMAL));
+    Body.setAngularVelocity(this.ball, response.angularVelocity);
+    this.ballFeedbackTier = response.tier;
+    this.ballFeedbackStrength = isPerfect ? GAMEPLAY_FEEL_TUNING.BALL_FEEDBACK_PERFECT_STRIKE
+      : (contactType === 'HEADER' ? GAMEPLAY_FEEL_TUNING.BALL_FEEDBACK_HEADER
+        : GAMEPLAY_FEEL_TUNING.BALL_FEEDBACK_NORMAL);
+    this.particles.triggerHitStop(isPerfect
+      ? GAMEPLAY_FEEL_TUNING.HIT_STOP_PERFECT_STRIKE_SECONDS
+      : (contactType === 'HEADER' ? GAMEPLAY_FEEL_TUNING.HIT_STOP_HEADER_SECONDS
+        : GAMEPLAY_FEEL_TUNING.HIT_STOP_CONTACT_SECONDS));
 
     this.ballGroundedDuration = 0;
     this.setCombo(this.combo + 1, 'BALL_CONTACT');
@@ -890,13 +950,23 @@ export class GameEngine {
       sounds.playComboMilestoneFanfare();
     }
 
-    this.camera.addTrauma(isPerfect ? 0.28 : 0.18);
+    this.camera.addTrauma(
+      isPerfect ? GAMEPLAY_FEEL_TUNING.CAMERA_PERFECT_STRIKE_TRAUMA
+        : (contactType === 'HEADER' ? GAMEPLAY_FEEL_TUNING.CAMERA_HEADER_TRAUMA
+          : GAMEPLAY_FEEL_TUNING.CAMERA_NORMAL_KICK_TRAUMA),
+      isPerfect ? GAMEPLAY_FEEL_TUNING.CAMERA_PERFECT_STRIKE_ZOOM
+        : (contactType === 'HEADER' ? GAMEPLAY_FEEL_TUNING.CAMERA_HEADER_ZOOM
+          : GAMEPLAY_FEEL_TUNING.CAMERA_NORMAL_KICK_ZOOM)
+    );
 
     const kickPos = contactType === 'HEADER'
       ? this.player.getHeaderPosition()
       : this.player.getKickPosition();
-    this.particles.spawnImpactRings(kickPos.x, kickPos.y, 2, isPerfect ? '#38bdf8' : '#facc15');
-    this.particles.spawnDebris(kickPos.x, kickPos.y, isPerfect ? 16 : 10, isPerfect ? '#38bdf8' : '#facc15', 6);
+    const impactCount = isPerfect ? 4 : (contactType === 'HEADER' ? 1 : 2);
+    const impactColor = isPerfect ? '#38bdf8' : (contactType === 'HEADER' ? '#93c5fd' : '#facc15');
+    this.particles.spawnImpactRings(kickPos.x, kickPos.y, impactCount, impactColor);
+    if (isPerfect) this.particles.spawnShockwave(kickPos.x, kickPos.y, 76, '#38bdf8', 5);
+    this.particles.spawnDebris(kickPos.x, kickPos.y, isPerfect ? 16 : (contactType === 'HEADER' ? 5 : 8), impactColor, 6);
 
     const banner = isPerfect ? `⚡ PERFECT STRIKE! ${this.combo}x (+${kickPts})` : (this.combo > 1 ? `KICK! ${this.combo}x (+${kickPts})` : `KICK! (+${kickPts})`);
     this.particles.spawnPopText(
@@ -914,11 +984,10 @@ export class GameEngine {
   update(frameDt = FIXED_STEP_SECONDS) {
     if (this.pageVisible === false || this.isGameOver || !['PLAYING', 'INTRO_CUTSCENE', 'ENDING_CUTSCENE'].includes(this.gameState)) return;
     // Keep variable-step gameplay clocks within the same per-frame time budget as capped physics.
-    const dt = Math.min(Math.max(frameDt, 0), MAX_SIMULATION_DT);
+    let dt = Math.min(Math.max(frameDt, 0), MAX_SIMULATION_DT);
+    dt = this.particles.consumeHitStop(dt);
+    if (dt <= 1e-9) return;
     this.camera.decay(dt);
-
-    // Check hit-freeze
-    if (this.particles.isFrozen()) return;
 
     // 1. INTRO CUTSCENE UPDATE
     if (this.gameState === 'INTRO_CUTSCENE') {
@@ -930,10 +999,10 @@ export class GameEngine {
       // Cinematic Camera Motion: Look at Kevin for first 45%, then glide back to Player
       if (progress < 0.45) {
         const targetCamX = this.npc.x - this.width * 0.5 - 60;
-        this.camera.setTargetX(targetCamX, 0.12);
+        this.camera.setTargetX(targetCamX, dt, GAMEPLAY_FEEL_TUNING.CAMERA_CUTSCENE_TRACKING_RATE);
       } else {
         const targetCamX = this.player.x - this.width * 0.5;
-        this.camera.setTargetX(targetCamX, 0.08);
+        this.camera.setTargetX(targetCamX, dt, GAMEPLAY_FEEL_TUNING.CAMERA_TRACKING_RATE);
       }
 
       // Player entrance slide
@@ -960,7 +1029,7 @@ export class GameEngine {
       this.cutsceneTimer -= dt;
       this.letterboxProgress = Math.min(1.0, this.letterboxProgress + dt * 3.5);
 
-      this.camera.setTargetX(this.player.x - this.width * 0.5, 0.08);
+      this.camera.setTargetX(this.player.x - this.width * 0.5, dt, GAMEPLAY_FEEL_TUNING.CAMERA_TRACKING_RATE);
       this.player.state = 'HURT';
 
       this.mapRenderer.update(dt, this.survivalSeconds);
@@ -989,6 +1058,10 @@ export class GameEngine {
       this.ballDeform.scaleX += (1.0 - this.ballDeform.scaleX) * springRate;
       this.ballDeform.scaleY += (1.0 - this.ballDeform.scaleY) * springRate;
     }
+    if (this.ballFeedbackStrength > 0) {
+      this.ballFeedbackStrength = Math.max(0, this.ballFeedbackStrength - dt * 4);
+      if (this.ballFeedbackStrength === 0) this.ballFeedbackTier = 'NORMAL';
+    }
 
     // Trick chain decay
     if (this.trickChainTimer > 0) {
@@ -999,7 +1072,7 @@ export class GameEngine {
     }
 
     this.proceduralWorld.updateActiveChunks(this.player.x);
-    this.camera.setTargetX(this.player.x - this.width * 0.5, 0.08);
+    this.camera.setTargetX(this.player.x - this.width * 0.5, dt, GAMEPLAY_FEEL_TUNING.CAMERA_TRACKING_RATE);
 
     // Throttled static boundary positioning
     if (Math.abs(this.player.x - this.ground.position.x) > 3000) {
@@ -1010,6 +1083,11 @@ export class GameEngine {
     this.mapRenderer.update(dt, this.survivalSeconds);
     this.player.update(dt, this.width, this.particles, this.combo);
     this.resolvePendingPrimaryAction();
+    if (this.particles.hitStopRemainingSeconds > 0) {
+      // Contact-created hit-stop discards this frame's unspent simulation budget.
+      this.accumulator = 0;
+      return;
+    }
 
     const playerChunk = this.proceduralWorld.getChunkIndexForX(this.player.x);
     this.npc.x = playerChunk * 960 + 790;
@@ -1047,7 +1125,7 @@ export class GameEngine {
         sounds.playGnomeBonk();
         sounds.playComboMilestoneFanfare();
         this.camera.addTrauma(0.85);
-        this.particles.triggerHitFreeze(3);
+        this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_KEVIN_HIT_SECONDS);
         this.particles.spawnImpactRings(this.npc.x, this.npc.y, 4, '#facc15');
         this.particles.spawnPopText(this.npc.x, this.npc.y - 45, '💥 RETURN TO SENDER BONK! +1,000', '#facc15', 28);
         this.npc.takeDirectHit({ x: 0, y: -10 });
@@ -1093,6 +1171,12 @@ export class GameEngine {
       }
     }
 
+    if (this.particles.hitStopRemainingSeconds > 0) {
+      // Pre-physics impacts discard this frame's remaining simulation budget.
+      this.accumulator = 0;
+      return;
+    }
+
     // Update Mouse Hold -> Power Shot Charge Progress
     if (this.isPointerDown && !this.isGameOver) {
       const holdSec = (performance.now() - this.pointerDownTime) / 1000;
@@ -1111,22 +1195,26 @@ export class GameEngine {
     // Fixed-Timestep Physics Accumulator (1/60s with 4 sub-steps, max 3 ticks/frame)
     this.accumulator = (this.accumulator || 0) + dt;
     let physicsTicks = 0;
+    let hitStopTriggeredDuringPhysics = false;
     while (this.accumulator >= FIXED_STEP_SECONDS && physicsTicks < MAX_PHYSICS_TICKS_PER_UPDATE) {
       for (let s = 0; s < this.nSub; s++) {
         Engine.update(this.engine, this.subDt * 1000);
+        if (this.particles.hitStopRemainingSeconds > 0) {
+          hitStopTriggeredDuringPhysics = true;
+          break;
+        }
       }
+      if (hitStopTriggeredDuringPhysics) break;
       this.accumulator -= FIXED_STEP_SECONDS;
       physicsTicks++;
     }
+    if (hitStopTriggeredDuringPhysics) {
+      // Drop the partial tick and remaining frame budget; never replay it after hit-stop.
+      this.accumulator = 0;
+      return;
+    }
     if (this.accumulator >= FIXED_STEP_SECONDS) {
       this.accumulator = 0;
-    }
-
-    if (this.ball) {
-      Body.setVelocity(this.ball, {
-        x: this.ball.velocity.x * 0.985,
-        y: this.ball.velocity.y
-      });
     }
 
     // Zero-allocation active shards lifecycle
@@ -1158,15 +1246,8 @@ export class GameEngine {
         sounds.playChime(3);
       }
 
-      const currentSpeed = Math.hypot(vel.x, vel.y);
-      const maxSpeed = 15.0; // Allowed higher speed for window shots
-      if (currentSpeed > maxSpeed) {
-        const scale = maxSpeed / currentSpeed;
-        Body.setVelocity(this.ball, {
-          x: vel.x * scale,
-          y: vel.y * scale
-        });
-      }
+      const boundedVelocity = clampBallVelocity(vel);
+      if (boundedVelocity !== vel) Body.setVelocity(this.ball, boundedVelocity);
 
       if (pos.y > this.height - 75 && Math.abs(vel.x) < 0.2 && Math.abs(vel.y) < 0.2) {
         this.ballIdleTime += dt;
@@ -1184,14 +1265,14 @@ export class GameEngine {
 
     this.updateComboGroundGrace(dt);
 
-    this.camera.decay(dt);
-
     if (this.ball) {
       const trailColor = this.combo >= 8 ? '#f97316' : (this.combo >= 5 ? '#facc15' : '#38bdf8');
+      const speedRatio = Math.min(1, Math.hypot(this.ball.velocity.x, this.ball.velocity.y)
+        / GAMEPLAY_FEEL_TUNING.BALL_MAX_SPEED);
       this.particles.addTrailPoint(
         this.ball.position,
         trailColor,
-        Math.min(16, 6 + this.combo * 1.0),
+        4 + speedRatio * 8 + this.ballFeedbackStrength * 2,
         this.combo
       );
 
@@ -1207,7 +1288,7 @@ export class GameEngine {
     if (this.gameState === 'GAME_OVER') return;
     this.isGameOver = true;
     this.gameState = 'GAME_OVER';
-    this.camera.reset();
+    this.resetTransientFeelState();
     sounds.playExplosion();
     sounds.stopMusic();
     sounds.speakKevinVoice("THAT'LL TEACH YA! Call the ambulance!", 'RAGE', 0);
@@ -1237,7 +1318,6 @@ export class GameEngine {
 
   resetEnvironment() {
     sounds.stopMusic();
-    this.camera.reset();
     this.camera.x = 0;
     this.isGameOver = false;
     this.gameState = 'IDLE';
@@ -1263,6 +1343,7 @@ export class GameEngine {
     this.ignoreNextPointerUp = false;
     this.mouseScreenPos = { x: this.width * 0.5, y: 160 };
     this.ballDeform = { scaleX: 1, scaleY: 1, angle: 0 };
+    this.resetTransientFeelState();
 
     // Clear thrown projectiles & active shards
     for (const proj of this.thrownProjectiles) {
@@ -1719,7 +1800,8 @@ export class GameEngine {
 
     if (speed > 2.0) {
       deformAngle = Math.atan2(vy, vx);
-      const speedStretch = Math.min(1.42, 1.0 + (speed / 24) * 0.42);
+      const speedStretch = Math.min(1.42, 1.0 + (speed / GAMEPLAY_FEEL_TUNING.BALL_MAX_SPEED) * 0.42
+        + this.ballFeedbackStrength * 0.06);
       const speedSquash = Math.max(0.72, 1.0 / Math.sqrt(speedStretch));
       scaleX = speedStretch;
       scaleY = speedSquash;
@@ -1746,8 +1828,10 @@ export class GameEngine {
     sphereGrad.addColorStop(1, '#94a3b8');
 
     ctx.fillStyle = sphereGrad;
-    ctx.strokeStyle = '#0f172a';
-    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = this.ballFeedbackTier === 'POWER_SHOT'
+      ? '#f97316'
+      : (this.ballFeedbackTier === 'PERFECT_STRIKE' ? '#38bdf8' : '#0f172a');
+    ctx.lineWidth = 2.5 + this.ballFeedbackStrength;
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
     ctx.fill();

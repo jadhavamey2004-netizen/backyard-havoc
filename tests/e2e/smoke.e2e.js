@@ -105,6 +105,37 @@ test('pointer aim and click leave the game session alive', async ({ page }) => {
   await expectTitleOverlayDismissed(page);
 });
 
+test('core gameplay feel smoke keeps movement, short action, and charged action healthy', async ({ page }, testInfo) => {
+  await page.goto('/');
+  await page.locator('#btn-start-game').click();
+  await page.keyboard.press('Space');
+  await expectTitleOverlayDismissed(page);
+
+  const canvas = page.locator('#game-canvas');
+  const bounds = await canvas.boundingBox();
+  expect(bounds).not.toBeNull();
+
+  await page.keyboard.down('d');
+  await page.waitForTimeout(160);
+  await page.keyboard.up('d');
+
+  await page.mouse.move(bounds.x + bounds.width * 0.58, bounds.y + bounds.height * 0.58);
+  await page.mouse.down();
+  await page.waitForTimeout(70);
+  await page.mouse.up();
+  await page.waitForTimeout(450);
+
+  await page.mouse.down();
+  await page.waitForTimeout(1000);
+  await page.mouse.up();
+  await page.waitForTimeout(450);
+
+  await expect(canvas).toBeVisible();
+  await expect(canvas).toHaveJSProperty('isConnected', true);
+  await expectTitleOverlayDismissed(page);
+  await attachScreenshot(testInfo, page, 'core-gameplay-feel-smoke.png');
+});
+
 test('reload returns to a clean title/bootstrap path', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-start-game').click();
