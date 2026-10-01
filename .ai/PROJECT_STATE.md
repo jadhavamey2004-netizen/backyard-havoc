@@ -1,10 +1,21 @@
 # Project State
 
+## Phase 8 — Reactive audio and VideoGen referral migration
+
+- **Baseline:** `f7cd90fd5b44e57fe0341633c3d662499314a560` on `main`; implementation branch: `codex/phase-8-reactive-audio`.
+- **Status:** Local verification PASS — `npm test` 279/279; production build PASS; Playwright Chromium 21/21 PASS twice. Every browser-health record had zero page errors, console errors/warnings, failed requests, and same-origin failures. The draft PR's latest Quality Gate, Vercel Preview, and artifact evidence are the external review record.
+- `.ai/AUDIO_REACTIVE_SYSTEM.md` documents the Web Audio buses, event-to-recipe ownership, voice/music lifecycle, and human review requirements.
+- `src/audio_director.js` owns canonical event audio. `src/audio_mix.js` centralizes the compressor/bus levels, priorities, stereo limits, polyphony cap, duck timing, and bounded CALM/BUILD/HEAT/FURY/HAVOC targets. Audio handlers are presentation-only and guarded against audio failures.
+- Power charge uses one managed oscillator. Managed one-shots use a 24-voice cap; ducking is leased and recoverable; mute, reset, and visibility loss clear transient audio. The optional procedural vocal bank routes through VOICE; SpeechSynthesis is still browser-owned and optional.
+- The seven destruction materials have distinct procedural recipes; grill explosion and gnome bonk retain dedicated identities. Canonical contact, defense, Kevin hit, destruction, damage, trick, escalation, and Havoc audio is event-owned to avoid duplicate direct cues.
+- The centralized VideoGen referral is `https://videogen.io/ai-video-generator?fp_ref=amey-ff39df`, shown only in game-over results after an explicit click. Its adjacent disclosure is “Affiliate link — we may earn a commission at no extra cost to you.” The link uses `_blank` with `sponsored noopener noreferrer` and `no-referrer`; attribution is handled by the owner-provided URL, with no custom conversion tracking. The centralized `enabled` flag is the kill switch. Gameplay impact is none.
+- The Playwright suite attaches `phase8-audio-diagnostics.json` from runtime snapshots, plus browser-health and gameplay evidence; final-head CI, Preview, and artifact provenance are reported in the draft PR.
+
 - **Project:** Backyard Havoc (Vite, JavaScript ES modules, Canvas 2D, Matter.js)
-- **Merged baseline:** Phase 6 `main`, `581b64db4261221d13ed1f63763c032ee31b1927`
-- **Working branch:** `codex/phase-7-vfx-camera-polish`
-- **Current phase:** Phase 7 — VFX, Camera & Game-Feel Polish
-- **Phase 7 status:** Local verification + PR CI/Preview PASS; awaiting external review.
+- **Merged baseline:** Phase 7 `main`, `f7cd90fd5b44e57fe0341633c3d662499314a560`
+- **Working branch:** `codex/phase-8-reactive-audio`
+- **Current phase:** Phase 8 — Sound, Music, Voice & Reactive Audio
+- **Phase 7 status:** Complete, merged into `main`, and release-verified at the Phase 8 baseline SHA.
 
 ## Phase 7 implementation
 
@@ -58,4 +69,4 @@ The Phase 1C contact and timing rules, Phase 2 gameplay feel, Phase 3 character 
 
 ## Deferred
 
-Phase 8 audio, Phase 9 UI, and all other later-phase work remain untouched. Production release waits for external review and a human merge to `main`; the Phase 7 Vercel production-alias precondition was verified against the exact Phase 6 baseline before branch creation.
+Phase 9 UI and all later-phase work remain untouched. Production release waits for external review and a human merge to `main`; Phase 8 does not promote Vercel Preview or change production.

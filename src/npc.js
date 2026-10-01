@@ -100,7 +100,6 @@ export class NeighborKevinNPC {
 
     // Priority 0 = Critical Interrupt
     sounds.speakKevinVoice(pickedLine, 'RAGE', 0);
-    sounds.playGnomeBonk();
   }
 
   showDialogue(dialogueText = '', emotion = 'RAGE', priority = 2, category = 'DEFAULT') {

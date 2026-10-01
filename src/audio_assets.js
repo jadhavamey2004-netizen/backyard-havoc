@@ -33,15 +33,14 @@ export class VocalSoundBank {
       this.buffers.set('VICTORY_LAUGH', this.synthesizeCaricatureLaugh(0.95));
       this.buffers.set('DEFEAT_WHIMPER', this.synthesizeWhimperGroan(0.75));
       this.buffers.set('INTRO_SHOUT', this.synthesizeGruffChallenge(0.65));
-    } catch (err) {
-      console.warn('VocalSoundBank synthesis notice:', err);
+    } catch (_) {
     } finally {
       this.isGenerating = false;
     }
   }
 
-  playVocalClip(category, destinationNode) {
-    if (!this.ctx || this.ctx.state === 'suspended') return false;
+  playVocalClip(category, destinationNode, registerSource = null) {
+    if (!this.ctx) return false;
 
     let bufferKey = '';
     const cat = (category || '').toUpperCase();
@@ -92,6 +91,7 @@ export class VocalSoundBank {
       eq.connect(gain);
       gain.connect(destinationNode || this.ctx.destination);
 
+      if (typeof registerSource === 'function') registerSource(source);
       source.start();
       return true;
     }

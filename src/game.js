@@ -18,6 +18,7 @@ import { getMaterialProfile } from './destruction_materials.js';
 import { calculateSubStepDt } from './physics.js';
 import { clampBallVelocity, computeBallContactResponse, GAMEPLAY_FEEL_TUNING } from './gameplay_feel.js';
 import { sounds } from './audio.js';
+import { AudioDirector } from './audio_director.js';
 import { aiService } from './ai.js';
 import { KevinDirector } from './kevin_director.js';
 import { HavocSystem, computeHavocScoreBonus } from './havoc_system.js';
@@ -56,6 +57,7 @@ export class GameEngine {
     this.npc = new NeighborKevinNPC(790, 110);
     this.kevinDirector = new KevinDirector();
     this.havocSystem = new HavocSystem();
+    this.audioDirector = new AudioDirector(sounds);
 
     // Thrown Projectiles Array & Physics Shards
     this.thrownProjectiles = [];
@@ -266,7 +268,7 @@ export class GameEngine {
           const proj = isProjA ? bodyA : bodyB;
           const other = isProjA ? bodyB : bodyA;
           if (other.label === 'boundary_ground') {
-            sounds.playThud();
+            sounds.playThud({ rateLimitKey: 'projectile-ground', rateLimitMs: 70 });
             this.particles.spawnDebris(proj.position.x, proj.position.y, 14, proj.projectileColor || '#c2410c', 6);
             Composite.remove(this.world, proj);
             const idx = this.thrownProjectiles.indexOf(proj);
@@ -291,7 +293,7 @@ export class GameEngine {
           if (this.combo > 2) {
             this.particles.spawnPopText(ball.position.x, ball.position.y - 25, 'SAVE IT!', '#facc15', 16);
           }
-          sounds.playThud();
+          sounds.playThud({ rateLimitKey: 'ball-ground', rateLimitMs: 45 });
           continue;
         }
 
@@ -327,9 +329,6 @@ export class GameEngine {
           this.npc.takeDirectHit(impactVel);
 
           this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_KEVIN_HIT_SECONDS);
-          sounds.playKevinHit();
-          sounds.playGlassShatter();
-
           const pts = 500 * this.combo;
           this.score += pts;
           this.emitGameplayEvent('KEVIN_HIT', { score: pts, combo: this.combo, targetId: target.id }, {
@@ -386,14 +385,11 @@ export class GameEngine {
           }
 
           if (isGrill) {
-            sounds.playExplosion();
             this.particles.spawnFire(target.position.x, target.position.y, 40);
             this.recordTrickEvent('GRILL_BLAST');
           } else if (isGnome) {
-            sounds.playGnomeBonk();
             this.recordTrickEvent('GNOME_BONK');
           } else {
-            sounds.playShatter(isGlass, 100);
             if (isWindow) this.recordTrickEvent('WINDOW_SHATTER');
             else if (isGreenhouse) this.recordTrickEvent('GREENHOUSE_SHATTER');
             else if (isPot) this.recordTrickEvent('POT_SMASH');
@@ -519,11 +515,32 @@ export class GameEngine {
   }
 
   publishGameplayEvent(event, presentationContext = null) {
-    this.vfxDirector.handleGameplayEvent(event,
-      presentationContext || this.getVfxContext(event));
+    const context = presentationContext || this.getVfxContext(event);
+    const pan = Math.max(-0.7, Math.min(0.7,
+      ((context.x - (this.camera.x + this.width * 0.5)) / (this.width * 0.5)) * 0.7));
+    this.audioDirector.handleGameplayEvent(event, { ...context, pan }, this.getAudioPresentationSnapshot());
+    this.vfxDirector.handleGameplayEvent(event, context);
     if (typeof this.onGameplayEvent === 'function') {
       this.onGameplayEvent(event);
     }
+  }
+
+  getAudioPresentationSnapshot() {
+    return {
+      combo: this.combo,
+      kevinState: this.kevinDirector.state,
+      havocActive: this.havocSystem.active,
+      gameState: this.gameState,
+      pageVisible: this.pageVisible,
+      muted: sounds.isMuted
+    };
+  }
+
+  getAudioDiagnostics() {
+    return {
+      audio: sounds.getAudioDiagnosticSnapshot(),
+      director: this.audioDirector.getDiagnosticSnapshot()
+    };
   }
 
   getVfxContext(event = {}) {
@@ -551,7 +568,6 @@ export class GameEngine {
     if (current === previous) return false;
     this.combo = current;
     this.peakCombo = Math.max(this.peakCombo, current);
-    sounds.updateMusicCombo(current);
     if (!silent) {
       this.emitGameplayEvent('COMBO_CHANGED', {
         previous,
@@ -619,7 +635,6 @@ export class GameEngine {
         x: (dx / length) * GAMEPLAY_TUNING.PROJECTILE_BLOCK_DEFLECTION_SPEED,
         y: (dy / length) * GAMEPLAY_TUNING.PROJECTILE_BLOCK_DEFLECTION_SPEED
       });
-      sounds.playParry();
       this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_BLOCK_SECONDS);
       this.particles.spawnPopText(projectile.position.x, projectile.position.y - 30, `BLOCK! +${points}`, '#93c5fd', 22);
     } else {
@@ -636,7 +651,6 @@ export class GameEngine {
         y: (dy / length) * GAMEPLAY_TUNING.PROJECTILE_RETURN_SPEED
       });
       projectile.isParried = true;
-      sounds.playParry();
       const isPerfectParry = tier === 'PERFECT_PARRY';
       this.particles.triggerHitStop(isPerfectParry
         ? GAMEPLAY_FEEL_TUNING.HIT_STOP_PERFECT_PARRY_SECONDS
@@ -721,7 +735,6 @@ export class GameEngine {
       const bonusPts = 1000 * this.combo;
       this.score += bonusPts;
       this.particles.spawnPopText(this.player.x, this.player.y - 80, `✨ TRICK CHAIN! +${bonusPts} BONUS!`, '#c084fc', 28);
-      sounds.playComboMilestoneFanfare();
       this.trickChain = []; // Reset chain
       this.emitGameplayEvent('TRICK_CHAIN_COMPLETED', {
         completedEvents,
@@ -773,7 +786,6 @@ export class GameEngine {
     this.ballFeedbackTier = response.tier;
     this.ballFeedbackStrength = Math.max(0, Math.min(1, charge));
 
-    sounds.playPowerShotFire();
     this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_POWER_SHOT_BASE_SECONDS
       + charge * GAMEPLAY_FEEL_TUNING.HIT_STOP_POWER_SHOT_CHARGE_SECONDS);
     this.particles.spawnPopText(ballPos.x, ballPos.y - 40, `💥 POWER SHOT! (${Math.round(charge * 100)}%)`, '#f97316', 26);
@@ -831,6 +843,7 @@ export class GameEngine {
   }
 
   startIntroCutscene() {
+    sounds.resetTransientAudio();
     this.resetTransientFeelState();
     this.kevinDirector.reset();
     this.havocSystem.reset();
@@ -874,6 +887,7 @@ export class GameEngine {
   }
 
   startEndingCutscene() {
+    sounds.resetTransientAudio();
     this.resetTransientFeelState();
     this.gameState = 'ENDING_CUTSCENE';
     this.cutsceneTimer = 3.2;
@@ -916,6 +930,7 @@ export class GameEngine {
     sounds.startGenerativeMusic();
     this.mouseScreenPos = { x: screenX, y: screenY };
     this.isPointerDown = true;
+    sounds.stopPowerCharge(true);
     this.pointerDownTime = performance.now();
     this.player.powerCharging = false;
     this.player.powerCharge = 0;
@@ -926,7 +941,7 @@ export class GameEngine {
     this.accumulator = 0;
     if (!this.pageVisible) {
       this.resetTransientFeelState();
-      sounds.stopMusic();
+      sounds.setPageVisible(false);
       if (this.isPointerDown) this.ignoreNextPointerUp = true;
       this.isPointerDown = false;
       this.pointerDownTime = 0;
@@ -939,7 +954,11 @@ export class GameEngine {
       this.player.keys.charge = false;
       this.player.vx = 0;
     } else if (this.gameState === 'PLAYING' && !this.isGameOver) {
+      sounds.setPageVisible(true);
+      sounds.updateReactiveMusic(this.getAudioPresentationSnapshot());
       sounds.startGenerativeMusic();
+    } else {
+      sounds.setPageVisible(true);
     }
   }
 
@@ -960,6 +979,7 @@ export class GameEngine {
     this.pointerDownTime = 0;
     this.player.powerCharging = false;
     this.player.powerCharge = 0;
+    sounds.stopPowerCharge();
 
     // Defensive outcomes are resolved at the release-time state, before any football action begins.
     if (this.resolveDefenseAtRelease()) {
@@ -974,6 +994,17 @@ export class GameEngine {
       powerShot: finalCharge >= GAMEPLAY_TUNING.POWER_SHOT_MIN_CHARGE,
       aim
     };
+  }
+
+  handlePointerCancel() {
+    if (!this.isPointerDown) return false;
+    this.isPointerDown = false;
+    this.pointerDownTime = 0;
+    this.ignoreNextPointerUp = true;
+    this.player.powerCharging = false;
+    this.player.powerCharge = 0;
+    sounds.stopPowerCharge();
+    return true;
   }
 
   executePlayerKick(targetX, targetY, contactType = null) {
@@ -1047,12 +1078,6 @@ export class GameEngine {
       y: kickPos.y,
       direction: Math.sign(launchVx) || this.player.facing
     });
-
-    sounds.playKick(this.combo);
-    sounds.playChime(this.combo);
-    if (this.combo === 5 || this.combo === 10 || this.combo === 15) {
-      sounds.playComboMilestoneFanfare();
-    }
 
     const banner = isPerfect ? `⚡ PERFECT STRIKE! ${this.combo}x (+${kickPts})` : (this.combo > 1 ? `KICK! ${this.combo}x (+${kickPts})` : `KICK! (+${kickPts})`);
     this.particles.spawnPopText(
@@ -1221,8 +1246,6 @@ export class GameEngine {
 
       // Check if Parried Projectile Strikes Kevin's 2nd-Story Window
       if (proj.isParried && proj.position.y <= 135 && Math.abs(proj.position.x - this.npc.x) < 45) {
-        sounds.playGnomeBonk();
-        sounds.playComboMilestoneFanfare();
         this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_KEVIN_HIT_SECONDS);
         this.particles.spawnPopText(this.npc.x, this.npc.y - 45, '💥 RETURN TO SENDER BONK! +1,000', '#facc15', 28);
         this.npc.takeDirectHit({ x: 0, y: -10 });
@@ -1246,7 +1269,6 @@ export class GameEngine {
       if (!proj.isParried && pdist < GAMEPLAY_TUNING.PROJECTILE_PLAYER_CONTACT_RADIUS) {
         const tookDamage = this.player.takeDamage(1);
         if (tookDamage) {
-          sounds.playPlayerHurt();
           this.setCombo(1, 'PLAYER_DAMAGED');
           this.emitGameplayEvent('PLAYER_DAMAGED', { health: this.player.health, damage: 1 }, {
             x: this.player.x,
@@ -1266,7 +1288,7 @@ export class GameEngine {
 
       // Hit Ground / Out of bounds -> Shatter
       if (proj.position.y >= this.height - 72 || proj.position.y > this.height + 50 || Math.abs(proj.position.x - this.player.x) > 2500) {
-        sounds.playThud();
+        sounds.playThud({ rateLimitKey: 'projectile-ground', rateLimitMs: 70 });
         this.particles.spawnDebris(proj.position.x, proj.position.y, 12, proj.projectileColor, 5);
         Composite.remove(this.world, proj);
         this.thrownProjectiles.splice(i, 1);
@@ -1285,13 +1307,16 @@ export class GameEngine {
       if (holdSec >= GAMEPLAY_TUNING.POWER_CHARGE_START_DELAY) {
         this.player.powerCharging = true;
         this.player.powerCharge = Math.min(1.0, (holdSec - GAMEPLAY_TUNING.POWER_CHARGE_START_DELAY) / GAMEPLAY_TUNING.POWER_CHARGE_RAMP_DURATION);
+        sounds.updatePowerCharge(this.player.powerCharge);
       } else {
         this.player.powerCharging = false;
         this.player.powerCharge = 0;
+        sounds.stopPowerCharge();
       }
     } else {
       this.player.powerCharging = false;
       this.player.powerCharge = 0;
+      sounds.stopPowerCharge();
     }
 
     // Fixed-Timestep Physics Accumulator (1/60s with 4 sub-steps, max 3 ticks/frame)
@@ -1345,7 +1370,7 @@ export class GameEngine {
         Body.setPosition(this.ball, { x: safeX, y: safeY });
         Body.setVelocity(this.ball, { x: 0.5, y: -4.5 });
         this.particles.spawnPopText(safeX, safeY - 40, '⚽ BALL RESCUED!', '#38bdf8', 20);
-        sounds.playChime(3);
+        sounds.playChime(3, { rateLimitKey: 'ball-rescue', rateLimitMs: 500 });
       }
 
       const boundedVelocity = clampBallVelocity(vel);
@@ -1358,7 +1383,7 @@ export class GameEngine {
           Body.setVelocity(this.ball, { x: this.player.facing * 1.5, y: -7.0 });
           this.ballIdleTime = 0;
           this.particles.spawnPopText(pos.x, pos.y - 30, '⚽ AUTO-HOP!', '#facc15', 18);
-          sounds.playKick(1);
+          sounds.playKick(1, { rateLimitKey: 'ball-auto-hop', rateLimitMs: 300 });
         }
       } else {
         this.ballIdleTime = 0;
@@ -1402,8 +1427,8 @@ export class GameEngine {
     this.isGameOver = true;
     this.gameState = 'GAME_OVER';
     this.resetTransientFeelState();
+    sounds.resetTransientAudio();
     sounds.playExplosion();
-    sounds.stopMusic();
     sounds.speakKevinVoice("THAT'LL TEACH YA! Call the ambulance!", 'RAGE', 0);
 
     // Save High Scores
@@ -1430,7 +1455,7 @@ export class GameEngine {
   }
 
   resetEnvironment() {
-    sounds.stopMusic();
+    sounds.resetTransientAudio();
     this.camera.x = 0;
     this.isGameOver = false;
     this.gameState = 'IDLE';

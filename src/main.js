@@ -187,6 +187,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     engine.handlePointerUp(coords.x, coords.y);
   });
 
+  window.addEventListener('pointercancel', () => engine.handlePointerCancel());
+  window.addEventListener('blur', () => engine.handlePointerCancel());
+
   // Mobile Touch Controls
   canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
@@ -215,6 +218,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       engine.handlePointerUp(engine.mouseScreenPos.x, engine.mouseScreenPos.y);
     }
   });
+  window.addEventListener('touchcancel', () => engine.handlePointerCancel());
 
   // 7. Page Visibility Guard (Pause music/physics when tab hidden)
   // 8. Main 60Hz Game Render & Telemetry Loop

@@ -181,7 +181,7 @@ test('all seven production materials break into their rendered fragment families
 test('VideoGen link appears only in results, discloses affiliate status, and has no gameplay effect', async ({ page, context }, testInfo) => {
   let videoGenRequests = 0;
   context.on('request', request => {
-    if (request.url().startsWith('https://app.videogen.io/')) videoGenRequests++;
+    if (request.url().startsWith('https://videogen.io/')) videoGenRequests++;
   });
   await page.goto('/');
   await expect(page.locator('#affiliate-placement')).toBeHidden();
@@ -197,7 +197,7 @@ test('VideoGen link appears only in results, discloses affiliate status, and has
   const placement = page.locator('#affiliate-placement');
   const link = placement.locator('a');
   await expect(placement).toBeVisible();
-  await expect(link).toHaveAttribute('href', 'https://app.videogen.io/affiliates?code=cfbff82e-d675-444b-9bbc-7e08c5847b2d');
+  await expect(link).toHaveAttribute('href', 'https://videogen.io/ai-video-generator?fp_ref=amey-ff39df');
   await expect(link).toHaveAttribute('target', '_blank');
   await expect(link).toHaveAttribute('rel', 'sponsored noopener noreferrer');
   await expect(link).toHaveAttribute('referrerpolicy', 'no-referrer');
@@ -206,7 +206,7 @@ test('VideoGen link appears only in results, discloses affiliate status, and has
   expect(videoGenRequests).toBe(0);
   await attachScreenshot(testInfo, page, 'phase6-results-affiliate-disclosure.png');
 
-  await context.route('https://app.videogen.io/**', route => route.fulfill({
+  await context.route('https://videogen.io/**', route => route.fulfill({
     status: 200,
     contentType: 'text/html',
     body: '<!doctype html><title>VideoGen test destination</title><p>Local link safety stub</p>'
@@ -217,7 +217,7 @@ test('VideoGen link appears only in results, discloses affiliate status, and has
   });
   const [popup] = await Promise.all([page.waitForEvent('popup'), link.click()]);
   await popup.waitForLoadState();
-  expect(popup.url()).toBe('https://app.videogen.io/affiliates?code=cfbff82e-d675-444b-9bbc-7e08c5847b2d');
+  expect(popup.url()).toBe('https://videogen.io/ai-video-generator?fp_ref=amey-ff39df');
   expect(videoGenRequests).toBe(1);
   const afterClick = await page.evaluate(() => {
     const engine = window.__BACKYARD_TEST_ENGINE__;
