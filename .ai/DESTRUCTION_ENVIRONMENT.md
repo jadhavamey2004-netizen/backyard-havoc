@@ -53,6 +53,6 @@ The user must click the semantic external anchor. It uses `_blank`, `sponsored n
 
 ## Vercel release process
 
-`vercel.json` remains configured for `npm run build`, output directory `dist`, and the Vite framework. The intended Git integration is `jadhavamey2004-netizen/backyard-havoc`, production branch `main`, at `https://backyard-havoc.vercel.app`. The local environment has no Vercel CLI, `.vercel` project link, or Vercel token; dashboard linkage therefore remains `VERCEL DASHBOARD VERIFICATION REQUIRES EXTERNAL REVIEW`.
+`vercel.json` remains configured for `npm run build`, output directory `dist`, and the Vite framework. The intended Git integration is `jadhavamey2004-netizen/backyard-havoc`, production branch `main`, at `https://backyard-havoc.vercel.app`. The GitHub Vercel Preview check passed for this draft PR and reported “Deployment has completed.” This environment has no Vercel CLI, `.vercel` project link, or Vercel token for dashboard-level verification; that remains `VERCEL DASHBOARD VERIFICATION REQUIRES EXTERNAL REVIEW`.
 
 Phase 6 ends at a green draft PR for external review. No production deployment is performed from the feature branch. After approval and human merge, the reviewer verifies the exact merged `main` SHA, Vercel's production deployment provenance/status, and a live gameplay smoke test before establishing a later-phase baseline.
