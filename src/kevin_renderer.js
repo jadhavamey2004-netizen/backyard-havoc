@@ -1,4 +1,5 @@
-import { getKevinPoseAnchors, getKevinVisualState, KEVIN_VISUAL_STYLE } from './character_style.js';
+import { getKevinVisualState, KEVIN_VISUAL_STYLE } from './character_style.js';
+import { computeKevinPoseAnchors } from './kevin_animation.js';
 
 const { palette: colors, line, geometry: g } = KEVIN_VISUAL_STYLE;
 
@@ -80,7 +81,7 @@ function drawJoint(ctx, point, radius, fill) {
 function drawTorso(ctx, anchor, expression, peeking) {
   ctx.save();
   ctx.translate(anchor.x, anchor.y);
-  ctx.rotate(expression === 'BONKED' ? 0.07 : 0);
+  ctx.rotate(expression === 'BONKED' ? 0.04 : 0);
   if (peeking) ctx.globalAlpha = 0.82;
 
   const halfHeight = g.torso.height / 2;
@@ -181,10 +182,10 @@ function drawArm(ctx, shoulder, elbow, wrist, front, pose, expression) {
   }
 }
 
-function drawHead(ctx, anchor, expression, facing) {
+function drawHead(ctx, anchor, expression, animationPose) {
   ctx.save();
-  ctx.translate(anchor.x, anchor.y);
-  if (expression === 'BONKED') ctx.rotate(0.12);
+  ctx.translate(anchor.x + animationPose.glassesJolt * 0.4, anchor.y);
+  if (expression === 'BONKED') ctx.rotate(0.12 + animationPose.bonkWobble * 0.04);
 
   ctx.fillStyle = colors.outline;
   ctx.beginPath();
@@ -247,12 +248,13 @@ function drawHead(ctx, anchor, expression, facing) {
   ctx.fillStyle = colors.white;
   for (const eyeX of [-8, 8]) {
     ctx.beginPath();
-    ctx.ellipse(eyeX, eyeY, 4.6, surprised || watchful ? 4.2 : 3.3, 0, 0, Math.PI * 2);
+    const eyeHeight = Math.max(0.45, (surprised || watchful ? 4.2 : 3.3) * (1 - animationPose.blink));
+    ctx.ellipse(eyeX, eyeY, 4.6, eyeHeight, 0, 0, Math.PI * 2);
     ctx.fill();
     if (!hurt) {
       ctx.fillStyle = colors.outline;
       ctx.beginPath();
-      ctx.arc(eyeX + 1.2 * (facing < 0 ? -1 : 1), eyeY, 1.8, 0, Math.PI * 2);
+      ctx.arc(eyeX + animationPose.gazeX * 0.6, eyeY, 1.8, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = colors.white;
     }
@@ -310,7 +312,7 @@ function drawHead(ctx, anchor, expression, facing) {
   if (expression === 'SHOUTING') {
     ctx.fillStyle = colors.mouth;
     ctx.beginPath();
-    ctx.ellipse(0, 16, 6.5, 7.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 16, 5 + animationPose.mouthOpen * 1.5, 2 + animationPose.mouthOpen * 5.5, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = colors.white;
     ctx.fillRect(-4, 10, 8, 2.8);
@@ -340,10 +342,10 @@ function drawHead(ctx, anchor, expression, facing) {
   ctx.restore();
 }
 
-function drawRepairCloth(ctx, wrist) {
+function drawRepairCloth(ctx, wrist, angle) {
   ctx.save();
   ctx.translate(wrist.x, wrist.y - 2);
-  ctx.rotate(-0.18);
+  ctx.rotate(angle);
   ctx.fillStyle = colors.ochre;
   ctx.strokeStyle = colors.outline;
   ctx.lineWidth = line.facial;
@@ -446,7 +448,7 @@ function drawDizzyStars(ctx, npc) {
 export function drawKevinCharacter(ctx, npc) {
   if (!npc.visible) return;
   const visual = getKevinVisualState(npc);
-  const a = getKevinPoseAnchors(npc);
+  const a = npc.animation.pose(npc);
   const open = visual.pose !== 'PEEKING_INSIDE';
   const peeking = visual.pose === 'PEEKING_INSIDE';
   const repairing = visual.pose === 'REPAIRING';
@@ -457,7 +459,7 @@ export function drawKevinCharacter(ctx, npc) {
   drawWindow(ctx, open);
   ctx.save();
   ctx.scale(a.facing, 1);
-  if (dizzy) ctx.rotate(Math.sin(Number.isFinite(npc.dizzyAngle) ? npc.dizzyAngle : 0) * 0.08);
+  ctx.rotate(a.bodyRotation + (dizzy ? a.bonkWobble * 0.08 : 0));
 
   // Kevin remains anchored to the existing window. A compact interior shadow grounds his torso.
   ctx.fillStyle = colors.shadow;
@@ -467,9 +469,9 @@ export function drawKevinCharacter(ctx, npc) {
 
   drawArm(ctx, a.shoulderBack, a.elbowBack, a.wristBack, false, visual.pose, visual.expression);
   drawTorso(ctx, a.torso, visual.expression, peeking);
-  drawHead(ctx, a.head, visual.expression, a.facing);
+  drawHead(ctx, a.head, visual.expression, a);
   drawArm(ctx, a.shoulderFront, a.elbowFront, a.wristFront, true, visual.pose, visual.expression);
-  if (repairing) drawRepairCloth(ctx, a.wristFront);
+  if (repairing) drawRepairCloth(ctx, a.wristFront, a.repairClothAngle);
   if (dizzy) drawDizzyStars(ctx, npc);
   ctx.restore();
 

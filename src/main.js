@@ -16,7 +16,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // and only on the local Playwright host. It uses the production model draw entry points.
   if (import.meta.env.MODE === 'e2e' && window.location.hostname === '127.0.0.1') {
     const showcase = new URLSearchParams(window.location.search).get('character-showcase');
-    if (showcase === 'player' || showcase === 'kevin') {
+    if (['player', 'kevin', 'player-kick-sequence', 'kevin-throw-sequence'].includes(showcase)) {
       document.getElementById('title-screen')?.classList.add('hidden');
       document.body.classList.add('character-showcase-test-mode');
       document.body.dataset.characterShowcase = showcase;
