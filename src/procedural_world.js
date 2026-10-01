@@ -5,6 +5,7 @@
 
 import Matter from 'matter-js';
 import { COLLISION_CATEGORIES } from './destructibles.js';
+import { getMaterialProfile } from './destruction_materials.js';
 
 const { Bodies, Composite } = Matter;
 
@@ -15,6 +16,8 @@ export class ProceduralWorld {
     this.world = world;
     this.chunkSize = chunkSize;
     this.activeChunks = new Map();
+    this.destroyedPropKeys = new Set();
+    this.clearedChunkKeys = new Set();
     this.yardsClearedCount = 0;
     this.totalPropsSmashed = 0;
   }
@@ -49,13 +52,53 @@ export class ProceduralWorld {
     const originX = chunkIdx * this.chunkSize;
     const themeIdx = Math.abs(chunkIdx) % YARD_THEMES.length;
     const theme = YARD_THEMES[themeIdx];
+    const chunkKey = `${chunkIdx}:${theme}`;
     const props = [];
+    const eligiblePropKeys = [];
+    const residues = [];
+
+    const getPropKey = opts => {
+      const localKey = opts.key || String(opts.name || opts.label || 'prop')
+        .toLowerCase()
+        .replace(/\byard\s+[-\d]+\b/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      return `${chunkIdx}:${theme}:${localKey || 'prop'}`;
+    };
 
     const addDestructible = (opts) => {
+      const propKey = getPropKey(opts);
+      if (!opts.isNpc && !opts.material) {
+        throw new TypeError(`Destructible ${propKey} must declare a material`);
+      }
+      const profile = opts.isNpc ? null : getMaterialProfile(opts.material);
+      if (!opts.isNpc) eligiblePropKeys.push(propKey);
+      if (this.destroyedPropKeys.has(propKey)) {
+        if (profile) {
+          residues.push({
+            propKey,
+            chunkIndex: chunkIdx,
+            theme,
+            material: opts.material,
+            residueType: profile.residueType,
+            x: originX + opts.x,
+            y: opts.y,
+            width: opts.width,
+            height: opts.height,
+            color: opts.color || '#94a3b8'
+          });
+        }
+        return null;
+      }
+
       const body = Bodies.rectangle(originX + opts.x, opts.y, opts.width, opts.height, {
         isStatic: true,
         label: opts.label,
         isDestructible: true,
+        material: opts.material || null,
+        propKey,
+        theme,
+        chunkKey,
         isGlass: !!opts.isGlass,
         isGrill: !!opts.isGrill,
         isWood: !!opts.isWood,
@@ -79,10 +122,14 @@ export class ProceduralWorld {
     };
 
     const addSolid = (opts) => {
+      const propKey = getPropKey(opts);
       const body = Bodies.rectangle(originX + opts.x, opts.y, opts.width, opts.height, {
         isStatic: true,
         label: opts.label,
         isDestructible: false,
+        propKey,
+        theme,
+        chunkKey,
         isTrampoline: !!opts.isTrampoline,
         restitution: opts.restitution || 0.65,
         friction: opts.friction || 0.2,
@@ -120,17 +167,20 @@ export class ProceduralWorld {
     // =========================================================================
     if (theme === 'GREENHOUSE') {
       // Conservatory Roof Glass Panes
-      addDestructible({ x: 730, y: 105, width: 50, height: 34, label: 'destructible_greenhouse', name: 'Conservatory Roof Glass #1', points: 200, trauma: 0.35, isGlass: true, color: '#67e8f9' });
-      addDestructible({ x: 790, y: 80, width: 54, height: 34, label: 'destructible_greenhouse', name: 'Conservatory Peak Skylight', points: 250, trauma: 0.4, isGlass: true, color: '#38bdf8' });
-      addDestructible({ x: 850, y: 105, width: 50, height: 34, label: 'destructible_greenhouse', name: 'Conservatory Roof Glass #3', points: 200, trauma: 0.35, isGlass: true, color: '#67e8f9' });
+      addDestructible({ x: 730, y: 105, width: 50, height: 34, label: 'destructible_greenhouse', name: 'Conservatory Roof Glass #1', material: 'GLASS', points: 200, trauma: 0.35, isGlass: true, color: '#67e8f9' });
+      addDestructible({ x: 790, y: 80, width: 54, height: 34, label: 'destructible_greenhouse', name: 'Conservatory Peak Skylight', material: 'GLASS', points: 250, trauma: 0.4, isGlass: true, color: '#38bdf8' });
+      addDestructible({ x: 850, y: 105, width: 50, height: 34, label: 'destructible_greenhouse', name: 'Conservatory Roof Glass #3', material: 'GLASS', points: 200, trauma: 0.35, isGlass: true, color: '#67e8f9' });
 
       // Conservatory Upper Transom Panes
-      addDestructible({ x: 735, y: 160, width: 52, height: 30, label: 'destructible_greenhouse', name: 'Conservatory Upper Transom #1', points: 150, trauma: 0.3, isGlass: true, color: '#bae6fd' });
-      addDestructible({ x: 845, y: 160, width: 52, height: 30, label: 'destructible_greenhouse', name: 'Conservatory Upper Transom #2', points: 150, trauma: 0.3, isGlass: true, color: '#bae6fd' });
+      addDestructible({ x: 735, y: 160, width: 52, height: 30, label: 'destructible_greenhouse', name: 'Conservatory Upper Transom #1', material: 'GLASS', points: 150, trauma: 0.3, isGlass: true, color: '#bae6fd' });
+      addDestructible({ x: 845, y: 160, width: 52, height: 30, label: 'destructible_greenhouse', name: 'Conservatory Upper Transom #2', material: 'GLASS', points: 150, trauma: 0.3, isGlass: true, color: '#bae6fd' });
 
       // Ground Lawn Garden Props (Naturally Grounded at y = 485 - height/2)
-      addDestructible({ x: 480, y: 463, width: 32, height: 44, label: 'destructible_gnome', name: 'Garden Lawn Gnome', points: 250, trauma: 0.4, color: '#ef4444' });
-      addDestructible({ x: 620, y: 468, width: 56, height: 34, label: 'destructible_flowerpot', name: 'Hydrangea Ground Planter', points: 200, trauma: 0.35, color: '#ea580c' });
+      addDestructible({ x: 480, y: 463, width: 32, height: 44, label: 'destructible_gnome', name: 'Garden Lawn Gnome', material: 'CERAMIC', points: 250, trauma: 0.4, color: '#ef4444' });
+      addDestructible({ x: 620, y: 468, width: 56, height: 34, label: 'destructible_flowerpot', name: 'Hydrangea Ground Planter', material: 'CERAMIC', points: 200, trauma: 0.35, color: '#ea580c' });
+      addDestructible({ x: 300, y: 462, width: 52, height: 34, label: 'destructible_wood_crate', name: 'Timber Garden Crate', material: 'WOOD', points: 180, color: '#a16207' });
+      addDestructible({ x: 690, y: 462, width: 36, height: 38, label: 'destructible_watering_can', name: 'Green Plastic Watering Can', material: 'PLASTIC', points: 150, color: '#22c55e' });
+      addDestructible({ x: 745, y: 477, width: 54, height: 16, label: 'destructible_soil_patch', name: 'Loose Garden Soil', material: 'SOIL', points: 120, color: '#713f12' });
       addSolid({ x: 180, y: 457, width: 66, height: 56, label: 'solid_doghouse', name: "Buster's Doghouse", restitution: 0.75, color: '#b45309' });
     }
 
@@ -139,50 +189,62 @@ export class ProceduralWorld {
     // =========================================================================
     else if (theme === 'PATIO_BBQ') {
       // 2nd-Story Bedroom Window
-      addDestructible({ x: 860, y: 95, width: 70, height: 52, label: 'destructible_window', name: `2nd-Story Bedroom Window [Yard ${chunkIdx}]`, points: 500, trauma: 0.65, isGlass: true, color: '#38bdf8' });
+      addDestructible({ x: 860, y: 95, width: 70, height: 52, label: 'destructible_window', name: `2nd-Story Bedroom Window [Yard ${chunkIdx}]`, material: 'GLASS', points: 500, trauma: 0.65, isGlass: true, color: '#38bdf8' });
       // 1st-Story French Window
-      addDestructible({ x: 800, y: 220, width: 72, height: 52, label: 'destructible_window', name: `1st-Story Patio French Window [Yard ${chunkIdx}]`, points: 350, trauma: 0.5, isGlass: true, color: '#38bdf8' });
+      addDestructible({ x: 800, y: 220, width: 72, height: 52, label: 'destructible_window', name: `1st-Story Patio French Window [Yard ${chunkIdx}]`, material: 'GLASS', points: 350, trauma: 0.5, isGlass: true, color: '#38bdf8' });
 
       // Ground Patio & Deck Props
-      addDestructible({ x: 520, y: 456, width: 48, height: 58, label: 'destructible_grill', name: 'Patio Weber Charcoal BBQ', points: 750, trauma: 0.85, isGrill: true, color: '#0f172a' });
-      addDestructible({ x: 80, y: 459, width: 44, height: 52, label: 'destructible_trashcan', name: 'Metal Yard Trash Can', points: 220, trauma: 0.45, color: '#94a3b8' });
+      addDestructible({ x: 520, y: 456, width: 48, height: 58, label: 'destructible_grill', name: 'Patio Weber Charcoal BBQ', material: 'METAL', points: 750, trauma: 0.85, isGrill: true, color: '#0f172a' });
+      addDestructible({ x: 80, y: 459, width: 44, height: 52, label: 'destructible_trashcan', name: 'Metal Yard Trash Can', material: 'METAL', points: 220, trauma: 0.45, color: '#94a3b8' });
       addSolid({ x: 260, y: 466, width: 64, height: 38, label: 'solid_table', name: 'Patio Glass Table', restitution: 0.8, color: '#e2e8f0' });
-      addDestructible({ x: 380, y: 468, width: 56, height: 34, label: 'destructible_flowerpot', name: 'Patio Terracotta Flowerpot', points: 160, trauma: 0.35, color: '#c2410c' });
+      addDestructible({ x: 380, y: 468, width: 56, height: 34, label: 'destructible_flowerpot', name: 'Patio Terracotta Flowerpot', material: 'CERAMIC', points: 160, trauma: 0.35, color: '#c2410c' });
+      addDestructible({ x: 330, y: 449, width: 54, height: 24, label: 'destructible_fabric_cushion', name: 'Patio Fabric Cushion', material: 'FABRIC', points: 150, color: '#be123c' });
+      addDestructible({ x: 445, y: 457, width: 44, height: 34, label: 'destructible_cooler', name: 'Blue Plastic Cooler', material: 'PLASTIC', points: 180, color: '#2563eb' });
     }
 
     // =========================================================================
     // 3. THEME: TALL LOFTED BARN & TRAMPOLINE (Loft Gable Window & Trampoline)
     // =========================================================================
     else if (theme === 'SHED_TRAMPOLINE') {
-      addDestructible({ x: 860, y: 125, width: 60, height: 44, label: 'destructible_window', name: 'Loft Gable Window', points: 300, trauma: 0.5, isGlass: true, color: '#38bdf8' });
-      addDestructible({ x: 800, y: 230, width: 56, height: 48, label: 'destructible_window', name: 'Tack Room Window', points: 250, trauma: 0.45, isGlass: true, color: '#38bdf8' });
+      addDestructible({ x: 860, y: 125, width: 60, height: 44, label: 'destructible_window', name: 'Loft Gable Window', material: 'GLASS', points: 300, trauma: 0.5, isGlass: true, color: '#38bdf8' });
+      addDestructible({ x: 800, y: 230, width: 56, height: 48, label: 'destructible_window', name: 'Tack Room Window', material: 'GLASS', points: 250, trauma: 0.45, isGlass: true, color: '#38bdf8' });
 
       // Ground Trampoline for Mega-Launches
       addSolid({ x: 420, y: 470, width: 95, height: 30, label: 'solid_trampoline', name: 'Backyard Trampoline', isTrampoline: true, restitution: 1.25, color: '#3b82f6' });
 
       // Ground Lawn Cruiser Bike & Gnome
       addSolid({ x: 180, y: 461, width: 62, height: 48, label: 'solid_bicycle', name: 'Red Cruiser Bike', restitution: 0.7, color: '#dc2626' });
-      addDestructible({ x: 580, y: 463, width: 32, height: 44, label: 'destructible_gnome', name: 'Shed Gnome', points: 250, trauma: 0.4, color: '#ef4444' });
+      addDestructible({ x: 580, y: 463, width: 32, height: 44, label: 'destructible_gnome', name: 'Shed Gnome', material: 'CERAMIC', points: 250, trauma: 0.4, color: '#ef4444' });
+      addDestructible({ x: 660, y: 462, width: 48, height: 34, label: 'destructible_wood_crate', name: 'Shed Timber Crate', material: 'WOOD', points: 180, color: '#92400e' });
+      addDestructible({ x: 720, y: 468, width: 32, height: 30, label: 'destructible_bucket', name: 'Utility Plastic Bucket', material: 'PLASTIC', points: 130, color: '#f59e0b' });
+      addDestructible({ x: 760, y: 473, width: 42, height: 14, label: 'destructible_fabric_towel', name: 'Folded Work Towel', material: 'FABRIC', points: 120, color: '#0e7490' });
     }
 
     // =========================================================================
     // 4. THEME: TALL CRAFTSMAN HOME & DOG PARK (Living Room Windows & Birdbath)
     // =========================================================================
     else if (theme === 'DOG_PARK') {
-      addDestructible({ x: 860, y: 110, width: 78, height: 56, label: 'destructible_window', name: `Craftsman 2nd-Story Window [Yard ${chunkIdx}]`, points: 450, trauma: 0.6, isGlass: true, color: '#38bdf8' });
-      addDestructible({ x: 790, y: 225, width: 68, height: 50, label: 'destructible_window', name: `Craftsman 1st-Story Bay Window [Yard ${chunkIdx}]`, points: 350, trauma: 0.5, isGlass: true, color: '#38bdf8' });
+      addDestructible({ x: 860, y: 110, width: 78, height: 56, label: 'destructible_window', name: `Craftsman 2nd-Story Window [Yard ${chunkIdx}]`, material: 'GLASS', points: 450, trauma: 0.6, isGlass: true, color: '#38bdf8' });
+      addDestructible({ x: 790, y: 225, width: 68, height: 50, label: 'destructible_window', name: `Craftsman 1st-Story Bay Window [Yard ${chunkIdx}]`, material: 'GLASS', points: 350, trauma: 0.5, isGlass: true, color: '#38bdf8' });
 
       // Ground Birdbath Fountain & Kennels
-      addDestructible({ x: 480, y: 458, width: 54, height: 54, label: 'destructible_flowerpot', name: 'Ceramic Birdbath Fountain', points: 300, trauma: 0.45, color: '#38bdf8' });
-      addDestructible({ x: 340, y: 468, width: 54, height: 34, label: 'destructible_flowerpot', name: 'Lawn Flowerpot', points: 160, trauma: 0.35, color: '#c2410c' });
+      addDestructible({ x: 480, y: 458, width: 54, height: 54, label: 'destructible_flowerpot', name: 'Ceramic Birdbath Fountain', material: 'CERAMIC', points: 300, trauma: 0.45, color: '#38bdf8' });
+      addDestructible({ x: 340, y: 468, width: 54, height: 34, label: 'destructible_flowerpot', name: 'Lawn Flowerpot', material: 'CERAMIC', points: 160, trauma: 0.35, color: '#c2410c' });
+      addDestructible({ x: 560, y: 470, width: 26, height: 20, label: 'destructible_dog_toy', name: 'Plastic Dog Toy', material: 'PLASTIC', points: 100, color: '#f97316' });
+      addDestructible({ x: 620, y: 464, width: 52, height: 26, label: 'destructible_dog_cushion', name: 'Dog Park Fabric Cushion', material: 'FABRIC', points: 150, color: '#7c3aed' });
+      addDestructible({ x: 275, y: 473, width: 42, height: 12, label: 'destructible_wood_chew', name: 'Wooden Chew Stick', material: 'WOOD', points: 110, color: '#a16207' });
       addSolid({ x: 180, y: 457, width: 66, height: 56, label: 'solid_doghouse', name: "Spike's Kennel", restitution: 0.75, color: '#b45309' });
     }
 
+    const isCleared = this.clearedChunkKeys.has(chunkKey);
     this.activeChunks.set(chunkIdx, {
       theme,
       originX,
       props,
-      isCleared: false
+      residues,
+      chunkKey,
+      eligiblePropKeys,
+      isCleared
     });
   }
 
@@ -206,13 +268,36 @@ export class ProceduralWorld {
     return allProps;
   }
 
+  markPropDestroyed(propKey, residue = null) {
+    if (typeof propKey !== 'string' || propKey.length === 0 || this.destroyedPropKeys.has(propKey)) {
+      return false;
+    }
+    this.destroyedPropKeys.add(propKey);
+    if (residue) {
+      const chunk = this.activeChunks.get(residue.chunkIndex);
+      if (chunk && !chunk.residues.some(item => item.propKey === propKey)) {
+        chunk.residues.push({ ...residue, propKey });
+      }
+    }
+    return true;
+  }
+
+  getActiveResidues() {
+    const residues = [];
+    for (const chunk of this.activeChunks.values()) residues.push(...chunk.residues);
+    return residues;
+  }
+
   checkChunkClearStates() {
     for (const chunk of this.activeChunks.values()) {
       if (chunk.isCleared) continue;
-      const destructibles = chunk.props.filter(p => p.isDestructible && !p.isDestroyed && !p.isNpc);
-      if (destructibles.length === 0 && chunk.props.length > 0) {
+      if (chunk.eligiblePropKeys.length > 0
+        && chunk.eligiblePropKeys.every(propKey => this.destroyedPropKeys.has(propKey))) {
         chunk.isCleared = true;
-        this.yardsClearedCount++;
+        if (!this.clearedChunkKeys.has(chunk.chunkKey)) {
+          this.clearedChunkKeys.add(chunk.chunkKey);
+          this.yardsClearedCount++;
+        }
       }
     }
   }
@@ -222,6 +307,8 @@ export class ProceduralWorld {
       this.unloadChunk(chunkIdx);
     }
     this.activeChunks.clear();
+    this.destroyedPropKeys.clear();
+    this.clearedChunkKeys.clear();
     this.yardsClearedCount = 0;
     this.totalPropsSmashed = 0;
   }

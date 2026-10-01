@@ -317,10 +317,91 @@ export class MapRenderer {
       ctx.lineWidth = 2;
       ctx.strokeRect(originX, this.height - 18, this.chunkSize, 18);
       ctx.restore();
+      this.drawThemeGroundDetails(ctx, originX, theme);
     }
 
     // E. Draw Fence Cat
     this.drawCatOnFence(ctx);
+  }
+
+  drawThemeGroundDetails(ctx, originX, theme) {
+    ctx.save();
+    ctx.globalAlpha = 0.72;
+
+    if (theme === 'GREENHOUSE') {
+      ctx.strokeStyle = '#854d0e';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(originX + 635, 410);
+      ctx.lineTo(originX + 635, 350);
+      ctx.moveTo(originX + 695, 410);
+      ctx.lineTo(originX + 695, 350);
+      ctx.moveTo(originX + 755, 410);
+      ctx.lineTo(originX + 755, 350);
+      ctx.moveTo(originX + 635, 360);
+      ctx.lineTo(originX + 755, 360);
+      ctx.stroke();
+      ctx.fillStyle = '#16a34a';
+      for (const point of [[650, 382], [680, 370], [718, 390], [742, 375]]) {
+        ctx.beginPath();
+        ctx.ellipse(originX + point[0], point[1], 8, 4, -0.35, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (theme === 'PATIO_BBQ') {
+      ctx.fillStyle = 'rgba(154,52,18,0.36)';
+      ctx.fillRect(originX + 268, 355, 160, 36);
+      ctx.strokeStyle = 'rgba(124,45,18,0.55)';
+      ctx.lineWidth = 1.4;
+      for (let row = 0; row < 2; row++) {
+        const y = 367 + row * 16;
+        ctx.beginPath();
+        ctx.moveTo(originX + 270, y);
+        ctx.lineTo(originX + 426, y);
+        ctx.moveTo(originX + (row ? 300 : 340), y - 12);
+        ctx.lineTo(originX + (row ? 300 : 340), y);
+        ctx.moveTo(originX + (row ? 380 : 415), y);
+        ctx.lineTo(originX + (row ? 380 : 415), y + 12);
+        ctx.stroke();
+      }
+    } else if (theme === 'SHED_TRAMPOLINE') {
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(originX + 615, 350, 84, 54);
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.8;
+      ctx.strokeRect(originX + 615, 350, 84, 54);
+      ctx.strokeStyle = '#d6d3d1';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(originX + 635, 360);
+      ctx.lineTo(originX + 635, 395);
+      ctx.moveTo(originX + 661, 360);
+      ctx.lineTo(originX + 661, 395);
+      ctx.moveTo(originX + 686, 360);
+      ctx.lineTo(originX + 686, 395);
+      ctx.stroke();
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(originX + 625, 375);
+      ctx.lineTo(originX + 645, 359);
+      ctx.moveTo(originX + 674, 362);
+      ctx.lineTo(originX + 692, 380);
+      ctx.stroke();
+    } else if (theme === 'DOG_PARK') {
+      ctx.fillStyle = '#14532d';
+      ctx.beginPath();
+      ctx.ellipse(originX + 690, 434, 32, 17, 0, 0, Math.PI * 2);
+      ctx.ellipse(originX + 724, 439, 27, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.arc(originX + 680, 430, 7, 0, Math.PI * 2);
+      ctx.arc(originX + 700, 423, 8, 0, Math.PI * 2);
+      ctx.arc(originX + 720, 430, 7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
   }
 
   drawCatOnFence(ctx) {
@@ -743,7 +824,7 @@ export class MapRenderer {
   drawProps(ctx, props) {
     for (let i = 0; i < props.length; i++) {
       const body = props[i];
-      if (!body || body.isDestroyed || body.isShard) continue;
+      if (!body || body.isDestroyed || body.isShard || body.isNpc) continue;
 
       ctx.save();
       ctx.translate(body.position.x, body.position.y);
@@ -773,6 +854,194 @@ export class MapRenderer {
         this.drawPatioTable(ctx, w, h);
       } else if (body.label === 'solid_bicycle') {
         this.drawBicycle(ctx, w, h);
+      } else if (body.isDestructible) {
+        this.drawMaterialProp(ctx, w, h, body);
+      }
+
+      ctx.restore();
+    }
+  }
+
+  drawMaterialProp(ctx, w, h, body) {
+    const color = body.color || '#94a3b8';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#0f172a';
+
+    if (body.material === 'WOOD') {
+      ctx.fillStyle = color;
+      ctx.fillRect(-w / 2, -h / 2, w, h);
+      ctx.strokeRect(-w / 2, -h / 2, w, h);
+      ctx.strokeStyle = 'rgba(69, 26, 3, 0.8)';
+      ctx.beginPath();
+      ctx.moveTo(-w / 2 + 3, -h / 6);
+      ctx.lineTo(w / 2 - 3, -h / 6);
+      ctx.moveTo(-w / 2 + 3, h / 6);
+      ctx.lineTo(w / 2 - 3, h / 6);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 237, 213, 0.65)';
+      ctx.beginPath();
+      ctx.moveTo(-w / 2 + 5, -h / 2 + 3);
+      ctx.lineTo(-w / 2 + 5, h / 2 - 3);
+      ctx.moveTo(w / 2 - 5, -h / 2 + 3);
+      ctx.lineTo(w / 2 - 5, h / 2 - 3);
+      ctx.stroke();
+      return;
+    }
+
+    if (body.material === 'PLASTIC') {
+      ctx.fillStyle = color;
+      ctx.fillRect(-w / 2, -h / 2, w, h);
+      ctx.strokeRect(-w / 2, -h / 2, w, h);
+      ctx.fillStyle = 'rgba(255,255,255,0.78)';
+      ctx.fillRect(-w / 2 + 4, -h / 2 + 4, Math.max(2, w * 0.12), Math.max(2, h * 0.55));
+      ctx.strokeStyle = 'rgba(15,23,42,0.7)';
+      ctx.beginPath();
+      ctx.moveTo(-w / 3, -h / 2 - 2);
+      ctx.lineTo(w / 3, -h / 2 - 2);
+      ctx.stroke();
+      if (body.label === 'destructible_watering_can') {
+        ctx.beginPath();
+        ctx.moveTo(w / 2 - 2, -h / 5);
+        ctx.lineTo(w / 2 + 9, -h / 2 - 1);
+        ctx.lineTo(w / 2 + 13, -h / 2 + 2);
+        ctx.stroke();
+      } else if (body.label === 'destructible_dog_toy') {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, w * 0.3, h * 0.28, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      return;
+    }
+
+    if (body.material === 'FABRIC') {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(-w / 2, -h / 3);
+      ctx.quadraticCurveTo(-w / 3, -h / 2, -w / 5, -h / 3);
+      ctx.quadraticCurveTo(w / 4, -h / 2, w / 2, -h / 4);
+      ctx.lineTo(w / 2, h / 3);
+      ctx.quadraticCurveTo(0, h / 2, -w / 2, h / 3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.72)';
+      ctx.beginPath();
+      ctx.moveTo(-w / 3, -h / 5);
+      ctx.quadraticCurveTo(0, 0, w / 3, h / 5);
+      ctx.moveTo(-w / 3, h / 4);
+      ctx.lineTo(w / 3, h / 4);
+      ctx.stroke();
+      return;
+    }
+
+    if (body.material === 'SOIL') {
+      ctx.fillStyle = '#451a03';
+      ctx.beginPath();
+      ctx.ellipse(0, 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = color;
+      for (let i = 0; i < 5; i++) {
+        const x = -w * 0.38 + (i * w * 0.19);
+        const y = (i % 2) * -h * 0.24;
+        ctx.beginPath();
+        ctx.arc(x, y, Math.max(2, Math.min(5, h * 0.25)), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      return;
+    }
+
+    ctx.fillStyle = color;
+    ctx.fillRect(-w / 2, -h / 2, w, h);
+    ctx.strokeRect(-w / 2, -h / 2, w, h);
+  }
+
+  drawResidues(ctx, residues = []) {
+    for (const residue of residues) {
+      if (!residue || !Number.isFinite(residue.x) || !Number.isFinite(residue.y)) continue;
+      const width = Math.max(8, Math.min(90, residue.width || 24));
+      const height = Math.max(6, Math.min(60, residue.height || 18));
+      ctx.save();
+      ctx.translate(residue.x, residue.y);
+      ctx.globalAlpha = 0.82;
+      ctx.lineWidth = 1.6;
+
+      if (residue.residueType === 'glass-glints') {
+        ctx.strokeStyle = '#78350f';
+        ctx.strokeRect(-width / 2, -height / 2, width, height);
+        ctx.strokeStyle = 'rgba(186,230,253,0.9)';
+        ctx.beginPath();
+        ctx.moveTo(-width * 0.38, -height * 0.24);
+        ctx.lineTo(-width * 0.08, height * 0.1);
+        ctx.lineTo(width * 0.12, -height * 0.18);
+        ctx.moveTo(width * 0.08, height * 0.25);
+        ctx.lineTo(width * 0.35, -height * 0.08);
+        ctx.stroke();
+      } else if (residue.residueType === 'ceramic-chips') {
+        ctx.fillStyle = residue.color || '#c2410c';
+        for (let i = 0; i < 4; i++) {
+          const x = -width * 0.35 + i * width * 0.2;
+          const y = height * (i % 2 ? 0.18 : 0.32);
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + width * 0.12, y - height * 0.25);
+          ctx.lineTo(x + width * 0.22, y + height * 0.03);
+          ctx.closePath();
+          ctx.fill();
+        }
+      } else if (residue.residueType === 'wood-splinters') {
+        ctx.fillStyle = residue.color || '#92400e';
+        for (let i = 0; i < 4; i++) {
+          ctx.save();
+          ctx.rotate((i - 1.5) * 0.16);
+          ctx.fillRect(-width * 0.38 + i * width * 0.08, height * 0.2, width * 0.42, 3);
+          ctx.restore();
+        }
+      } else if (residue.residueType === 'metal-scrap') {
+        ctx.fillStyle = 'rgba(15,23,42,0.68)';
+        ctx.beginPath();
+        ctx.ellipse(0, height * 0.27, width * 0.4, height * 0.15, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.beginPath();
+        ctx.moveTo(-width * 0.28, height * 0.18);
+        ctx.lineTo(-width * 0.1, height * 0.02);
+        ctx.lineTo(width * 0.22, height * 0.2);
+        ctx.stroke();
+      } else if (residue.residueType === 'plastic-scraps') {
+        ctx.fillStyle = residue.color || '#2563eb';
+        ctx.fillRect(-width * 0.38, height * 0.15, width * 0.3, height * 0.14);
+        ctx.fillRect(width * 0.08, height * 0.25, width * 0.24, height * 0.12);
+        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+        ctx.beginPath();
+        ctx.moveTo(-width * 0.33, height * 0.17);
+        ctx.lineTo(-width * 0.12, height * 0.17);
+        ctx.stroke();
+      } else if (residue.residueType === 'collapsed-fabric') {
+        ctx.fillStyle = residue.color || '#7c3aed';
+        ctx.beginPath();
+        ctx.moveTo(-width * 0.42, height * 0.28);
+        ctx.quadraticCurveTo(-width * 0.1, height * 0.02, width * 0.02, height * 0.28);
+        ctx.quadraticCurveTo(width * 0.25, height * 0.08, width * 0.42, height * 0.28);
+        ctx.lineTo(width * 0.36, height * 0.38);
+        ctx.lineTo(-width * 0.3, height * 0.38);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+        ctx.beginPath();
+        ctx.moveTo(-width * 0.24, height * 0.24);
+        ctx.lineTo(width * 0.24, height * 0.24);
+        ctx.stroke();
+      } else if (residue.residueType === 'disturbed-soil') {
+        ctx.fillStyle = '#451a03';
+        ctx.beginPath();
+        ctx.ellipse(0, height * 0.25, width * 0.42, height * 0.22, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = residue.color || '#713f12';
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.arc(-width * 0.28 + i * width * 0.18, height * (0.06 + (i % 2) * 0.08), Math.max(2, height * 0.1), 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
       ctx.restore();
