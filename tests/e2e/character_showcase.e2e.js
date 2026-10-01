@@ -31,7 +31,35 @@ for (const character of ['player', 'kevin']) {
       return matches;
     }, character === 'player' ? '#E85F5C' : '#55465F');
     expect(palettePixels, `${character} artwork should be visible in its sheet`).toBeGreaterThan(100);
-    await testInfo.attach(`phase-3-${character}-character-sheet.png`, {
+    await testInfo.attach(`phase-4-${character}-animation-pose-sheet.png`, {
+      body: await canvas.screenshot(),
+      contentType: 'image/png',
+    });
+  });
+}
+
+for (const sequence of ['player-kick-sequence', 'kevin-throw-sequence']) {
+  test(`${sequence} production pose calculations form a deterministic sequence strip`, async ({ page }, testInfo) => {
+    await page.goto(`/?character-showcase=${sequence}`);
+    await expect(page.locator('body')).toHaveAttribute('data-character-showcase', sequence);
+    const canvas = page.locator('#game-canvas');
+    await expect(canvas).toBeVisible();
+    await expect(canvas).toHaveJSProperty('width', 960);
+    await expect(canvas).toHaveJSProperty('height', 540);
+    if (sequence === 'kevin-throw-sequence') {
+      await expect(canvas).toHaveAttribute(
+        'data-sequence-phases',
+        'WINDUP|RELEASE|FOLLOW-THROUGH|RECOVERY|RETURN',
+      );
+      await expect(canvas).toHaveAttribute(
+        'data-sequence-states',
+        'LEANING_OUT_RAGE|THROWING_PROJECTILE|THROWING_PROJECTILE|THROWING_PROJECTILE|THROWING_PROJECTILE',
+      );
+      const windupProgress = Number(await canvas.getAttribute('data-sequence-windup-progress'));
+      expect(windupProgress).toBeGreaterThanOrEqual(0.4);
+      expect(windupProgress).toBeLessThanOrEqual(0.6);
+    }
+    await testInfo.attach(`phase-4-${sequence}.png`, {
       body: await canvas.screenshot(),
       contentType: 'image/png',
     });
@@ -42,7 +70,9 @@ test('normal gameplay has readable characters and preserves a baseline compariso
   await page.goto('/');
   await page.locator('#btn-start-game').click();
   await page.keyboard.press('Space');
-  await expect(page.locator('#title-screen')).toHaveClass(/\bhidden\b/);
+  const titleScreen = page.locator('#title-screen');
+  await expect(titleScreen).toHaveClass(/\bhidden\b/);
+  await expect(titleScreen).toHaveCSS('opacity', '0');
   await page.waitForTimeout(250);
   const canvas = page.locator('#game-canvas');
   await expect(canvas).toBeVisible();
@@ -51,7 +81,7 @@ test('normal gameplay has readable characters and preserves a baseline compariso
     body: await readFile(baselineGameplayPath),
     contentType: 'image/png',
   });
-  await testInfo.attach('phase-3-live-gameplay.png', {
+  await testInfo.attach('phase-4-live-gameplay.png', {
     body: await page.screenshot(),
     contentType: 'image/png',
   });

@@ -7,6 +7,7 @@
 import { GAMEPLAY_TUNING, getContactPhase } from './gameplay_rules.js';
 import { GAMEPLAY_FEEL_TUNING, moveToward } from './gameplay_feel.js';
 import { drawPlayerCharacter } from './player_renderer.js';
+import { PlayerAnimationController } from './player_animation.js';
 
 export class Player {
   constructor(x = 340, y = 485) {
@@ -45,9 +46,8 @@ export class Player {
     };
 
     this.targetX = null;
-    this.runCycle = 0;
     this.dustTimer = 0;
-    this.idleTime = 0;
+    this.animation = new PlayerAnimationController();
   }
 
   takeDamage(amount = 1) {
@@ -57,6 +57,7 @@ export class Player {
     this.invulnerabilityTimer = 1.2; // 1.2s invulnerability window
     this.hurtTimer = 0.35;
     this.state = 'HURT';
+    this.animation.triggerHurt();
     return true;
   }
 
@@ -126,14 +127,11 @@ export class Player {
     this.keys.sprint = false;
     this.keys.charge = false;
     this.targetX = null;
-    this.runCycle = 0;
     this.dustTimer = 0;
-    this.idleTime = 0;
+    this.animation.reset();
   }
 
   update(dt, boundsWidth = 960, particles = null, combo = 1) {
-    this.idleTime += dt;
-
     // Squash decay
     if (this.squashTimer > 0) {
       this.squashTimer -= dt;
@@ -180,7 +178,6 @@ export class Player {
     if (this.state !== 'KICKING' && this.state !== 'HEADING' && this.state !== 'HURT') {
       if (Math.abs(this.vx) > 1) {
         this.state = 'RUNNING';
-        this.runCycle += dt * (this.keys.sprint ? 24 : 16);
         if (moveDir !== 0) {
           this.dustTimer += dt;
           if (this.dustTimer > (this.keys.sprint ? 0.05 : 0.09) && particles) {
@@ -191,7 +188,6 @@ export class Player {
         }
       } else {
         this.state = 'IDLE';
-        this.runCycle = 0;
       }
     }
 
@@ -204,6 +200,8 @@ export class Player {
         this.kickProgress = 0;
       }
     }
+
+    this.animation.update(dt, this);
   }
 
   getKickPosition() {

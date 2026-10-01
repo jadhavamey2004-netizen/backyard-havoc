@@ -1,5 +1,7 @@
 # Backyard Havoc Character Art Direction — Phase 3
 
+> **Phase 4 compatibility note:** Phase 3's approved character appearance, palette, proportions, and silhouette remain authoritative. Motion descriptions and implementation notes below record the Phase 3-era design/audit state; current movement is defined by [`.ai/CHARACTER_ANIMATION.md`](./CHARACTER_ANIMATION.md).
+
 **Status:** `IMPLEMENTED` for the Canvas character redesign and its automated structural checks. **HUMAN ART REVIEW REQUIRED** for aesthetic approval.
 **Baseline:** `b196fb485f6268e6423280428f7cc7643cd6f66d`
 **Scope:** Player and Kevin character presentation only. Runtime/gameplay truth remains in the existing model classes.
@@ -146,9 +148,9 @@ Renderer entry points map every production state explicitly. Drawing consumes mo
 
 **`ART DIRECTION — HUMAN REVIEW REQUIRED`:** Automated tests establish deterministic structure and runtime safety; they do not judge whether the characters look good, memorable, original enough, or appropriately balanced in the scene.
 
-## Known visual limitations
+## Phase 3-era visual limitations
 
-This is a Canvas-vector design and remains procedural. Phase 3 does not add authored frames, interpolation, skeletal animation, IK, sprite sheets, motion curves, or an animation event system. Existing run/kick/head motions are retained as compact visual pose offsets and still need a dedicated Phase 4 animation pass. Kevin remains positioned in a window; this design does not add lower-body staging. Human review must judge the art at actual gameplay scale and against a range of real backgrounds/effects.
+At Phase 3 completion this was a Canvas-vector design with compact procedural pose offsets; authored motion was deferred to Phase 4. Phase 4 now adds the focused simulation-time pose controllers documented in `.ai/CHARACTER_ANIMATION.md`, while retaining the same Canvas character construction. Kevin remains positioned in a window; this design does not add lower-body staging. Human review must judge the art at actual gameplay scale and against a range of real backgrounds/effects.
 
 ## HUMAN CHARACTER REVIEW CHECKLIST — REQUIRES HUMAN REVIEW
 

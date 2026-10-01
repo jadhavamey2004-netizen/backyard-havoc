@@ -1,12 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { Player } from '../src/player.js';
 import { NeighborKevinNPC } from '../src/npc.js';
 import {
   KEVIN_VISUAL_STYLE,
   PLAYER_VISUAL_STYLE,
-  getKevinPoseAnchors,
   getKevinVisualState,
-  getPlayerPoseAnchors,
   getPlayerVisualState,
 } from '../src/character_style.js';
 import { drawKevinCharacter } from '../src/kevin_renderer.js';
@@ -124,6 +122,8 @@ describe('character art tokens and visual state contracts', () => {
     expect(getKevinVisualState(kevin).expression).toBe('SURPRISED');
     kevin.dialogueEmotion = 'CRYING';
     expect(getKevinVisualState(kevin).expression).toBe('HURT');
+    kevin.dialogueEmotion = 'RAGE';
+    expect(getKevinVisualState(kevin).expression).toBe('SHOUTING');
     kevin.state = 'THROWING_PROJECTILE';
     expect(getKevinVisualState(kevin).expression).toBe('SHOUTING');
     kevin.state = 'DIZZY_BONK';
@@ -141,8 +141,8 @@ describe('character art tokens and visual state contracts', () => {
       player.state = state;
       for (const progress of [0, 0.3, 0.5, 0.7, 1]) {
         player.kickProgress = progress;
-        player.runCycle = Math.PI * 2;
-        expectFiniteNumbers(getPlayerPoseAnchors(player));
+        player.animation.runPhase = Math.PI * 2;
+        expectFiniteNumbers(player.animation.pose(player));
       }
     }
     expect(player.getKickPosition()).toEqual(kickContact);
@@ -151,10 +151,8 @@ describe('character art tokens and visual state contracts', () => {
     const kevin = new NeighborKevinNPC();
     for (const state of ['PEEKING_INSIDE', 'LEANING_OUT_RAGE', 'THROWING_PROJECTILE', 'DIZZY_BONK', 'REPAIRING']) {
       kevin.state = state;
-      kevin.fistShakeAngle = 0.45;
-      kevin.pitchArmAngle = 1.8;
       kevin.dizzyAngle = Math.PI;
-      expectFiniteNumbers(getKevinPoseAnchors(kevin));
+      expectFiniteNumbers(kevin.animation.pose(kevin));
     }
   });
 });
@@ -167,7 +165,7 @@ describe('character renderers', () => {
       player.state = state;
       player.invulnerabilityTimer = 0;
       player.powerCharging = state === 'IDLE';
-      player.runCycle = 0.9;
+      player.animation.runPhase = 0.9;
       player.kickProgress = 0.5;
       const before = snapshot(player);
       drawPlayerCharacter(context, player, 4);
@@ -212,21 +210,16 @@ describe('character renderers', () => {
     expect(getSaveDepth()).toBe(0);
   });
 
-  it('retains the existing timed invulnerability visibility blink', () => {
+  it('samples the invulnerability visibility blink from simulation time', () => {
     const player = new Player();
     player.invulnerabilityTimer = 1;
     const { context, calls } = makeCanvasContext();
-    const now = vi.spyOn(Date, 'now');
-    try {
-      now.mockReturnValue(0);
-      drawPlayerCharacter(context, player);
-      expect(calls).toEqual([]);
+    player.animation.elapsed = 0;
+    drawPlayerCharacter(context, player);
+    expect(calls).toEqual([]);
 
-      now.mockReturnValue(70);
-      drawPlayerCharacter(context, player);
-      expect(calls.length).toBeGreaterThan(0);
-    } finally {
-      vi.restoreAllMocks();
-    }
+    player.animation.elapsed = 0.07;
+    drawPlayerCharacter(context, player);
+    expect(calls.length).toBeGreaterThan(0);
   });
 });

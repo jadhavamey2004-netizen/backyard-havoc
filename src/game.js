@@ -658,6 +658,7 @@ export class GameEngine {
     if (!contactCandidate || (contactType && contactType !== contactCandidate)) return false;
     contactType = contactCandidate;
     if (!contactType || !this.player.consumeKickContact()) return false;
+    this.player.animation.triggerActionAccent('POWER_SHOT');
     charge = Number.isFinite(charge) ? Math.max(0, Math.min(1, charge)) : 0;
     this.player.powerCharging = false;
     this.player.powerCharge = 0;
@@ -742,6 +743,8 @@ export class GameEngine {
 
   startIntroCutscene() {
     this.resetTransientFeelState();
+    this.player.animation.reset();
+    this.npc.animation.reset();
     this.gameState = 'INTRO_CUTSCENE';
     this.cutsceneTimer = 3.6;
     this.cutsceneDuration = 3.6;
@@ -795,6 +798,7 @@ export class GameEngine {
     sounds.stopMusic();
     sounds.playDefeatHorn();
     this.player.state = 'HURT';
+    this.player.animation.triggerHurt();
     this.npc.state = 'LEANING_OUT_RAGE';
     this.npc.stateTimer = this.cutsceneDuration;
     this.npc.dialogue = "HA! That'll teach you! Now get off my lawn!";
@@ -904,6 +908,7 @@ export class GameEngine {
     const measuredFootDistance = Math.hypot(ballPos.x - foot.x, ballPos.y - foot.y);
     const isPerfect = contactType === 'KICK'
       && measuredFootDistance < GAMEPLAY_TUNING.PERFECT_STRIKE_RADIUS;
+    if (isPerfect) this.player.animation.triggerActionAccent('PERFECT_STRIKE');
     const response = computeBallContactResponse({
       contactType,
       aim: { x: aimDx, y: aimDy },
@@ -1014,6 +1019,8 @@ export class GameEngine {
         this.player.state = 'IDLE';
       }
 
+      this.player.animation.update(dt, this.player);
+
       this.mapRenderer.update(dt, this.survivalSeconds);
       this.npc.update(dt, this.player.x, this.particles, false);
       this.particles.update(dt);
@@ -1031,6 +1038,7 @@ export class GameEngine {
 
       this.camera.setTargetX(this.player.x - this.width * 0.5, dt, GAMEPLAY_FEEL_TUNING.CAMERA_TRACKING_RATE);
       this.player.state = 'HURT';
+      this.player.animation.update(dt, this.player);
 
       this.mapRenderer.update(dt, this.survivalSeconds);
       this.npc.update(dt, this.player.x, this.particles, false);

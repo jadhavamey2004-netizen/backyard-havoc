@@ -1,4 +1,4 @@
-import { getPlayerPoseAnchors, getPlayerVisualState, PLAYER_VISUAL_STYLE } from './character_style.js';
+import { getPlayerVisualState, PLAYER_VISUAL_STYLE } from './character_style.js';
 
 const { palette: colors, line, geometry: g } = PLAYER_VISUAL_STYLE;
 
@@ -87,16 +87,17 @@ function drawCleat(ctx, ankle, isFront) {
 }
 
 function drawLegs(ctx, a) {
+  const pelvis = a.pelvis;
   ctx.fillStyle = colors.outline;
   ctx.beginPath();
-  ctx.roundRect(-17, g.pelvisY - 1, 34, 17, 5);
+  ctx.roundRect(pelvis.x - 17, pelvis.y - 1, 34, 17, 5);
   ctx.fill();
   ctx.fillStyle = colors.shorts;
   ctx.beginPath();
-  ctx.roundRect(-15, g.pelvisY, 30, 13, 4);
+  ctx.roundRect(pelvis.x - 15, pelvis.y, 30, 13, 4);
   ctx.fill();
   ctx.fillStyle = colors.mint;
-  ctx.fillRect(-13, g.pelvisY + 9, 26, 2.4);
+  ctx.fillRect(pelvis.x - 13, pelvis.y + 9, 26, 2.4);
 
   drawSegment(ctx, a.hipBack, a.kneeBack, colors.skin, g.limbWidth - 1, line.structural);
   drawSegment(ctx, a.kneeBack, a.ankleBack, colors.skin, g.limbWidth - 1, line.structural);
@@ -117,10 +118,12 @@ function drawLegs(ctx, a) {
   drawCleat(ctx, a.ankleFront, true);
 }
 
-function drawTorso(ctx, anchor, pose, player, combo, torsoLean) {
+function drawTorso(ctx, anchor, visual, player, combo, torsoLean, animationPose) {
   ctx.save();
   ctx.translate(anchor.x, anchor.y);
-  ctx.rotate(pose.pose === 'HURT' ? -0.12 : torsoLean);
+  ctx.rotate(animationPose.torsoRotation || torsoLean);
+  const accentScale = 1 + (animationPose.strikeAccent || 0) * 0.025;
+  ctx.scale(accentScale, 1 / accentScale);
   if (combo >= 4) {
     ctx.shadowBlur = Math.min(18, combo * 2.7);
     ctx.shadowColor = combo >= 8 ? colors.comboGlowPeak : colors.comboGlow;
@@ -168,18 +171,18 @@ function drawTorso(ctx, anchor, pose, player, combo, torsoLean) {
   ctx.quadraticCurveTo(11, 0, 12, 9);
   ctx.stroke();
 
-  ctx.fillStyle = player.powerCharging ? colors.charge : colors.mint;
+  ctx.fillStyle = animationPose.charge > 0 ? colors.charge : colors.mint;
   ctx.beginPath();
-  ctx.arc(9, -4, 3.2 + (player.powerCharging ? player.powerCharge * 1.4 : 0), 0, Math.PI * 2);
+  ctx.arc(9, -4, 3.2 + animationPose.charge * 1.4, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
 
-function drawHead(ctx, anchor, expression, player, pose) {
+function drawHead(ctx, anchor, expression, player, pose, animationPose) {
   const radius = g.head.radius;
   ctx.save();
   ctx.translate(anchor.x, anchor.y);
-  ctx.rotate(expression === 'HURT' ? -0.25 : pose === 'HEADING' ? 0.22 : expression === 'EFFORT' ? 0.03 : 0);
+  ctx.rotate(animationPose.headRotation || (expression === 'HURT' ? -0.25 : pose === 'HEADING' ? 0.22 : expression === 'EFFORT' ? 0.03 : 0));
 
   // Neck and jaw sit over the jersey, under the swept hair.
   ctx.fillStyle = colors.outline;
@@ -237,7 +240,7 @@ function drawHead(ctx, anchor, expression, player, pose) {
   ctx.moveTo(-13, -8);
   ctx.quadraticCurveTo(-23, -7, -25, -1);
   ctx.lineTo(-21, 1);
-  ctx.quadraticCurveTo(-16, -3, -12, -3);
+  ctx.quadraticCurveTo(-16, -3 + animationPose.headbandSwing, -12, -3);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -246,19 +249,20 @@ function drawHead(ctx, anchor, expression, player, pose) {
   const effort = expression === 'EFFORT';
   const charging = expression === 'CHARGING';
   const eyeY = -1;
+  const eyeHeight = hurt ? 1.5 : Math.max(0.45, 3.2 * (1 - (animationPose.blink || 0)));
   ctx.fillStyle = colors.outline;
   for (const x of [-6, 6]) {
     ctx.beginPath();
-    ctx.ellipse(x, eyeY, hurt ? 3 : 3.8, hurt ? 1.5 : 3.2, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, eyeY, hurt ? 3 : 3.8, eyeHeight, 0, 0, Math.PI * 2);
     ctx.fill();
     if (!hurt) {
       ctx.fillStyle = colors.white;
       ctx.beginPath();
-      ctx.arc(x + 0.8, eyeY, 2.4, 0, Math.PI * 2);
+      ctx.arc(x + 0.8 + animationPose.gazeX, eyeY, 2.4, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = colors.outline;
       ctx.beginPath();
-      ctx.arc(x + 1.6, eyeY + 0.3, 1.45, 0, Math.PI * 2);
+      ctx.arc(x + 1.6 + animationPose.gazeX, eyeY + 0.3, 1.45, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -315,10 +319,11 @@ function drawHead(ctx, anchor, expression, player, pose) {
 }
 
 export function drawPlayerCharacter(ctx, player, combo = 1) {
-  if (player.invulnerabilityTimer > 0 && Math.floor(Date.now() / 70) % 2 === 0) return;
+  const animationPose = player.animation.pose(player);
+  if (player.invulnerabilityTimer > 0 && Math.floor(player.animation.elapsed / 0.07) % 2 === 0) return;
 
-  const pose = getPlayerVisualState(player);
-  const a = getPlayerPoseAnchors(player);
+  const visual = getPlayerVisualState(player);
+  const a = animationPose;
   const squash = Number.isFinite(player.squashY) ? player.squashY : 1;
 
   ctx.save();
@@ -335,8 +340,8 @@ export function drawPlayerCharacter(ctx, player, combo = 1) {
   // Rear arm, legs and footwear stay behind the jersey silhouette.
   drawArm(ctx, a.shoulderBack, a.elbowBack, a.wristBack, false, player);
   drawLegs(ctx, a);
-  drawTorso(ctx, a.torso, pose, player, combo, a.torsoLean);
-  drawHead(ctx, a.head, pose.expression, player, pose.pose);
+  drawTorso(ctx, a.torso, visual, player, combo, a.torsoLean, animationPose);
+  drawHead(ctx, a.head, visual.expression, player, visual.pose, animationPose);
   drawArm(ctx, a.shoulderFront, a.elbowFront, a.wristFront, true, player);
 
   ctx.restore();
