@@ -60,7 +60,7 @@ function prepareKevin(state, { throwElapsed = 0, throwTimer = 1.8, rage = 0, ela
     kevin.state = 'PEEKING_INSIDE';
   } else if (state === 'IRRITATED' || state === 'ANGRY' || state === 'WINDUP') {
     kevin.state = 'LEANING_OUT_RAGE';
-    if (state === 'WINDUP') kevin.throwTimer = Math.min(throwTimer, KEVIN_ANIMATION_TUNING.THROW_WINDUP_SECONDS * 0.4);
+    if (state === 'WINDUP') kevin.throwTimer = Math.min(throwTimer, KEVIN_ANIMATION_TUNING.THROW_WINDUP_SECONDS * 0.5);
   } else if (state === 'SHOUTING') {
     kevin.state = 'THROWING_PROJECTILE';
     kevin.rageMeter = Math.max(rage, 80);
@@ -174,25 +174,36 @@ function renderKickSequence(ctx) {
 
 function renderThrowSequence(ctx) {
   const frames = [
-    ['RELEASE', 0],
-    ['SETTLE', KEVIN_ANIMATION_TUNING.THROW_RELEASE_HOLD_SECONDS],
-    ['FOLLOW-THROUGH', 0.24],
-    ['RECOVERY', 0.42],
-    ['RETURN', 0.6],
+    ['WINDUP', 'WINDUP', 0],
+    ['RELEASE', 'SHOUTING', 0],
+    ['FOLLOW-THROUGH', 'SHOUTING', 0.24],
+    ['RECOVERY', 'SHOUTING', 0.42],
+    ['RETURN', 'SHOUTING', 0.6],
   ];
+  const sampledStates = [];
+  let windupProgress = 0;
   ctx.fillStyle = '#26344B';
   ctx.font = '800 18px Outfit, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('KEVIN THROW — RELEASE HAND MATCHES PROJECTILE SPAWN', WIDTH / 2, 28);
-  frames.forEach(([label, age], index) => {
+  frames.forEach(([label, state, age], index) => {
     const x = index * WIDTH / frames.length;
     drawCard(ctx, x, 48, label, index, WIDTH / frames.length, 470);
-    const kevin = prepareKevin('SHOUTING', { rage: 80, throwElapsed: age, elapsed: 0.7 });
+    const kevin = prepareKevin(state, { rage: 80, throwElapsed: age, elapsed: 0.7 });
+    sampledStates.push(kevin.state);
+    if (label === 'WINDUP') {
+      windupProgress = 1 - kevin.throwTimer / KEVIN_ANIMATION_TUNING.THROW_WINDUP_SECONDS;
+    }
     kevin.x = x + WIDTH / frames.length / 2;
     kevin.y = 360;
     drawKevinCharacter(ctx, kevin);
   });
+  return {
+    phases: frames.map(([label]) => label),
+    states: sampledStates,
+    windupProgress,
+  };
 }
 
 export function renderCharacterShowcase(canvas, subject) {
@@ -207,5 +218,10 @@ export function renderCharacterShowcase(canvas, subject) {
   if (subject === 'player') renderPlayerSheet(ctx);
   else if (subject === 'kevin') renderKevinSheet(ctx);
   else if (subject === 'player-kick-sequence') renderKickSequence(ctx);
-  else renderThrowSequence(ctx);
+  else {
+    const sequence = renderThrowSequence(ctx);
+    canvas.dataset.sequencePhases = sequence.phases.join('|');
+    canvas.dataset.sequenceStates = sequence.states.join('|');
+    canvas.dataset.sequenceWindupProgress = String(sequence.windupProgress);
+  }
 }

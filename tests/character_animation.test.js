@@ -294,6 +294,15 @@ describe('Kevin animation controller', () => {
 
   it('keeps throw windup/release/follow-through deterministic and aligns release hand to spawn', () => {
     const kevin = new NeighborKevinNPC(790, 110);
+    const windupKevin = new NeighborKevinNPC(790, 110);
+    windupKevin.state = 'LEANING_OUT_RAGE';
+    windupKevin.rageMeter = 80;
+    windupKevin.throwTimer = KEVIN_ANIMATION_TUNING.THROW_WINDUP_SECONDS * 0.5;
+    const windupPose = windupKevin.animation.pose(windupKevin);
+    expect(windupKevin.state).toBe('LEANING_OUT_RAGE');
+    expect(windupKevin.throwTimer).toBeGreaterThan(0);
+    expect(windupKevin.throwTimer).toBeLessThanOrEqual(KEVIN_ANIMATION_TUNING.THROW_WINDUP_SECONDS);
+
     kevin.state = 'THROWING_PROJECTILE';
     kevin.animation.beginThrow();
     const releasePose = kevin.animation.pose(kevin);
@@ -301,6 +310,7 @@ describe('Kevin animation controller', () => {
     const hand = getKevinProjectileHandWorldPosition(kevin, releasePose);
     expect(hand.x).toBeCloseTo(kevin.x + kevin.facing * 10, 6);
     expect(hand.y).toBeCloseTo(kevin.y + 12, 6);
+    expect(windupPose.wristFront).not.toEqual(releasePose.wristFront);
 
     kevin.animation.throwElapsed = KEVIN_ANIMATION_TUNING.THROW_DURATION * 0.45;
     const followThrough = kevin.animation.pose(kevin);

@@ -46,6 +46,19 @@ for (const sequence of ['player-kick-sequence', 'kevin-throw-sequence']) {
     await expect(canvas).toBeVisible();
     await expect(canvas).toHaveJSProperty('width', 960);
     await expect(canvas).toHaveJSProperty('height', 540);
+    if (sequence === 'kevin-throw-sequence') {
+      await expect(canvas).toHaveAttribute(
+        'data-sequence-phases',
+        'WINDUP|RELEASE|FOLLOW-THROUGH|RECOVERY|RETURN',
+      );
+      await expect(canvas).toHaveAttribute(
+        'data-sequence-states',
+        'LEANING_OUT_RAGE|THROWING_PROJECTILE|THROWING_PROJECTILE|THROWING_PROJECTILE|THROWING_PROJECTILE',
+      );
+      const windupProgress = Number(await canvas.getAttribute('data-sequence-windup-progress'));
+      expect(windupProgress).toBeGreaterThanOrEqual(0.4);
+      expect(windupProgress).toBeLessThanOrEqual(0.6);
+    }
     await testInfo.attach(`phase-4-${sequence}.png`, {
       body: await canvas.screenshot(),
       contentType: 'image/png',
