@@ -57,10 +57,22 @@ export class NeighborKevinNPC {
     this.onThrowCallback = callback;
   }
 
+  setRage(value) {
+    const next = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : this.rageMeter;
+    if (next > this.rageMeter) this.calmTimer = 0;
+    this.rageMeter = next;
+    return this.rageMeter;
+  }
+
+  addRage(amount) {
+    if (!Number.isFinite(amount) || amount <= 0) return this.rageMeter;
+    return this.setRage(this.rageMeter + amount);
+  }
+
   takeDirectHit(impactVel = { x: 0, y: 0 }) {
     this.state = 'DIZZY_BONK';
     this.stateTimer = 4.0;
-    this.rageMeter = 100;
+    this.setRage(100);
     this.calmTimer = 0;
     this.dizzyAngle = 0;
     this.animation.triggerBonk();
@@ -87,7 +99,7 @@ export class NeighborKevinNPC {
     sounds.playGnomeBonk();
   }
 
-  triggerRage(dialogueText = '', emotion = 'RAGE', priority = 2, category = 'DEFAULT') {
+  showDialogue(dialogueText = '', emotion = 'RAGE', priority = 2, category = 'DEFAULT') {
     if (this.state === 'DIZZY_BONK' && priority > 0) return;
 
     const now = Date.now();
@@ -98,19 +110,15 @@ export class NeighborKevinNPC {
     if (priority > 0 && (now - lastTime < cooldown)) return;
     this.lastDialogueTimestamps[category] = now;
 
-    this.rageMeter = Math.min(100, this.rageMeter + (priority <= 1 ? 55 : 35));
-    this.calmTimer = 0;
     this.dialogue = dialogueText || "HEY! Watch the windows, you delinquent!";
     this.dialogueEmotion = emotion;
     this.dialogueTimer = this.dialogueDuration;
     this.bubbleScale = 0;
-    this.state = 'LEANING_OUT_RAGE';
-    this.stateTimer = 4.0;
 
     sounds.speakKevinVoice(this.dialogue, emotion, priority);
   }
 
-  update(dt, playerX, particles, allowAttacks = true) {
+  update(dt, playerX, particles, allowAttacks = true, attackPolicy = null, advanceGameplay = true) {
     this.facing = playerX < this.x ? -1 : 1;
 
     // Smooth spring bounce-in for speech bubble
@@ -122,9 +130,9 @@ export class NeighborKevinNPC {
       this.dialogue = '';
     }
 
-    // Rage decay after calm period
-    this.calmTimer += dt;
-    if (this.calmTimer > 6.0 && this.rageMeter > 0 && this.state !== 'DIZZY_BONK') {
+    // Gameplay rage timing pauses during cutscenes; dialogue and animation remain presentation-only.
+    if (advanceGameplay) this.calmTimer += dt;
+    if (advanceGameplay && this.calmTimer > 6.0 && this.rageMeter > 0 && this.state !== 'DIZZY_BONK') {
       const oldRage = this.rageMeter;
       this.rageMeter = Math.max(0, this.rageMeter - dt * 3.5);
 
@@ -142,10 +150,19 @@ export class NeighborKevinNPC {
       }
     }
 
-    // Responsive projectile throwing when rage >= 35%
-    if (allowAttacks && this.rageMeter >= 35 && this.state !== 'DIZZY_BONK' && this.state !== 'REPAIRING') {
+    const currentAttackPolicy = typeof attackPolicy === 'function'
+      ? attackPolicy(this.rageMeter)
+      : attackPolicy;
+    const canAttack = currentAttackPolicy
+      ? currentAttackPolicy.canAttack === true
+      : this.rageMeter >= 35;
+
+    // The legacy rage band remains the default for isolated NPC callers; GameEngine supplies the director policy.
+    if (allowAttacks && canAttack && this.state !== 'DIZZY_BONK' && this.state !== 'REPAIRING') {
       this.throwTimer -= dt;
-      const currentInterval = this.rageMeter >= 75 ? 1.4 : (this.rageMeter >= 50 ? 2.1 : 2.8);
+      const currentInterval = Number.isFinite(currentAttackPolicy?.intervalSeconds)
+        ? currentAttackPolicy.intervalSeconds
+        : (this.rageMeter >= 75 ? 1.4 : (this.rageMeter >= 50 ? 2.1 : 2.8));
 
       if (this.throwTimer <= 0) {
         this.throwTimer = currentInterval;

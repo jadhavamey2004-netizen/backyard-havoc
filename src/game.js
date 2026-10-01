@@ -17,6 +17,8 @@ import { calculateSubStepDt } from './physics.js';
 import { clampBallVelocity, computeBallContactResponse, GAMEPLAY_FEEL_TUNING } from './gameplay_feel.js';
 import { sounds } from './audio.js';
 import { aiService } from './ai.js';
+import { KevinDirector } from './kevin_director.js';
+import { HavocSystem, computeHavocScoreBonus } from './havoc_system.js';
 import {
   GAMEPLAY_TUNING,
   classifyDefense,
@@ -48,6 +50,8 @@ export class GameEngine {
     this.mapRenderer = new MapRenderer(this.width, this.height, 960);
     this.player = new Player(340, this.height - 55);
     this.npc = new NeighborKevinNPC(790, 110);
+    this.kevinDirector = new KevinDirector();
+    this.havocSystem = new HavocSystem();
 
     // Thrown Projectiles Array & Physics Shards
     this.thrownProjectiles = [];
@@ -110,10 +114,10 @@ export class GameEngine {
     this.setupNpcDialogueRelay();
   }
 
-  // Wire AI dialogue responses to Kevin — handles priority-level routing
+  // Wire local dialogue responses to Kevin's presentation-only bubble and voice.
   setupNpcDialogueRelay() {
     aiService.onDialogue((text, emotion, priority) => {
-      this.npc.triggerRage(text, emotion, priority);
+      this.npc.showDialogue(text, emotion, priority);
     });
   }
 
@@ -126,7 +130,9 @@ export class GameEngine {
         { name: 'Heavy Boot', color: '#451a03', radius: 16, shape: 'boot' },
         { name: 'Steel Wrench', color: '#64748b', radius: 12, shape: 'wrench' }
       ];
-      const picked = types[Math.floor(Math.random() * types.length)];
+      const projectileName = this.kevinDirector.nextProjectileType();
+      const picked = types.find(type => type.name === projectileName);
+      if (!picked) return;
 
       const projectile = Bodies.circle(data.x, data.y, picked.radius, {
         density: 0.003,
@@ -405,11 +411,14 @@ export class GameEngine {
 
           const pts = (target.pointValue || 100) * this.combo;
           this.score += pts;
+          const distanceToKevin = Math.hypot(target.position.x - this.npc.x, target.position.y - this.npc.y);
           this.emitGameplayEvent('OBJECT_DESTROYED', {
             score: pts,
             combo: this.combo,
             targetId: target.id,
-            objectName: target.objectName || target.label
+            objectName: target.objectName || target.label,
+            distanceToKevin,
+            nearKevin: distanceToKevin < 280
           });
           this.particles.spawnPopText(target.position.x, target.position.y - 20, `${popText} +${pts}`, '#fbbf24', 22);
 
@@ -422,8 +431,7 @@ export class GameEngine {
           this.proceduralWorld.checkChunkClearStates();
 
           // Proximity-based NPC dialogue: only trigger Kevin when destruction is near him (within 280px)
-          const distToKevin = Math.hypot(target.position.x - this.npc.x, target.position.y - this.npc.y);
-          if (distToKevin < 280) {
+          if (distanceToKevin < 280) {
             aiService.dispatchTelemetry({
               npc_id: target.associatedNpcId || 'grumpy_neighbor_kevin',
               impact_object: target.objectName || 'Prop',
@@ -449,8 +457,43 @@ export class GameEngine {
   }
 
   emitGameplayEvent(type, payload = {}) {
+    const event = { ...payload, type };
+    const wasHavocActive = this.havocSystem.active;
+    const scoreBonus = computeHavocScoreBonus(event, wasHavocActive, this.combo);
+    const systemEvents = [];
+
+    if (scoreBonus) {
+      this.score += scoreBonus.bonus;
+      systemEvents.push(scoreBonus);
+    }
+
+    const escalation = this.kevinDirector.processEvent(event);
+    if (escalation.rage !== this.npc.rageMeter) this.npc.setRage(escalation.rage);
+    if (escalation.transition) {
+      systemEvents.push({ type: 'KEVIN_ESCALATION_CHANGED', ...escalation.transition });
+    }
+
+    const havoc = this.havocSystem.processEvent(event);
+    systemEvents.push(...havoc.events);
+    if (havoc.started) {
+      const reaction = this.kevinDirector.processEvent({ type: 'HAVOC_STARTED' });
+      this.npc.setRage(reaction.rage);
+      if (reaction.transition) {
+        systemEvents.push({ type: 'KEVIN_ESCALATION_CHANGED', ...reaction.transition });
+      }
+      this.camera.addTrauma(0.25);
+      this.particles.spawnShockwave(this.player.x, this.player.y - 40, 70, '#f97316', 4);
+      this.particles.spawnPopText(this.player.x, this.player.y - 90, '🔥 HAVOC MODE!', '#fb923c', 26);
+    }
+
+    this.publishGameplayEvent(event);
+    for (const systemEvent of systemEvents) this.publishGameplayEvent(systemEvent);
+    return event;
+  }
+
+  publishGameplayEvent(event) {
     if (typeof this.onGameplayEvent === 'function') {
-      this.onGameplayEvent({ ...payload, type });
+      this.onGameplayEvent(event);
     }
   }
 
@@ -642,12 +685,19 @@ export class GameEngine {
 
     // Check for Trick Chain Bonus (3+ events)
     if (this.trickChain.length >= 3) {
+      const completedEvents = [...this.trickChain];
       const bonusPts = 1000 * this.combo;
       this.score += bonusPts;
       this.particles.spawnImpactRings(this.player.x, this.player.y - 60, 4, '#a855f7');
       this.particles.spawnPopText(this.player.x, this.player.y - 80, `✨ TRICK CHAIN! +${bonusPts} BONUS!`, '#c084fc', 28);
       sounds.playComboMilestoneFanfare();
       this.trickChain = []; // Reset chain
+      this.emitGameplayEvent('TRICK_CHAIN_COMPLETED', {
+        completedEvents,
+        combo: this.combo,
+        score: bonusPts,
+        bonusScore: bonusPts
+      });
     }
   }
 
@@ -743,6 +793,9 @@ export class GameEngine {
 
   startIntroCutscene() {
     this.resetTransientFeelState();
+    this.kevinDirector.reset();
+    this.havocSystem.reset();
+    this.npc.resetRunState();
     this.player.animation.reset();
     this.npc.animation.reset();
     this.gameState = 'INTRO_CUTSCENE';
@@ -1022,7 +1075,7 @@ export class GameEngine {
       this.player.animation.update(dt, this.player);
 
       this.mapRenderer.update(dt, this.survivalSeconds);
-      this.npc.update(dt, this.player.x, this.particles, false);
+      this.npc.update(dt, this.player.x, this.particles, false, null, false);
       this.particles.update(dt);
 
       if (this.cutsceneTimer <= 0) {
@@ -1041,7 +1094,7 @@ export class GameEngine {
       this.player.animation.update(dt, this.player);
 
       this.mapRenderer.update(dt, this.survivalSeconds);
-      this.npc.update(dt, this.player.x, this.particles, false);
+      this.npc.update(dt, this.player.x, this.particles, false, null, false);
       this.particles.update(dt);
 
       if (this.cutsceneTimer <= 0) {
@@ -1055,6 +1108,10 @@ export class GameEngine {
       this.kickoffBannerTimer -= dt;
       this.letterboxProgress = Math.max(0.0, this.letterboxProgress - dt * 2.5);
     }
+
+    const havocEvents = this.havocSystem.update(dt);
+    this.kevinDirector.update(dt);
+    for (const event of havocEvents) this.publishGameplayEvent(event);
 
     this.survivalSeconds += dt;
     // Damped elastic spring recovery for ball squash & stretch with NaN protection
@@ -1100,7 +1157,13 @@ export class GameEngine {
     const playerChunk = this.proceduralWorld.getChunkIndexForX(this.player.x);
     this.npc.x = playerChunk * 960 + 790;
     this.npc.y = 110;
-    this.npc.update(dt, this.player.x, this.particles);
+    this.npc.update(dt, this.player.x, this.particles, true, rage => {
+      const transition = this.kevinDirector.syncRage(rage, 'RAGE_DECAY');
+      if (transition) {
+        this.publishGameplayEvent({ type: 'KEVIN_ESCALATION_CHANGED', ...transition });
+      }
+      return this.kevinDirector.getAttackProfile();
+    });
     aiService.setNpcRage(this.npc.rageMeter);
 
     if (this.kevinBonkTimer > 0) {
@@ -1342,6 +1405,8 @@ export class GameEngine {
     this.kevinBonkTimer = 0;
     this.trickChain = [];
     this.trickChainTimer = 0;
+    this.kevinDirector.reset();
+    this.havocSystem.reset();
     this.accumulator = 0;
     this.cutsceneTimer = 0;
     this.cutsceneDuration = 3.6;

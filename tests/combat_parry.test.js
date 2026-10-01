@@ -41,11 +41,27 @@ describe('Combat & Parry Mechanics', () => {
   });
 
   it('calculates throw trajectory safely without division by zero', () => {
+    game.npc.setRage(35);
+    game.kevinDirector.syncRage(35, 'TEST');
     game.npc.onThrowCallback({ x: 100, y: 100, targetX: 100 }); // targetX === x (dist === 0)
     expect(game.thrownProjectiles.length).toBe(1);
     const proj = game.thrownProjectiles[0];
     expect(Number.isFinite(proj.velocity.x)).toBe(true);
     expect(Number.isFinite(proj.velocity.y)).toBe(true);
+  });
+
+  it('selects FURIOUS projectile types in the deterministic escalation sequence', () => {
+    game.npc.setRage(50);
+    game.kevinDirector.syncRage(50, 'TEST');
+    for (let index = 0; index < 3; index++) {
+      game.npc.onThrowCallback({ x: 100, y: 100, targetX: 500 });
+    }
+
+    expect(game.thrownProjectiles.map(projectile => projectile.projectileName))
+      .toEqual(['Clay Pot', 'Steel Wrench', 'Heavy Boot']);
+    expect(game.thrownProjectiles.map(projectile => projectile.restitution)).toEqual([0.5, 0.5, 0.5]);
+    expect(game.thrownProjectiles.map(projectile => projectile.friction)).toEqual([0.3, 0.3, 0.3]);
+    expect(game.thrownProjectiles.map(projectile => projectile.density)).toEqual([0.003, 0.003, 0.003]);
   });
 
   it('parries projectile when player kicks near incoming projectile', () => {
@@ -271,5 +287,27 @@ describe('Combat & Parry Mechanics', () => {
     game.npc.takeDirectHit();
     expect(game.npc.state).toBe('DIZZY_BONK');
     expect(game.npc.stateTimer).toBeGreaterThan(0);
+  });
+
+  it('keeps the six-second rage grace and 3.5-per-second simulation decay', () => {
+    game.npc.setRage(50);
+    game.npc.calmTimer = 5.9;
+    game.npc.update(0.05, game.player.x, game.particles, false);
+    expect(game.npc.rageMeter).toBe(50);
+
+    game.npc.update(0.1, game.player.x, game.particles, false);
+    expect(game.npc.rageMeter).toBeCloseTo(49.65);
+
+    const rageDuringCutscene = game.npc.rageMeter;
+    game.npc.update(1, game.player.x, game.particles, false, null, false);
+    expect(game.npc.rageMeter).toBe(rageDuringCutscene);
+  });
+
+  it('guards rage changes against non-finite and negative input', () => {
+    game.npc.setRage(20);
+    expect(game.npc.addRage(Number.NaN)).toBe(20);
+    expect(game.npc.addRage(-5)).toBe(20);
+    expect(game.npc.addRage(200)).toBe(100);
+    expect(game.npc.setRage(Number.POSITIVE_INFINITY)).toBe(100);
   });
 });

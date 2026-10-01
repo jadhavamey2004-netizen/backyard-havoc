@@ -77,10 +77,11 @@ export async function attachBrowserHealth(testInfo, health) {
     console.info(`[browser-health-details] ${JSON.stringify(nonemptyDetails)}`);
   }
 
-  // Uncaught page errors, console errors, and same-origin request failures
-  // block the smoke suite. Warnings and external request failures stay as diagnostics.
+  // Phase 5 requires every recorded browser-health category to remain clean.
   expect(health.pageErrors, 'uncaught browser exceptions').toEqual([]);
   expect(health.consoleErrors, 'browser console errors').toEqual([]);
+  expect(health.consoleWarnings, 'browser console warnings').toEqual([]);
+  expect(health.failedRequests, 'failed browser requests').toEqual([]);
   expect(health.sameOriginFailures, 'same-origin request/HTTP failures').toEqual([]);
 }
 
