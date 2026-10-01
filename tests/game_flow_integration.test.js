@@ -760,6 +760,70 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(event).toEqual({ type: 'PERFECT_PARRY', score: 1000, combo: 4 });
   });
 
+  it('keeps a representative ball-contact result identical when audio is muted', () => {
+    const previousMuted = sounds.isMuted;
+    const runContact = muted => {
+      game.resetEnvironment();
+      game.gameState = 'PLAYING';
+      sounds.isMuted = muted;
+      game.player.triggerKick();
+      game.player.kickProgress = 0.5;
+      const foot = game.player.getKickPosition();
+      Matter.Body.setPosition(game.ball, { x: foot.x + 90, y: foot.y });
+      Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+
+      expect(game.executePlayerKick(game.player.x + 180, game.player.y - 80)).toBe(true);
+      return {
+        ballVelocity: { x: game.ball.velocity.x, y: game.ball.velocity.y },
+        score: game.score,
+        combo: game.combo,
+        health: game.player.health,
+        kevinRage: game.kevinDirector.rage,
+        kevinState: game.kevinDirector.state,
+        havoc: game.havocSystem.getSnapshot(),
+        destroyedProps: game.proceduralWorld.totalPropsSmashed
+      };
+    };
+
+    try {
+      expect(runContact(false)).toEqual(runContact(true));
+    } finally {
+      sounds.isMuted = previousMuted;
+      sounds.resetTransientAudio();
+    }
+  });
+
+  it('continues a successful gameplay contact when a registered audio recipe throws', () => {
+    const playKick = vi.spyOn(sounds, 'playKick').mockImplementation(() => {
+      throw new Error('simulated Web Audio failure');
+    });
+    try {
+      game.player.triggerKick();
+      game.player.kickProgress = 0.5;
+      const foot = game.player.getKickPosition();
+      Matter.Body.setPosition(game.ball, { x: foot.x + 90, y: foot.y });
+      Matter.Body.setVelocity(game.ball, { x: 0, y: 0 });
+
+      expect(() => game.executePlayerKick(game.player.x + 180, game.player.y - 80)).not.toThrow();
+      expect(game.score).toBeGreaterThan(0);
+      expect(game.audioDirector.getDiagnosticSnapshot().audioFailures).toBe(1);
+    } finally {
+      playKick.mockRestore();
+    }
+  });
+
+  it('plays the defeat horn once across the ending cutscene to game-over transition', () => {
+    const defeatHorn = vi.spyOn(sounds, 'playDefeatHorn');
+    try {
+      game.startEndingCutscene();
+      game.triggerGameOver();
+      expect(defeatHorn).toHaveBeenCalledTimes(1);
+    } finally {
+      defeatHorn.mockRestore();
+      sounds.resetTransientAudio();
+    }
+  });
+
   it('maps mouse aim through zoom without incorporating shake or changing world camera position', () => {
     game.camera.x = 420;
     const initial = game.getScreenAimWorldPoint(960, 540);

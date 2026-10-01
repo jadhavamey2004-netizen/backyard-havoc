@@ -2,7 +2,7 @@ export const VIDEOGEN_AFFILIATE = Object.freeze({
   id: 'videogen',
   provider: 'VideoGen',
   label: 'Create your own game clips',
-  url: 'https://app.videogen.io/affiliates?code=cfbff82e-d675-444b-9bbc-7e08c5847b2d',
+  url: 'https://videogen.io/ai-video-generator?fp_ref=amey-ff39df',
   affiliate: true,
   disclosure: 'Affiliate link — we may earn a commission at no extra cost to you.',
   enabled: true

@@ -32,7 +32,7 @@ describe('VideoGen affiliate placement', () => {
 
     const anchor = mountAffiliateLink(container);
     expect(VIDEOGEN_AFFILIATE.url)
-      .toBe('https://app.videogen.io/affiliates?code=cfbff82e-d675-444b-9bbc-7e08c5847b2d');
+      .toBe('https://videogen.io/ai-video-generator?fp_ref=amey-ff39df');
     expect(anchor).toMatchObject({
       tagName: 'a',
       href: VIDEOGEN_AFFILIATE.url,
