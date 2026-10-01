@@ -58,8 +58,12 @@ export class NeighborKevinNPC {
   }
 
   setRage(value) {
+    return this.applyGameplayRage(value);
+  }
+
+  applyGameplayRage(value, { provoked = false } = {}) {
     const next = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : this.rageMeter;
-    if (next > this.rageMeter) this.calmTimer = 0;
+    if (provoked || next > this.rageMeter) this.calmTimer = 0;
     this.rageMeter = next;
     return this.rageMeter;
   }

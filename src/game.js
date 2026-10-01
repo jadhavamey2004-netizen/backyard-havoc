@@ -468,7 +468,9 @@ export class GameEngine {
     }
 
     const escalation = this.kevinDirector.processEvent(event);
-    if (escalation.rage !== this.npc.rageMeter) this.npc.setRage(escalation.rage);
+    if (escalation.provoked || escalation.rage !== this.npc.rageMeter) {
+      this.npc.applyGameplayRage(escalation.rage, { provoked: escalation.provoked });
+    }
     if (escalation.transition) {
       systemEvents.push({ type: 'KEVIN_ESCALATION_CHANGED', ...escalation.transition });
     }
@@ -477,7 +479,9 @@ export class GameEngine {
     systemEvents.push(...havoc.events);
     if (havoc.started) {
       const reaction = this.kevinDirector.processEvent({ type: 'HAVOC_STARTED' });
-      this.npc.setRage(reaction.rage);
+      if (reaction.provoked || reaction.rage !== this.npc.rageMeter) {
+        this.npc.applyGameplayRage(reaction.rage, { provoked: reaction.provoked });
+      }
       if (reaction.transition) {
         systemEvents.push({ type: 'KEVIN_ESCALATION_CHANGED', ...reaction.transition });
       }

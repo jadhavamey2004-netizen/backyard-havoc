@@ -17,7 +17,7 @@
 
 ## Verification status
 
-- **Vitest:** `npm test` PASS — 24 files, 193 tests. Existing headless Web Audio `window is not defined` diagnostics remain in tests that intentionally initialize audio without a browser.
+- **Vitest:** `npm test` PASS — 24 files, 201 tests. Existing headless Web Audio `window is not defined` diagnostics remain in tests that intentionally initialize audio without a browser.
 - **Production build:** `npm run build` PASS — Vite 5.4.21, 30 modules transformed. The test bridge is E2E-build-only.
 - **Playwright:** `npm run test:e2e` PASS twice — 15 Chromium scenarios each at 1280×720. Every scenario reports zero page errors, console errors, console warnings, failed requests, and same-origin failures.
 - **Phase 5 evidence:** the Playwright report includes normal gameplay, Kevin escalation, RAMPAGE, near-full Havoc, active Havoc, and reset screenshots plus browser-health JSON. Traces/screenshots/videos remain configured for failures.

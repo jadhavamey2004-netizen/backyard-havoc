@@ -43,6 +43,12 @@ describe('Game Flow & Integration Lifecycle', () => {
     game.gameState = 'PLAYING';
   });
 
+  const primeKevinAtCap = (calmTimer = 5) => {
+    game.kevinDirector.syncRage(100, 'TEST');
+    game.npc.setRage(100);
+    game.npc.calmTimer = calmTimer;
+  };
+
   it('accumulates score and peak combo during player kicks', () => {
     expect(game.score).toBe(0);
     game.player.triggerKick();
@@ -837,13 +843,103 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(published[1]).toMatchObject({ previous: 'CALM', current: 'SUSPICIOUS', rage: 12, reason: 'OBJECT_DESTROYED' });
   });
 
+  it('refreshes capped rage grace after a new positive gameplay provocation', () => {
+    primeKevinAtCap(5.9);
+    const applyGameplayRage = vi.spyOn(game.npc, 'applyGameplayRage');
+
+    game.emitGameplayEvent('PERFECT_PARRY');
+
+    expect(game.kevinDirector.state).toBe('RAMPAGE');
+    expect(game.kevinDirector.rage).toBe(100);
+    expect(game.npc.rageMeter).toBe(100);
+    expect(game.npc.calmTimer).toBe(0);
+    expect(applyGameplayRage).toHaveBeenCalledOnce();
+    expect(applyGameplayRage).toHaveBeenCalledWith(100, { provoked: true });
+  });
+
+  it('preserves the full six-second grace after a capped provocation before normal decay', () => {
+    primeKevinAtCap(5.9);
+    game.emitGameplayEvent('PERFECT_PARRY');
+    const updateKevin = dt => game.npc.update(dt, game.player.x, game.particles, false, rage => {
+      game.kevinDirector.syncRage(rage, 'RAGE_DECAY');
+      return game.kevinDirector.getAttackProfile();
+    });
+
+    updateKevin(5.9);
+    expect(game.npc.calmTimer).toBeCloseTo(5.9);
+    expect(game.npc.rageMeter).toBe(100);
+
+    updateKevin(0.1);
+    expect(game.npc.calmTimer).toBeCloseTo(6);
+    expect(game.npc.rageMeter).toBe(100);
+
+    updateKevin(0.1);
+    expect(game.npc.calmTimer).toBeCloseTo(6.1);
+    expect(game.npc.rageMeter).toBeCloseTo(99.65);
+    expect(game.kevinDirector.rage).toBeCloseTo(99.65);
+  });
+
+  it('does not refresh capped rage grace for BLOCK', () => {
+    primeKevinAtCap(5);
+    game.emitGameplayEvent('BLOCK');
+    expect(game.npc.calmTimer).toBe(5);
+  });
+
+  it('does not refresh capped rage grace for ordinary ball contact', () => {
+    primeKevinAtCap(5);
+    game.emitGameplayEvent('BALL_CONTACT', { contactType: 'KICK', perfectStrike: false });
+    expect(game.npc.calmTimer).toBe(5);
+  });
+
+  it('ignores the Power Shot companion contact but refreshes once for canonical Power Shot', () => {
+    primeKevinAtCap(5);
+    const applyGameplayRage = vi.spyOn(game.npc, 'applyGameplayRage');
+
+    game.emitGameplayEvent('BALL_CONTACT', { contactType: 'POWER_SHOT', perfectStrike: true });
+    expect(game.npc.calmTimer).toBe(5);
+    expect(applyGameplayRage).not.toHaveBeenCalled();
+
+    game.emitGameplayEvent('POWER_SHOT');
+    expect(game.npc.calmTimer).toBe(0);
+    expect(applyGameplayRage).toHaveBeenCalledOnce();
+    expect(applyGameplayRage).toHaveBeenCalledWith(100, { provoked: true });
+  });
+
+  it('refreshes capped calm grace through production Havoc activation and reaction', () => {
+    primeKevinAtCap(5);
+    game.havocSystem.meter = 94;
+    const applyGameplayRage = vi.spyOn(game.npc, 'applyGameplayRage');
+
+    game.emitGameplayEvent('POWER_SHOT');
+
+    expect(game.havocSystem.active).toBe(true);
+    expect(game.kevinDirector.rage).toBe(100);
+    expect(game.kevinDirector.getRecentContext()).toMatchObject({
+      lastProvocationType: 'HAVOC_STARTED', recentEventCount: 2
+    });
+    expect(game.npc.calmTimer).toBe(0);
+    expect(applyGameplayRage).toHaveBeenCalledTimes(2);
+    expect(applyGameplayRage).toHaveBeenNthCalledWith(1, 100, { provoked: true });
+    expect(applyGameplayRage).toHaveBeenNthCalledWith(2, 100, { provoked: true });
+  });
+
+  it('refreshes capped calm grace when KEVIN_HIT is processed', () => {
+    primeKevinAtCap(5);
+    game.emitGameplayEvent('KEVIN_HIT');
+    expect(game.kevinDirector.state).toBe('RAMPAGE');
+    expect(game.npc.rageMeter).toBe(100);
+    expect(game.npc.calmTimer).toBe(0);
+  });
+
   it('keeps local delayed dialogue cosmetic and unable to alter rage, escalation, or attack timing', () => {
     const speak = vi.spyOn(sounds, 'speakKevinVoice').mockImplementation(() => {});
+    primeKevinAtCap(5);
     const initial = {
       rage: game.npc.rageMeter,
       state: game.kevinDirector.state,
       throwTimer: game.npc.throwTimer,
-      lowLevel: game.npc.state
+      lowLevel: game.npc.state,
+      calmTimer: game.npc.calmTimer
     };
 
     aiService.handleEdgeResponse({
@@ -863,6 +959,7 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.kevinDirector.state).toBe(initial.state);
     expect(game.npc.throwTimer).toBe(initial.throwTimer);
     expect(game.npc.state).toBe(initial.lowLevel);
+    expect(game.npc.calmTimer).toBe(initial.calmTimer);
     expect(speak).toHaveBeenCalled();
     speak.mockRestore();
   });

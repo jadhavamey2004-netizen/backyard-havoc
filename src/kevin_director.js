@@ -56,18 +56,21 @@ export class KevinDirector {
   processEvent(event = {}) {
     const currentRage = this.rage;
     const gain = getRageGain(event);
+    const provoked = isProvocation(event);
     const nextRage = event.type === 'KEVIN_HIT'
       ? 100
       : clampRage(currentRage + gain);
 
-    if (isProvocation(event)) this.recordProvocation(event.type);
+    if (provoked) this.recordProvocation(event.type);
     const reason = event.type === 'BALL_CONTACT' && event.perfectStrike === true
       ? 'PERFECT_STRIKE'
       : event.type || 'UNKNOWN';
     const transition = this.syncRage(nextRage, reason);
     return {
       rage: this.rage,
+      // This is the actual clamped numeric delta; provoked can stay true at the rage cap.
       gain: this.rage - currentRage,
+      provoked,
       transition,
       context: this.getRecentContext()
     };

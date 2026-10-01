@@ -53,7 +53,7 @@ Rage is clamped to 0–100. A changed state produces one informational `KEVIN_ES
 | `HAVOC_STARTED` | +10, clamped |
 | ordinary contact, Power Shot companion `BALL_CONTACT`, `BLOCK`, and unrelated events | 0 |
 
-NPC rage decays after the existing approximately 6-second calm grace at 3.5 rage per simulation second. Dialogue never resets this timer or adds rage. `Date.now()` dialogue cooldowns can remain because they are cosmetic after this separation.
+NPC rage decays after the existing approximately 6-second calm grace at 3.5 rage per simulation second. Every positive gameplay provocation refreshes the calm grace even when rage is capped and the numeric rage delta is zero. Events that are not gameplay provocations and cosmetic dialogue do not refresh this timer or add rage. `Date.now()` dialogue cooldowns can remain because they are cosmetic after this separation.
 
 ## Recent provocation context
 

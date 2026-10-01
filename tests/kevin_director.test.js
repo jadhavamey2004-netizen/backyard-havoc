@@ -73,6 +73,52 @@ describe('KevinDirector escalation and deterministic context', () => {
     expect(director.processEvent({ type: 'BLOCK' }).rage).toBe(51);
   });
 
+  it('reports positive gameplay provocations independently of clamped rage delta', () => {
+    const positiveEvents = [
+      { type: 'OBJECT_DESTROYED', nearKevin: true },
+      { type: 'OBJECT_DESTROYED', nearKevin: false },
+      { type: 'BALL_CONTACT', contactType: 'KICK', perfectStrike: true },
+      { type: 'POWER_SHOT' },
+      { type: 'PARRY' },
+      { type: 'PERFECT_PARRY' },
+      { type: 'TRICK_CHAIN_COMPLETED' },
+      { type: 'KEVIN_HIT' },
+      { type: 'HAVOC_STARTED' }
+    ];
+
+    for (const event of positiveEvents) {
+      const director = new KevinDirector();
+      director.syncRage(100, 'TEST');
+
+      expect(director.processEvent(event)).toMatchObject({
+        rage: 100,
+        gain: 0,
+        provoked: true,
+        transition: null
+      });
+    }
+
+    const zeroGainEvents = [
+      { type: 'BLOCK' },
+      { type: 'BALL_CONTACT', perfectStrike: false },
+      { type: 'BALL_CONTACT', contactType: 'POWER_SHOT', perfectStrike: true },
+      { type: 'COMBO_CHANGED' },
+      { type: 'PLAYER_DAMAGED' },
+      { type: 'HAVOC_CHANGED' },
+      { type: 'HAVOC_ENDED' },
+      { type: 'HAVOC_SCORE_BONUS' },
+      { type: 'KEVIN_ESCALATION_CHANGED' }
+    ];
+
+    for (const event of zeroGainEvents) {
+      const director = new KevinDirector();
+      director.syncRage(100, 'TEST');
+
+      expect(director.processEvent(event)).toMatchObject({ rage: 100, gain: 0, provoked: false });
+      expect(director.getRecentContext().recentEventCount).toBe(0);
+    }
+  });
+
   it('keeps at most eight recent provocations and ages them by simulation time', () => {
     const director = new KevinDirector();
     for (let i = 0; i < 10; i++) director.processEvent({ type: 'OBJECT_DESTROYED', nearKevin: true });
