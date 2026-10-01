@@ -4,7 +4,7 @@
 - **Official Phase 5 baseline SHA:** `732d853468cd5701f9e47edd699b82d1e2516485` (`main`, Phase 4 merged)
 - **Working branch:** `codex/phase-5-kevin-ai-havoc`
 - **Current phase:** Phase 5 — Kevin AI, Escalation & Havoc
-- **Phase 5 status:** local verification PASS; draft PR Quality Gate pending. External review follows green CI.
+- **Phase 5 status:** Phase 5 local verification + PR CI PASS; awaiting external review.
 
 ## Phase 5 implementation
 
@@ -21,7 +21,7 @@
 - **Production build:** `npm run build` PASS — Vite 5.4.21, 30 modules transformed. The test bridge is E2E-build-only.
 - **Playwright:** `npm run test:e2e` PASS twice — 15 Chromium scenarios each at 1280×720. Every scenario reports zero page errors, console errors, console warnings, failed requests, and same-origin failures.
 - **Phase 5 evidence:** the Playwright report includes normal gameplay, Kevin escalation, RAMPAGE, near-full Havoc, active Havoc, and reset screenshots plus browser-health JSON. Traces/screenshots/videos remain configured for failures.
-- **GitHub Actions:** see the draft PR's latest Quality Gate and Playwright evidence; the PR description carries the final run and artifact provenance.
+- **GitHub Actions:** see the draft PR's latest Quality Gate and Playwright evidence; the PR description records the current head, run, and artifact provenance.
 - **Human gameplay review:** required. Tests establish state, event, timing, score, lifecycle, determinism, and browser-health rules; they cannot approve balance or the feel of escalation/Havoc.
 
 ## Preserved rules and architecture

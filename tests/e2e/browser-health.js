@@ -1,4 +1,6 @@
 import { expect } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 
 export function monitorBrowserHealth(page) {
   const health = {
@@ -52,8 +54,12 @@ export function monitorBrowserHealth(page) {
 }
 
 export async function attachBrowserHealth(testInfo, health) {
+  const body = JSON.stringify(health, null, 2);
+  const evidencePath = testInfo.outputPath('browser-health.json');
+  await mkdir(dirname(evidencePath), { recursive: true });
+  await writeFile(evidencePath, `${body}\n`);
   await testInfo.attach('browser-health.json', {
-    body: Buffer.from(JSON.stringify(health, null, 2)),
+    body: Buffer.from(body),
     contentType: 'application/json',
   });
 
