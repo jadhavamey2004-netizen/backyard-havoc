@@ -4,7 +4,7 @@
 - **Merged baseline:** Phase 6 `main`, `581b64db4261221d13ed1f63763c032ee31b1927`
 - **Working branch:** `codex/phase-7-vfx-camera-polish`
 - **Current phase:** Phase 7 — VFX, Camera & Game-Feel Polish
-- **Phase 7 status:** Local verification PASS; Draft PR, final-head CI, and Preview verification pending.
+- **Phase 7 status:** Local verification + PR CI/Preview PASS; awaiting external review.
 
 ## Phase 7 implementation
 
@@ -24,7 +24,8 @@
 - **Playwright:** `npm run test:e2e` PASS — 20/20 Chromium scenarios, run twice locally.
 - **Browser health:** Both full E2E runs reported zero page errors, console errors, console warnings, failed requests, and same-origin failures in all 20 scenarios.
 - **Playwright evidence:** Phase 7 E2E attaches representative gameplay screenshots, including incoming/resolved Perfect Parry and its returned projectile trail, plus normal/reduced-motion comparison and cleared-state evidence. The Playwright report includes trace/video on test failure under the existing configuration.
-- **GitHub Actions / Vercel Preview:** Awaiting the final-head run after Draft PR creation.
+- **GitHub Actions:** PR #10's latest Quality Gate passed; the PR description records final-head and Playwright artifact provenance.
+- **Vercel Preview:** PR #10's current final-head Preview passed.
 - **Human visual review:** required; browser assertions and screenshots do not replace visual/gameplay approval.
 
 ## Phase 6 implementation
