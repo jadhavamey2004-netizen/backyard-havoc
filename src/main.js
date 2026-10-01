@@ -7,6 +7,7 @@
 import { GameEngine } from './game.js';
 import { aiService } from './ai.js';
 import { sounds } from './audio.js';
+import { mountAffiliateLink } from './affiliate_links.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
   const canvas = document.getElementById('game-canvas');
@@ -76,6 +77,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // 2. Hook Game Over Event
   engine.onGameOverCallback = (stats) => {
     if (gameOverModal) {
+      mountAffiliateLink(document.getElementById('affiliate-placement'));
       if (goScore) goScore.textContent = (stats.score || 0).toLocaleString();
       if (goHighScore) goHighScore.textContent = (stats.highScore || 0).toLocaleString();
       if (goTime) goTime.textContent = `${stats.survivalSeconds || 0}s`;

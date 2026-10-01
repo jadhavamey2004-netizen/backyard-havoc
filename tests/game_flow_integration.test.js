@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import Matter from 'matter-js';
 import { GameEngine } from '../src/game.js';
+import { COLLISION_CATEGORIES } from '../src/destructibles.js';
 import { sounds } from '../src/audio.js';
 import { aiService } from '../src/ai.js';
 import { GAMEPLAY_TUNING } from '../src/gameplay_rules.js';
@@ -1096,5 +1097,141 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.kevinDirector.getSnapshot()).toMatchObject({ state: 'CALM', rage: 0, recentContext: { recentEventCount: 0 } });
     expect(game.havocSystem.getSnapshot()).toMatchObject({ meter: 0, active: false, havocActivations: 0 });
     expect(game.npc.rageMeter).toBe(0);
+  });
+
+  it('emits one metadata-complete destruction event and preserves glass special behavior', () => {
+    const target = game.proceduralWorld.activeChunks.get(0).props.find(prop => prop.label === 'destructible_greenhouse');
+    const events = [];
+    game.combo = 3;
+    game.onGameplayEvent = event => events.push(event);
+    game.ball.velocity.x = 8;
+    game.ball.velocity.y = -2;
+
+    game.collisionHandler({ pairs: [{ bodyA: game.ball, bodyB: target }] });
+    game.collisionHandler({ pairs: [{ bodyA: game.ball, bodyB: target }] });
+
+    const destructionEvents = events.filter(event => event.type === 'OBJECT_DESTROYED');
+    expect(destructionEvents).toHaveLength(1);
+    expect(destructionEvents[0]).toMatchObject({
+      material: 'GLASS',
+      theme: 'GREENHOUSE',
+      propKey: target.propKey,
+      objectName: target.objectName,
+      score: target.pointValue * 3,
+      combo: 3,
+      nearKevin: true
+    });
+    expect(game.proceduralWorld.totalPropsSmashed).toBe(1);
+    expect(game.activeShards).toHaveLength(9);
+    expect(game.havocSystem.meter).toBe(8);
+    expect(game.kevinDirector.getSnapshot().rage).toBe(12);
+    expect(game.particles.hitStopRemainingSeconds).toBe(GAMEPLAY_FEEL_TUNING.HIT_STOP_WORLD_IMPACT_SECONDS);
+    expect(game.trickChain).toContain('GREENHOUSE_SHATTER');
+    expect(game.proceduralWorld.destroyedPropKeys.has(target.propKey)).toBe(true);
+    expect(game.proceduralWorld.getActiveResidues().some(residue => residue.propKey === target.propKey)).toBe(true);
+
+    const farTarget = Matter.Bodies.rectangle(1600, 300, 32, 32, {
+      label: 'destructible_wood_crate',
+      isDestructible: true,
+      material: 'WOOD',
+      propKey: '1:PATIO_BBQ:far-crate',
+      theme: 'PATIO_BBQ',
+      chunkIndex: 1,
+      pointValue: 180,
+      color: '#92400e'
+    });
+    game.collisionHandler({ pairs: [{ bodyA: game.ball, bodyB: farTarget }] });
+    game.collisionHandler({ pairs: [{ bodyA: game.ball, bodyB: farTarget }] });
+    expect(events.filter(event => event.type === 'OBJECT_DESTROYED')).toHaveLength(2);
+    expect(events.find(event => event.propKey === farTarget.propKey)).toMatchObject({
+      material: 'WOOD', theme: 'PATIO_BBQ', score: 180 * 3, combo: 3, nearKevin: false
+    });
+    expect(game.havocSystem.meter).toBe(16);
+    expect(game.kevinDirector.getSnapshot().rage).toBe(16);
+  });
+
+  it('preserves grill, gnome, window, greenhouse, and pot special trick paths exactly once', () => {
+    const cases = [
+      { label: 'destructible_grill', material: 'METAL', isGrill: true, trick: 'GRILL_BLAST' },
+      { label: 'destructible_gnome', material: 'CERAMIC', trick: 'GNOME_BONK' },
+      { label: 'destructible_window', material: 'GLASS', isGlass: true, trick: 'WINDOW_SHATTER' },
+      { label: 'destructible_greenhouse', material: 'GLASS', isGlass: true, trick: 'GREENHOUSE_SHATTER' },
+      { label: 'destructible_flowerpot', material: 'CERAMIC', trick: 'POT_SMASH' }
+    ];
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+    const explosion = vi.spyOn(sounds, 'playExplosion').mockImplementation(() => {});
+    const gnomeBonk = vi.spyOn(sounds, 'playGnomeBonk').mockImplementation(() => {});
+    const fire = vi.spyOn(game.particles, 'spawnFire').mockImplementation(() => {});
+    const trick = vi.spyOn(game, 'recordTrickEvent');
+
+    for (let index = 0; index < cases.length; index++) {
+      const spec = cases[index];
+      const target = Matter.Bodies.rectangle(500 + index * 70, 300, 32, 32, {
+        label: spec.label,
+        isDestructible: true,
+        material: spec.material,
+        isGlass: !!spec.isGlass,
+        isGrill: !!spec.isGrill,
+        propKey: `special:${index}`,
+        theme: 'PATIO_BBQ',
+        chunkIndex: 1,
+        pointValue: 120,
+        color: '#94a3b8'
+      });
+      game.collisionHandler({ pairs: [{ bodyA: game.ball, bodyB: target }] });
+      game.collisionHandler({ pairs: [{ bodyA: game.ball, bodyB: target }] });
+      expect(trick).toHaveBeenCalledWith(spec.trick);
+      expect(events.filter(event => event.type === 'OBJECT_DESTROYED' && event.propKey === target.propKey)).toHaveLength(1);
+    }
+
+    expect(explosion).toHaveBeenCalledOnce();
+    expect(gnomeBonk).toHaveBeenCalledOnce();
+    expect(fire).toHaveBeenCalledOnce();
+    expect(game.proceduralWorld.totalPropsSmashed).toBe(cases.length);
+  });
+
+  it('keeps material debris outside gameplay events and expires it only in simulation time', () => {
+    const target = game.proceduralWorld.activeChunks.get(0).props.find(prop => prop.label === 'destructible_wood_crate');
+    const secondTarget = game.proceduralWorld.activeChunks.get(0).props.find(prop => prop.label === 'destructible_gnome');
+    game.ball.velocity.x = 8;
+    game.ball.velocity.y = -2;
+    game.collisionHandler({ pairs: [{ bodyA: game.ball, bodyB: target }] });
+    game.collisionHandler({ pairs: [{ bodyA: game.ball, bodyB: secondTarget }] });
+    const fragment = game.activeShards[0];
+    const initialLifetime = fragment.lifeTime;
+    const scoreAfterDestruction = game.score;
+    const havocAfterDestruction = game.havocSystem.meter;
+    const rageAfterDestruction = game.npc.rageMeter;
+    const events = [];
+    game.onGameplayEvent = event => events.push(event);
+
+    game.collisionHandler({ pairs: [{ bodyA: game.ball, bodyB: fragment }] });
+    expect(game.score).toBe(scoreAfterDestruction);
+    expect(game.havocSystem.meter).toBe(havocAfterDestruction);
+    expect(game.npc.rageMeter).toBe(rageAfterDestruction);
+    expect(events).toEqual([]);
+    expect(fragment.collisionFilter.mask).toBe(COLLISION_CATEGORIES.STATIC);
+
+    game.update(0.05);
+    expect(fragment.lifeTime).toBeCloseTo(initialLifetime - 0.05, 5);
+    const visibleLifetime = fragment.lifeTime;
+
+    game.setPageVisibility(false);
+    game.update(0.5);
+    expect(fragment.lifeTime).toBe(visibleLifetime);
+    game.setPageVisibility(true);
+    game.particles.triggerHitStop(0.2);
+    game.update(0.05);
+    expect(fragment.lifeTime).toBe(visibleLifetime);
+
+    game.resetEnvironment();
+    expect(game.activeShards).toHaveLength(0);
+    expect(game.proceduralWorld.destroyedPropKeys.size).toBe(0);
+    expect(game.proceduralWorld.clearedChunkKeys.size).toBe(0);
+    expect(game.proceduralWorld.getActiveResidues()).toHaveLength(0);
+    expect(game.proceduralWorld.totalPropsSmashed).toBe(0);
+    expect(game.proceduralWorld.getAllActiveProps().some(prop => prop.propKey === target.propKey)).toBe(true);
+    expect(game.proceduralWorld.getAllActiveProps().some(prop => prop.propKey === secondTarget.propKey)).toBe(true);
   });
 });

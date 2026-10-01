@@ -12,7 +12,9 @@ import { MapRenderer } from './map_renderer.js';
 import { Player } from './player.js';
 import { NeighborKevinNPC } from './npc.js';
 import { ProceduralWorld } from './procedural_world.js';
-import { COLLISION_CATEGORIES, breakObjectIntoFragments } from './destructibles.js';
+import { COLLISION_CATEGORIES } from './destructibles.js';
+import { breakObjectIntoFragments, createResidueRecord } from './destruction_system.js';
+import { getMaterialProfile } from './destruction_materials.js';
 import { calculateSubStepDt } from './physics.js';
 import { clampBallVelocity, computeBallContactResponse, GAMEPLAY_FEEL_TUNING } from './gameplay_feel.js';
 import { sounds } from './audio.js';
@@ -364,12 +366,17 @@ export class GameEngine {
           const isGnome = target.label === 'destructible_gnome';
 
           const impactVel = { x: ball.velocity.x, y: ball.velocity.y };
+          const material = target.material || (isGlass ? 'GLASS' : (isGrill ? 'METAL' : (target.isWood ? 'WOOD' : 'CERAMIC')));
+          const profile = getMaterialProfile(material);
+          const propKey = target.propKey || `${target.chunkIndex ?? 0}:${target.theme || 'UNKNOWN'}:body-${target.id}`;
+          const theme = target.theme || this.proceduralWorld.activeChunks.get(target.chunkIndex)?.theme || 'UNKNOWN';
 
           this.proceduralWorld.totalPropsSmashed++;
-          const newShards = breakObjectIntoFragments(this.world, target, impactVel);
-          if (newShards && Array.isArray(newShards)) {
-            this.activeShards.push(...newShards);
-          }
+          this.proceduralWorld.markPropDestroyed(propKey, createResidueRecord(target, profile));
+          breakObjectIntoFragments(this.world, target, impactVel, {
+            activeFragments: this.activeShards,
+            propKey
+          });
 
           if (isGlass) {
             this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_WORLD_IMPACT_SECONDS);
@@ -394,7 +401,7 @@ export class GameEngine {
           }
 
           const shardColor = target.color || '#94a3b8';
-          this.particles.spawnDebris(target.position.x, target.position.y, isGlass ? 22 : 14, shardColor, 7, isGlass);
+          this.particles.spawnDebris(target.position.x, target.position.y, profile.particleCount, shardColor, 7, isGlass);
 
           let popText = 'SMASH!';
           if (isWindow) {
@@ -407,6 +414,18 @@ export class GameEngine {
             popText = 'BBQ EXPLODED!';
           } else if (isGnome) {
             popText = 'GNOME BONKED!';
+          } else if (material === 'WOOD') {
+            popText = 'WOOD SPLINTERED!';
+          } else if (material === 'CERAMIC') {
+            popText = 'CERAMIC CRACKED!';
+          } else if (material === 'METAL') {
+            popText = 'METAL BROKEN!';
+          } else if (material === 'PLASTIC') {
+            popText = 'PLASTIC SNAPPED!';
+          } else if (material === 'FABRIC') {
+            popText = 'FABRIC TORN!';
+          } else if (material === 'SOIL') {
+            popText = 'SOIL SCATTERED!';
           }
 
           const pts = (target.pointValue || 100) * this.combo;
@@ -416,6 +435,9 @@ export class GameEngine {
             score: pts,
             combo: this.combo,
             targetId: target.id,
+            material,
+            theme,
+            propKey,
             objectName: target.objectName || target.label,
             distanceToKevin,
             nearKevin: distanceToKevin < 280
@@ -1483,6 +1505,7 @@ export class GameEngine {
 
     const activeProps = this.proceduralWorld.getAllActiveProps();
     this.mapRenderer.drawProps(ctx, activeProps);
+    this.mapRenderer.drawResidues(ctx, this.proceduralWorld.getActiveResidues());
 
     // Draw Thrown Flying Projectiles
     this.drawThrownProjectiles(ctx);
@@ -1955,8 +1978,14 @@ export class GameEngine {
       ctx.rotate(body.angle);
 
       const bounds = body.bounds;
-      const w = bounds.max.x - bounds.min.x;
-      const h = bounds.max.y - bounds.min.y;
+      const fallbackWidth = bounds ? bounds.max.x - bounds.min.x : 2;
+      const fallbackHeight = bounds ? bounds.max.y - bounds.min.y : 2;
+      const w = Number.isFinite(body.fragmentRenderWidth) && body.fragmentRenderWidth > 0
+        ? body.fragmentRenderWidth
+        : (Number.isFinite(fallbackWidth) && fallbackWidth > 0 ? fallbackWidth : 2);
+      const h = Number.isFinite(body.fragmentRenderHeight) && body.fragmentRenderHeight > 0
+        ? body.fragmentRenderHeight
+        : (Number.isFinite(fallbackHeight) && fallbackHeight > 0 ? fallbackHeight : 2);
 
       const alpha = Math.min(1.0, (body.lifeTime || 2.0) / 1.0);
       ctx.globalAlpha = alpha;
@@ -1976,8 +2005,59 @@ export class GameEngine {
         ctx.fillStyle = body.color || '#94a3b8';
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 1.8;
-        ctx.fillRect(-w / 2, -h / 2, w, h);
-        ctx.strokeRect(-w / 2, -h / 2, w, h);
+        if (body.fragmentShape === 'chip') {
+          const sides = Number.isInteger(body.fragmentSides) && body.fragmentSides >= 3 && body.fragmentSides <= 5
+            ? body.fragmentSides
+            : 4;
+          const radius = Number.isFinite(body.fragmentRenderRadius) && body.fragmentRenderRadius > 0
+            ? body.fragmentRenderRadius
+            : Math.min(w, h) * 0.58;
+          ctx.beginPath();
+          for (let side = 0; side < sides; side++) {
+            const angle = -Math.PI / 2 + side * (Math.PI * 2 / sides);
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+            if (side === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else if (body.fragmentShape === 'clod') {
+          ctx.beginPath();
+          ctx.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        } else if (body.fragmentShape === 'splinter') {
+          ctx.fillRect(-w / 2, -h / 2, w, h);
+          ctx.strokeRect(-w / 2, -h / 2, w, h);
+          ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+          ctx.beginPath();
+          ctx.moveTo(-w / 3, 0);
+          ctx.lineTo(w / 3, 0);
+          ctx.stroke();
+        } else if (body.fragmentShape === 'fabric-strip') {
+          ctx.fillRect(-w / 2, -h / 2, w, h);
+          ctx.strokeRect(-w / 2, -h / 2, w, h);
+          ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+          ctx.beginPath();
+          ctx.moveTo(-w / 3, -h / 2);
+          ctx.lineTo(-w / 3, h / 2);
+          ctx.moveTo(w / 3, -h / 2);
+          ctx.lineTo(w / 3, h / 2);
+          ctx.stroke();
+        } else {
+          ctx.fillRect(-w / 2, -h / 2, w, h);
+          ctx.strokeRect(-w / 2, -h / 2, w, h);
+          if (body.material === 'METAL' || body.material === 'PLASTIC') {
+            ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-w / 3, -h / 4);
+            ctx.lineTo(w / 3, -h / 4);
+            ctx.stroke();
+          }
+        }
       }
 
       ctx.restore();
