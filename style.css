@@ -231,8 +231,11 @@ body {
   width: 100%;
   height: auto;
   display: block;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+}
+
+body.character-showcase-test-mode .floating-hud,
+body.character-showcase-test-mode .bottom-hud-bar {
+  display: none;
 }
 
 /* ==========================================================================

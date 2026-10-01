@@ -8,9 +8,23 @@ import { GameEngine } from './game.js';
 import { aiService } from './ai.js';
 import { sounds } from './audio.js';
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   const canvas = document.getElementById('game-canvas');
   if (!canvas) return;
+
+  // The deterministic character sheet exists only in the dedicated E2E build
+  // and only on the local Playwright host. It uses the production model draw entry points.
+  if (import.meta.env.MODE === 'e2e' && window.location.hostname === '127.0.0.1') {
+    const showcase = new URLSearchParams(window.location.search).get('character-showcase');
+    if (showcase === 'player' || showcase === 'kevin') {
+      document.getElementById('title-screen')?.classList.add('hidden');
+      document.body.classList.add('character-showcase-test-mode');
+      document.body.dataset.characterShowcase = showcase;
+      const { renderCharacterShowcase } = await import('./character_showcase.js');
+      renderCharacterShowcase(canvas, showcase);
+      return;
+    }
+  }
 
   const engine = new GameEngine(canvas);
 
