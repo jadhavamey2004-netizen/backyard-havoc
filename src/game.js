@@ -1978,8 +1978,14 @@ export class GameEngine {
       ctx.rotate(body.angle);
 
       const bounds = body.bounds;
-      const w = bounds.max.x - bounds.min.x;
-      const h = bounds.max.y - bounds.min.y;
+      const fallbackWidth = bounds ? bounds.max.x - bounds.min.x : 2;
+      const fallbackHeight = bounds ? bounds.max.y - bounds.min.y : 2;
+      const w = Number.isFinite(body.fragmentRenderWidth) && body.fragmentRenderWidth > 0
+        ? body.fragmentRenderWidth
+        : (Number.isFinite(fallbackWidth) && fallbackWidth > 0 ? fallbackWidth : 2);
+      const h = Number.isFinite(body.fragmentRenderHeight) && body.fragmentRenderHeight > 0
+        ? body.fragmentRenderHeight
+        : (Number.isFinite(fallbackHeight) && fallbackHeight > 0 ? fallbackHeight : 2);
 
       const alpha = Math.min(1.0, (body.lifeTime || 2.0) / 1.0);
       ctx.globalAlpha = alpha;
@@ -1999,7 +2005,25 @@ export class GameEngine {
         ctx.fillStyle = body.color || '#94a3b8';
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 1.8;
-        if (body.fragmentShape === 'clod') {
+        if (body.fragmentShape === 'chip') {
+          const sides = Number.isInteger(body.fragmentSides) && body.fragmentSides >= 3 && body.fragmentSides <= 5
+            ? body.fragmentSides
+            : 4;
+          const radius = Number.isFinite(body.fragmentRenderRadius) && body.fragmentRenderRadius > 0
+            ? body.fragmentRenderRadius
+            : Math.min(w, h) * 0.58;
+          ctx.beginPath();
+          for (let side = 0; side < sides; side++) {
+            const angle = -Math.PI / 2 + side * (Math.PI * 2 / sides);
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+            if (side === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else if (body.fragmentShape === 'clod') {
           ctx.beginPath();
           ctx.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2);
           ctx.fill();

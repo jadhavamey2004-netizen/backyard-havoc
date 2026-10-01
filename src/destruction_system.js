@@ -137,6 +137,13 @@ export function generateFragmentDescriptors({
         + (random() - 0.5) * scatter * 0.12,
       y: -Math.abs(safeImpact.y) * 0.08 - scatter * (0.12 + random() * 0.52)
     };
+    const fragmentWidth = clamp(dimensions.width, MIN_FRAGMENT_DIMENSION, MAX_FRAGMENT_DIMENSION);
+    const fragmentHeight = clamp(dimensions.height, MIN_FRAGMENT_DIMENSION, MAX_FRAGMENT_DIMENSION);
+    const radius = dimensions.radius ?? (
+      profile.shapeFamily === 'triangle' || profile.shapeFamily === 'chip'
+        ? clamp(Math.min(fragmentWidth, fragmentHeight) * 0.58, 1, 14)
+        : null
+    );
 
     return {
       material,
@@ -145,9 +152,9 @@ export function generateFragmentDescriptors({
       sides: profile.shapeFamily === 'triangle' ? 3 : (profile.shapeFamily === 'chip' ? 3 + Math.floor(random() * 3) : 0),
       x,
       y,
-      width: clamp(dimensions.width, MIN_FRAGMENT_DIMENSION, MAX_FRAGMENT_DIMENSION),
-      height: clamp(dimensions.height, MIN_FRAGMENT_DIMENSION, MAX_FRAGMENT_DIMENSION),
-      radius: dimensions.radius,
+      width: fragmentWidth,
+      height: fragmentHeight,
+      radius,
       velocity,
       angularVelocity: (random() * 2 - 1) * profile.spin,
       angle: (random() - 0.5) * Math.PI,
@@ -199,12 +206,18 @@ function createFragmentBody(descriptor, profile, sourceBody) {
   if (descriptor.shape === 'clod') {
     fragment = Bodies.circle(descriptor.x, descriptor.y, clamp(descriptor.radius || 2, 1, 12), options);
   } else if (descriptor.shape === 'triangle' || descriptor.shape === 'chip') {
-    const radius = clamp(Math.min(descriptor.width, descriptor.height) * 0.58, 1, 14);
+    const radius = clamp(descriptor.radius ?? Math.min(descriptor.width, descriptor.height) * 0.58, 1, 14);
     const sides = descriptor.shape === 'triangle' ? 3 : clamp(descriptor.sides || 4, 3, 5);
     fragment = Bodies.polygon(descriptor.x, descriptor.y, radius, sides, options);
   } else {
     fragment = Bodies.rectangle(descriptor.x, descriptor.y, descriptor.width, descriptor.height, options);
   }
+  fragment.fragmentRenderWidth = descriptor.width;
+  fragment.fragmentRenderHeight = descriptor.height;
+  fragment.fragmentRenderRadius = Number.isFinite(descriptor.radius) && descriptor.radius > 0
+    ? descriptor.radius
+    : null;
+  fragment.fragmentSides = Number.isInteger(descriptor.sides) ? descriptor.sides : 0;
   Body.setAngle(fragment, descriptor.angle);
   Body.setVelocity(fragment, descriptor.velocity);
   Body.setAngularVelocity(fragment, descriptor.angularVelocity);

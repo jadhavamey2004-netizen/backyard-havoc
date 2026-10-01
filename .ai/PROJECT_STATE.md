@@ -4,7 +4,7 @@
 - **Phase 5 merged baseline:** `cdf9db06e132faa4b446f8a3f7a47a75c7c409f1` (`main`)
 - **Working branch:** `codex/phase-6-destruction-environment`
 - **Current phase:** Phase 6 — Destruction & Environment Overhaul
-- **Phase 6 status:** Phase 6 local verification + PR CI PASS; awaiting external review.
+- **Phase 6 status:** Corrected source passes local verification; PR #9 is the source of record for final-head CI/Vercel status; external review pending.
 
 ## Phase 6 implementation
 
@@ -19,13 +19,13 @@
 
 ## Local verification
 
-- **Vitest:** `npm test` PASS — 27 files, 218 tests. Existing headless Web Audio `window is not defined` diagnostics remain in tests that intentionally initialize audio without a browser.
+- **Vitest:** `npm test` PASS — 27 files, 222 tests. Existing headless Web Audio `window is not defined` diagnostics remain in tests that intentionally initialize audio without a browser.
 - **Production build:** `npm run build` PASS — Vite 5.4.21, 33 modules transformed. No package manifests or lockfiles changed.
-- **Playwright:** `npm run test:e2e` PASS — 18 Chromium scenarios at 1280×720, completed twice locally.
-- **Browser health:** Phase 6 theme, debris/persistence, and affiliate scenarios each report zero page errors, console errors, console warnings, failed requests, and same-origin failures.
-- **Visual evidence:** Phase 6 E2E attaches screenshots for all four intact yard themes, night readability, live wood debris, reloaded residue, title placement, and the results affiliate disclosure. Existing smoke coverage supplies ordinary gameplay evidence.
+- **Playwright:** `npm run test:e2e` PASS — 19 Chromium scenarios at 1280×720, completed twice locally.
+- **Browser health:** All 19 Chromium scenarios report zero page errors, console errors, console warnings, failed requests, and same-origin failures.
+- **Visual evidence:** Phase 6 E2E attaches post-impact production screenshots for GLASS, CERAMIC, WOOD, METAL, PLASTIC, FABRIC, and SOIL; four intact yard themes; night readability; reloaded residue; title placement; and the results affiliate disclosure. Existing smoke coverage supplies ordinary gameplay evidence.
 - **GitHub Actions:** see the draft PR's latest Quality Gate and Playwright evidence; the PR description records final-head, run, and artifact provenance.
-- **Vercel:** Preview check PASS; dashboard verification remains `VERCEL DASHBOARD VERIFICATION REQUIRES EXTERNAL REVIEW`.
+- **Vercel:** Check final-head Preview status on PR #9; dashboard verification remains `VERCEL DASHBOARD VERIFICATION REQUIRES EXTERNAL REVIEW`.
 - **Human visual review:** required; browser assertions and screenshots do not replace visual/gameplay approval.
 
 ## Preserved rules and architecture

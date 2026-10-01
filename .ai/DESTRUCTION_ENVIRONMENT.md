@@ -16,7 +16,7 @@ Phase 6 adds material-specific destruction to the existing Matter.js world and C
 | FABRIC | 3 | thin strips, strong air resistance, low bounce | collapsed cloth |
 | SOIL | 6 | circular clods, high friction, very low bounce | disturbed dirt |
 
-`src/destruction_system.js` generates bounded Matter primitives and visual residue metadata. Fracture uses a seeded PRNG derived from stable prop identity, material, position, source dimensions, impact velocity, and occurrence. It does not use wall-clock time, network data, or global random state. Fragment dimensions are finite and clamped from source dimensions and profile.
+`src/destruction_system.js` generates bounded Matter primitives and visual residue metadata. Fracture uses a seeded PRNG derived from stable prop identity, material, position, source dimensions, impact velocity, and occurrence. It does not use wall-clock time, network data, or global random state. Fragment dimensions are finite and clamped from source dimensions and profile. Each physical body stores descriptor-local render width, height, radius, and polygon sides. Canvas fragment rendering uses that stable metadata while bodies rotate; world-space bounds are only a defensive fallback for legacy or malformed bodies. Ceramic chips render as polygons using their stored three-to-five sides.
 
 ## Identity, persistence, and debris
 

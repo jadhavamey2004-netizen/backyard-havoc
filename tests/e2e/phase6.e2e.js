@@ -13,7 +13,9 @@ async function startGameplay(page) {
   await page.goto('/');
   await page.locator('#btn-start-game').click();
   await page.keyboard.press('Space');
-  await expect(page.locator('#title-screen')).toHaveClass(/\bhidden\b/);
+  const titleScreen = page.locator('#title-screen');
+  await expect(titleScreen).toHaveClass(/\bhidden\b/);
+  await expect(titleScreen).toHaveCSS('opacity', '0');
   await page.waitForFunction(() => Boolean(window.__BACKYARD_TEST_ENGINE__));
 }
 
@@ -85,7 +87,8 @@ test('material destruction leaves one event, live debris, and persistent residue
   expect(before.residueCount).toBe(1);
   expect(before.fragments).toHaveLength(6);
   expect(before.fragments.every(fragment => fragment.material === 'WOOD' && fragment.shape === 'splinter')).toBe(true);
-  expect(before.fragments.some(fragment => fragment.velocityX > 0)).toBe(true);
+  expect(before.fragments.filter(fragment => fragment.velocityX > 0).length)
+    .toBeGreaterThan(before.fragments.filter(fragment => fragment.velocityX < 0).length);
   await attachScreenshot(testInfo, page, 'phase6-greenhouse-wood-live-debris.png');
 
   const afterReload = await page.evaluate(propKey => {
@@ -106,6 +109,70 @@ test('material destruction leaves one event, live debris, and persistent residue
   expect(afterReload.score).toBe(before.score);
   expect(afterReload.totalPropsSmashed).toBe(1);
   await attachScreenshot(testInfo, page, 'phase6-greenhouse-wood-persisted-residue.png');
+});
+
+test('all seven production materials break into their rendered fragment families', async ({ page }, testInfo) => {
+  const samples = [
+    { material: 'GLASS', shape: 'triangle', count: 9, chunkIndex: 0, label: 'destructible_greenhouse', screenshot: 'phase6-glass-live-debris.png' },
+    { material: 'CERAMIC', shape: 'chip', count: 6, chunkIndex: 0, label: 'destructible_gnome', screenshot: 'phase6-ceramic-live-debris.png' },
+    { material: 'WOOD', shape: 'splinter', count: 6, chunkIndex: 0, label: 'destructible_wood_crate', screenshot: 'phase6-wood-live-debris.png' },
+    { material: 'METAL', shape: 'scrap', count: 4, chunkIndex: 1, label: 'destructible_trashcan', screenshot: 'phase6-metal-live-debris.png' },
+    { material: 'PLASTIC', shape: 'molded', count: 5, chunkIndex: 0, label: 'destructible_watering_can', screenshot: 'phase6-plastic-live-debris.png' },
+    { material: 'FABRIC', shape: 'fabric-strip', count: 3, chunkIndex: 1, label: 'destructible_fabric_cushion', screenshot: 'phase6-fabric-live-debris.png' },
+    { material: 'SOIL', shape: 'clod', count: 6, chunkIndex: 0, label: 'destructible_soil_patch', screenshot: 'phase6-soil-live-debris.png' }
+  ];
+
+  for (const sample of samples) {
+    await startGameplay(page);
+    await showChunk(page, sample.chunkIndex);
+
+    const result = await page.evaluate(({ chunkIndex, label, material }) => {
+      const engine = window.__BACKYARD_TEST_ENGINE__;
+      const chunk = engine.proceduralWorld.activeChunks.get(chunkIndex);
+      const target = chunk?.props.find(prop => prop.label === label && prop.material === material && !prop.isDestroyed);
+      if (!target) throw new Error(`Missing production ${material} prop ${label} in chunk ${chunkIndex}`);
+
+      engine.player.x = target.position.x - 160;
+      engine.camera.x = target.position.x - engine.width * 0.5;
+      engine.ball.velocity.x = 8;
+      engine.ball.velocity.y = -2;
+      engine.collisionHandler({ pairs: [{ bodyA: engine.ball, bodyB: target }] });
+      engine.gameState = 'IDLE';
+      engine.kickoffBannerTimer = 0;
+      engine.particles.popTexts.length = 0;
+
+      const fragments = engine.activeShards.map(fragment => ({
+        material: fragment.material,
+        shape: fragment.fragmentShape,
+        propKey: fragment.propKey,
+        velocityX: fragment.velocity.x,
+        renderWidth: fragment.fragmentRenderWidth,
+        renderHeight: fragment.fragmentRenderHeight,
+        renderRadius: fragment.fragmentRenderRadius,
+        sides: fragment.fragmentSides
+      }));
+      engine.render(performance.now());
+      return { targetMaterial: target.material, fragments };
+    }, sample);
+
+    expect(result.targetMaterial).toBe(sample.material);
+    expect(result.fragments).toHaveLength(sample.count);
+    expect(result.fragments.every(fragment => fragment.material === sample.material && fragment.shape === sample.shape)).toBe(true);
+    expect(result.fragments.every(fragment => fragment.renderWidth > 0 && fragment.renderHeight > 0)).toBe(true);
+    expect(result.fragments.some(fragment => fragment.velocityX > 0)).toBe(true);
+
+    if (sample.material === 'CERAMIC') {
+      expect(result.fragments.every(fragment => fragment.sides >= 3 && fragment.sides <= 5 && fragment.renderRadius > 0)).toBe(true);
+    }
+    if (sample.material === 'GLASS') {
+      expect(result.fragments.every(fragment => fragment.sides === 3 && fragment.renderRadius > 0)).toBe(true);
+    }
+    if (sample.material === 'SOIL') {
+      expect(result.fragments.every(fragment => fragment.renderRadius > 0)).toBe(true);
+    }
+
+    await attachScreenshot(testInfo, page, sample.screenshot);
+  }
 });
 
 test('VideoGen link appears only in results, discloses affiliate status, and has no gameplay effect', async ({ page, context }, testInfo) => {
