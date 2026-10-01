@@ -20,6 +20,7 @@ export class EmotionalVoiceEngine {
     this.minCooldownMs = 2600;
     this.onSpeakingChange = typeof onSpeakingChange === 'function' ? onSpeakingChange : null;
     this.currentItem = null;
+    this.clauseTimer = null;
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       this.loadVoices();
@@ -154,11 +155,7 @@ export class EmotionalVoiceEngine {
 
   cancelCurrentSpeech() {
     const cancelledItem = this.currentItem;
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch (_) {}
-    }
+    this.clearClauseTimer();
     if (this.watchdogTimer) {
       clearTimeout(this.watchdogTimer);
       this.watchdogTimer = null;
@@ -167,7 +164,19 @@ export class EmotionalVoiceEngine {
     this.currentPriority = 999;
     this.currentUtterance = null;
     this.currentItem = null;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (_) {}
+    }
     if (cancelledItem) this.onSpeakingChange?.(false, cancelledItem, { reason: 'cancelled' });
+  }
+
+  clearClauseTimer() {
+    if (this.clauseTimer !== null) {
+      clearTimeout(this.clauseTimer);
+      this.clauseTimer = null;
+    }
   }
 
   processNext() {
@@ -189,6 +198,7 @@ export class EmotionalVoiceEngine {
     // Phonetically sanitize text to prevent spelling letters like O-W-W-W
     const spokenText = this.normalizePhonetics(item.text);
     if (!spokenText) {
+      this.clearClauseTimer();
       this.isSpeaking = false;
       this.currentPriority = 999;
       this.currentItem = null;
@@ -201,6 +211,7 @@ export class EmotionalVoiceEngine {
     const finishSpeech = (reason = 'finished') => {
       if (finished || this.currentItem !== item) return;
       finished = true;
+      this.clearClauseTimer();
       if (this.watchdogTimer) {
         clearTimeout(this.watchdogTimer);
         this.watchdogTimer = null;
@@ -222,7 +233,8 @@ export class EmotionalVoiceEngine {
       const voice = this.getPreferredVoice();
 
       const speakClause = () => {
-        if (!this.isSpeaking || clauseIdx >= totalClauses) {
+        if (!this.isSpeaking || this.currentItem !== item) return;
+        if (clauseIdx >= totalClauses) {
           finishSpeech();
           return;
         }
@@ -240,9 +252,12 @@ export class EmotionalVoiceEngine {
         clauseIdx++;
 
         utterance.onend = () => {
+          if (!this.isSpeaking || this.currentItem !== item) return;
           if (clauseIdx < totalClauses) {
-            setTimeout(() => {
-              if (this.isSpeaking) speakClause();
+            this.clearClauseTimer();
+            this.clauseTimer = setTimeout(() => {
+              this.clauseTimer = null;
+              if (this.isSpeaking && this.currentItem === item) speakClause();
             }, 60);
           } else {
             finishSpeech();

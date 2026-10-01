@@ -223,6 +223,83 @@ describe('SoundEngine runtime safety', () => {
     expect(engine.getAudioDiagnosticSnapshot().musicDuck).toBe(1);
   });
 
+  it('cancels stale clause cadence when priority speech interrupts and preserves the new duck', () => {
+    vi.useFakeTimers();
+    const utterances = [];
+    globalThis.SpeechSynthesisUtterance = class {
+      constructor(text) { this.text = text; }
+    };
+    globalThis.window = {
+      AudioContext: FakeAudioContext,
+      speechSynthesis: {
+        getVoices: () => [],
+        speak: utterance => utterances.push(utterance),
+        cancel: vi.fn(() => utterances.at(-1)?.onend?.())
+      }
+    };
+    const engine = new SoundEngine();
+    expect(engine.init()).toBe(true);
+    engine.vocalBank.playVocalClip = vi.fn(() => false);
+
+    expect(engine.speakKevinVoice('A1! A2!', 'RAGE', 0)).toBe(true);
+    expect(utterances.map(({ text }) => text)).toEqual(['A1!']);
+    const oldItem = engine.voiceQueue.currentItem;
+    utterances[0].onend();
+
+    expect(engine.voiceQueue.clauseTimer).not.toBeNull();
+    expect(engine.speakKevinVoice('B!', 'RAGE', 0)).toBe(true);
+    expect(engine.voiceQueue.currentItem.text).toBe('B!');
+    expect(engine.voiceQueue.clauseTimer).toBeNull();
+    expect(utterances.map(({ text }) => text)).toEqual(['A1!', 'B!']);
+    expect(engine.getAudioDiagnosticSnapshot().musicDuck).toBeCloseTo(0.501, 2);
+
+    vi.advanceTimersByTime(100);
+    expect(utterances.map(({ text }) => text)).toEqual(['A1!', 'B!']);
+    expect(engine.voiceQueue.currentItem.text).toBe('B!');
+    expect(engine.voiceQueue.isSpeaking).toBe(true);
+    expect(engine.getAudioDiagnosticSnapshot().musicDuck).toBeCloseTo(0.501, 2);
+    expect(engine.voiceQueue.currentItem).not.toBe(oldItem);
+
+    utterances[1].onend();
+    expect(engine.voiceQueue.isSpeaking).toBe(false);
+    expect(engine.getAudioDiagnosticSnapshot().musicDuck).toBe(1);
+  });
+
+  it('clears a pending clause cadence and restores ducking when the voice queue is cleared', () => {
+    vi.useFakeTimers();
+    const utterances = [];
+    globalThis.SpeechSynthesisUtterance = class {
+      constructor(text) { this.text = text; }
+    };
+    globalThis.window = {
+      AudioContext: FakeAudioContext,
+      speechSynthesis: {
+        getVoices: () => [],
+        speak: utterance => utterances.push(utterance),
+        cancel: vi.fn(() => utterances.at(-1)?.onend?.())
+      }
+    };
+    const engine = new SoundEngine();
+    expect(engine.init()).toBe(true);
+    engine.vocalBank.playVocalClip = vi.fn(() => false);
+
+    expect(engine.speakKevinVoice('Clear A1! Clear A2!', 'RAGE', 0)).toBe(true);
+    utterances[0].onend();
+    expect(engine.voiceQueue.clauseTimer).not.toBeNull();
+
+    engine.voiceQueue.clear();
+    expect(engine.voiceQueue.clauseTimer).toBeNull();
+    expect(engine.voiceQueue.isSpeaking).toBe(false);
+    expect(engine.voiceQueue.queue).toEqual([]);
+    expect(engine.getAudioDiagnosticSnapshot().musicDuck).toBe(1);
+    vi.advanceTimersByTime(100);
+
+    expect(utterances.map(({ text }) => text)).toEqual(['Clear A1!']);
+    expect(engine.voiceQueue.isSpeaking).toBe(false);
+    expect(engine.voiceQueue.queue).toEqual([]);
+    expect(engine.getAudioDiagnosticSnapshot().musicDuck).toBe(1);
+  });
+
   it('ducks and restores a procedural voice when SpeechSynthesis is unavailable', () => {
     vi.useFakeTimers();
     const engine = createEngine();

@@ -1,3 +1,12 @@
+const KEVIN_STATE_RANK = Object.freeze({
+  CALM: 0,
+  SUSPICIOUS: 1,
+  ANNOYED: 2,
+  ANGRY: 3,
+  FURIOUS: 4,
+  RAMPAGE: 5
+});
+
 export class AudioDirector {
   constructor(soundEngine) {
     this.soundEngine = soundEngine;
@@ -98,7 +107,10 @@ export class AudioDirector {
       case 'KEVIN_ESCALATION_CHANGED': {
         const next = String(event.toState || event.to || event.current || '').toUpperCase();
         const previous = String(event.fromState || event.from || event.previous || '').toUpperCase();
-        if (['ANGRY', 'FURIOUS', 'RAMPAGE'].includes(next) && next !== previous) {
+        const movedUp = Number.isFinite(KEVIN_STATE_RANK[previous])
+          && Number.isFinite(KEVIN_STATE_RANK[next])
+          && KEVIN_STATE_RANK[next] > KEVIN_STATE_RANK[previous];
+        if (movedUp && ['ANGRY', 'FURIOUS', 'RAMPAGE'].includes(next)) {
           this.play('kevinEscalation', 'playKevinEscalation', next);
         }
         this.updateMusic(stateSnapshot);

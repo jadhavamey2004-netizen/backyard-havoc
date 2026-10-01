@@ -52,7 +52,7 @@ describe('AudioDirector event ownership', () => {
     director.handleGameplayEvent({ type: 'KEVIN_HIT', source: 'PARRIED_PROJECTILE' }, { pan: 0.4 });
     director.handleGameplayEvent({ type: 'PLAYER_DAMAGED' });
     director.handleGameplayEvent({ type: 'TRICK_CHAIN_COMPLETED' });
-    director.handleGameplayEvent({ type: 'KEVIN_ESCALATION_CHANGED', to: 'RAMPAGE' });
+    director.handleGameplayEvent({ type: 'KEVIN_ESCALATION_CHANGED', from: 'FURIOUS', to: 'RAMPAGE' });
     director.handleGameplayEvent({ type: 'KEVIN_ESCALATION_CHANGED', to: 'ANNOYED' });
     director.handleGameplayEvent({ type: 'HAVOC_STARTED' });
     director.handleGameplayEvent({ type: 'HAVOC_ENDED' });
@@ -70,6 +70,53 @@ describe('AudioDirector event ownership', () => {
     expect(audio.playKevinEscalation).toHaveBeenCalledWith('RAMPAGE');
     expect(audio.playHavocStart).toHaveBeenCalledTimes(1);
     expect(audio.playHavocEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it('plays escalation stings only for upward moves into an intense state', () => {
+    const audio = makeAudioPort();
+    const director = new AudioDirector(audio);
+    const transitions = [
+      ['ANNOYED', 'ANGRY'],
+      ['ANGRY', 'FURIOUS'],
+      ['FURIOUS', 'RAMPAGE']
+    ];
+
+    for (const [from, to] of transitions) {
+      director.handleGameplayEvent({ type: 'KEVIN_ESCALATION_CHANGED', from, to });
+    }
+
+    expect(audio.playKevinEscalation.mock.calls).toEqual([['ANGRY'], ['FURIOUS'], ['RAMPAGE']]);
+  });
+
+  it('suppresses downward and same-state stings while updating reactive music', () => {
+    const audio = makeAudioPort();
+    const director = new AudioDirector(audio);
+    const snapshot = { kevinState: 'FURIOUS' };
+    const transitions = [
+      ['RAMPAGE', 'FURIOUS'],
+      ['FURIOUS', 'ANGRY'],
+      ['ANGRY', 'ANNOYED'],
+      ['ANGRY', 'ANGRY']
+    ];
+
+    for (const [from, to] of transitions) {
+      director.handleGameplayEvent({ type: 'KEVIN_ESCALATION_CHANGED', from, to }, {}, snapshot);
+    }
+
+    expect(audio.playKevinEscalation).not.toHaveBeenCalled();
+    expect(audio.updateReactiveMusic).toHaveBeenCalledTimes(transitions.length);
+    expect(audio.updateReactiveMusic).toHaveBeenNthCalledWith(1, snapshot);
+  });
+
+  it('fails safely for unknown escalation states and still updates reactive music', () => {
+    const audio = makeAudioPort();
+    const director = new AudioDirector(audio);
+    const snapshot = { kevinState: 'CALM' };
+
+    expect(() => director.handleGameplayEvent({ type: 'KEVIN_ESCALATION_CHANGED', from: 'MYSTERY', to: 'RAMPAGE' }, {}, snapshot)).not.toThrow();
+    expect(() => director.handleGameplayEvent({ type: 'KEVIN_ESCALATION_CHANGED', from: 'ANGRY', to: 'UNKNOWN' }, {}, snapshot)).not.toThrow();
+    expect(audio.playKevinEscalation).not.toHaveBeenCalled();
+    expect(audio.updateReactiveMusic).toHaveBeenCalledTimes(2);
   });
 
   it('updates music presentation from gameplay snapshots without changing those snapshots', () => {
