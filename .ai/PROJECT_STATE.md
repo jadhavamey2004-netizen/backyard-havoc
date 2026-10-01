@@ -4,7 +4,7 @@
 - **Official Phase 4 baseline SHA:** `449b47f8ca1821d0f102fdbb9732991380ce1075` (`main`, merged Phase 3)
 - **Phase 3 merge Quality Gate:** run `36803652153`; 145/145 Vitest tests, production build, 11/11 Chromium scenarios, all browser-health counters zero; Playwright artifact `11136574402` (1,850,337 bytes) matched the exact baseline.
 - **Working branch:** `codex/phase-4-character-animation-overhaul`
-- **Current phase:** Phase 4 local verification PASS; draft PR and GitHub Quality Gate pending.
+- **Current phase:** Phase 4 local verification PASS; draft PR #7 open for external review.
 - **Phase 4 scope:** deterministic, authored procedural animation for the existing player and Kevin designs. No gameplay, AI escalation, Havoc, world, destruction, VFX, audio, UI, mobile, progression, or broad architecture overhaul.
 
 ## Current implementation
@@ -23,7 +23,7 @@
 - **Production build:** `npm run build` PASS — Vite 5.4.21, 28 modules transformed.
 - **Playwright:** `npm run test:e2e` PASS twice — 13 Chromium scenarios per run at 1280×720 with one worker. Every scenario reports zero page errors, console errors, console warnings, failed requests, and same-origin failures.
 - **Animation evidence:** both runs attach a 10-pose player sheet, 10-pose Kevin sheet, player kick sequence strip, Kevin throw sequence strip, live gameplay screenshot, baseline comparison screenshot, and per-scenario browser-health JSON. Player evidence includes run/contact, anticipation, kick contact, follow-through, header preparation/contact, charge, and hurt. Kevin evidence includes watchful, rage, shout, windup/release/follow-through, bonk/dizzy, and repairing. Traces, screenshots, and videos remain configured for failures; video is optional.
-- **GitHub Actions:** pending creation of the Phase 4 draft PR. Final-head Quality Gate and artifact provenance must be verified before handoff.
+- **GitHub Actions:** check PR #7 for the latest final-head Quality Gate and Playwright evidence artifact; run details are maintained in the PR description.
 - **Human animation review:** required. Tests establish timing, contact geometry, deterministic structure, finite poses, immutability, and browser health; they cannot approve motion quality.
 
 ## Architecture
