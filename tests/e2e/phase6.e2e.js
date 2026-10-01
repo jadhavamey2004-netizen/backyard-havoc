@@ -66,6 +66,9 @@ test('material destruction leaves one event, live debris, and persistent residue
     engine.ball.velocity.x = 8;
     engine.ball.velocity.y = -2;
     engine.collisionHandler({ pairs: [{ bodyA: engine.ball, bodyB: target }] });
+    // Freeze only the E2E fixture after its production collision so the score comparison
+    // cannot race another live physics tick while screenshots are captured.
+    engine.gameState = 'IDLE';
     engine.camera.x = 0;
     engine.render(performance.now());
     return {

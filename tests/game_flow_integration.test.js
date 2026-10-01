@@ -700,46 +700,115 @@ describe('Game Flow & Integration Lifecycle', () => {
   });
 
   it('clears temporary feel state on intro, ending, game over, and run reset', () => {
+    const primeTransientFeel = () => {
+      game.particles.triggerHitStop(0.1);
+      game.particles.spawnVignetteFlash();
+      game.particles.spawnImpactRings(10, 20, 2);
+      game.particles.addTrailPoint({ x: 30, y: 40 });
+      game.camera.addTrauma(0.5, 0.04);
+      game.camera.addImpulse(4, -2);
+      game.ballFeedbackTier = 'POWER_SHOT';
+      game.ballFeedbackStrength = 0.9;
+      game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
+    };
     const expectFeelReset = () => {
       expect(game.particles.hitStopRemainingSeconds).toBe(0);
+      expect(game.particles.vignettes).toHaveLength(0);
+      expect(game.particles.impactRings).toHaveLength(0);
+      expect(game.particles.trailPoints).toHaveLength(0);
       expect(game.ballFeedbackTier).toBe('NORMAL');
       expect(game.ballFeedbackStrength).toBe(0);
       expect(game.ballDeform).toEqual({ scaleX: 1, scaleY: 1, angle: 0 });
       expect(game.camera.trauma).toBe(0);
       expect(game.camera.zoomPunch).toBe(0);
       expect(game.camera.chromaticAberration).toBe(0);
+      expect(game.camera.impulseX).toBe(0);
+      expect(game.camera.impulseY).toBe(0);
     };
-    game.particles.triggerHitStop(0.1);
-    game.camera.addTrauma(0.5, 0.04);
-    game.ballFeedbackTier = 'POWER_SHOT';
-    game.ballFeedbackStrength = 0.9;
-    game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
+    primeTransientFeel();
     game.startIntroCutscene();
     expectFeelReset();
 
-    game.particles.triggerHitStop(0.1);
-    game.camera.addTrauma(0.5, 0.04);
+    primeTransientFeel();
     game.ballFeedbackTier = 'PERFECT_STRIKE';
     game.ballFeedbackStrength = 0.8;
-    game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
     game.startEndingCutscene();
     expectFeelReset();
 
-    game.particles.triggerHitStop(0.1);
-    game.camera.addTrauma(0.5, 0.04);
-    game.ballFeedbackTier = 'POWER_SHOT';
+    primeTransientFeel();
     game.ballFeedbackStrength = 1;
-    game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
     game.triggerGameOver();
     expectFeelReset();
 
-    game.particles.triggerHitStop(0.1);
-    game.camera.addTrauma(0.5, 0.04);
-    game.ballFeedbackTier = 'POWER_SHOT';
+    primeTransientFeel();
     game.ballFeedbackStrength = 1;
-    game.ballDeform = { scaleX: 0.7, scaleY: 1.3, angle: 1 };
     game.resetEnvironment();
     expectFeelReset();
+  });
+
+  it('dispatches gameplay events to presentation without changing their gameplay results', () => {
+    game.score = 1234;
+    game.combo = 4;
+    const event = { type: 'PERFECT_PARRY', score: 1000, combo: 4 };
+
+    game.publishGameplayEvent(event, { x: 100, y: 120, direction: 1 });
+
+    expect(game.camera.trauma).toBe(GAMEPLAY_FEEL_TUNING.CAMERA_PERFECT_PARRY_TRAUMA);
+    expect(game.particles.impactRings).toHaveLength(6);
+    expect(game.score).toBe(1234);
+    expect(game.combo).toBe(4);
+    expect(event).toEqual({ type: 'PERFECT_PARRY', score: 1000, combo: 4 });
+  });
+
+  it('maps mouse aim through zoom without incorporating shake or changing world camera position', () => {
+    game.camera.x = 420;
+    const initial = game.getScreenAimWorldPoint(960, 540);
+    game.camera.addTrauma(0, 0.08, 0);
+    game.camera.addImpulse(8, -4);
+    const transformed = game.getScreenAimWorldPoint(960, 540);
+
+    expect(initial).toEqual({ x: 1380, y: 540 });
+    expect(transformed.x).toBeCloseTo(420 + 480 + 480 / 1.08, 8);
+    expect(transformed.y).toBeCloseTo(270 + 270 / 1.08, 8);
+    expect(game.camera.x).toBe(420);
+  });
+
+  it('renders bounded zoom around the stable screen center without drifting world tracking', () => {
+    const scale = vi.spyOn(game.ctx, 'scale');
+    game.camera.x = 420;
+    game.camera.addTrauma(0, 0.05, 0);
+    game.mapRenderer.drawSkyAndSun = vi.fn();
+    game.mapRenderer.drawWorldLayers = vi.fn();
+    game.mapRenderer.drawProps = vi.fn();
+    game.mapRenderer.drawResidues = vi.fn();
+    game.npc.draw = vi.fn();
+    game.drawThrownProjectiles = vi.fn();
+    game.drawEnvironmentShards = vi.fn();
+    game.particles.draw = vi.fn();
+    game.player.draw = vi.fn();
+    game.drawBall = vi.fn();
+    game.drawAimGuide = vi.fn();
+    game.drawBallIndicators = vi.fn();
+    game.drawPowerMeterInCanvas = vi.fn();
+
+    game.render(0);
+
+    expect(scale).toHaveBeenCalledWith(1.05, 1.05);
+    expect(game.camera.x).toBe(420);
+  });
+
+  it('applies reduced-motion scaling only to presentation systems', () => {
+    game.score = 765;
+    game.combo = 3;
+    game.camera.addTrauma(0.4, 0.03, 2);
+
+    game.setReducedMotion(true);
+
+    expect(game.camera.motionMultiplier).toBe(0.35);
+    expect(game.particles.motionMultiplier).toBe(0.35);
+    expect(game.camera.trauma).toBe(0.4);
+    expect(game.score).toBe(765);
+    expect(game.combo).toBe(3);
   });
 
   it('identical kick inputs produce identical physics at different combo levels', () => {
@@ -756,6 +825,42 @@ describe('Game Flow & Integration Lifecycle', () => {
     };
 
     expect(launchAtCombo(20)).toEqual(launchAtCombo(1));
+  });
+
+  it('keeps gameplay outcomes identical with normal and reduced-motion presentation', () => {
+    const runScenario = (reducedMotion) => {
+      const engine = new GameEngine(createMockCanvas());
+      engine.gameState = 'PLAYING';
+      engine.setReducedMotion(reducedMotion);
+      engine.player.triggerKick();
+      engine.player.kickProgress = 0.5;
+      const foot = engine.player.getKickPosition();
+      Matter.Body.setPosition(engine.ball, foot);
+      Matter.Body.setVelocity(engine.ball, { x: 0, y: 0 });
+      expect(engine.executePlayerKick(foot.x + 200, foot.y - 120, 'KICK')).toBe(true);
+      const kickVelocity = { ...engine.ball.velocity };
+
+      const target = engine.proceduralWorld.getAllActiveProps().find(prop =>
+        prop.isDestructible && prop.material === 'WOOD' && !prop.isNpc);
+      expect(target).toBeDefined();
+      Matter.Body.setVelocity(engine.ball, { x: 8, y: -2 });
+      engine.collisionHandler({ pairs: [{ bodyA: engine.ball, bodyB: target }] });
+
+      return {
+        kickVelocity,
+        impactVelocity: { ...engine.ball.velocity },
+        score: engine.score,
+        combo: engine.combo,
+        health: engine.player.health,
+        kevinRage: engine.npc.rageMeter,
+        kevinState: engine.kevinDirector.getSnapshot(),
+        havoc: engine.havocSystem.getSnapshot(),
+        destroyedPropKeys: [...engine.proceduralWorld.destroyedPropKeys].sort(),
+        totalPropsSmashed: engine.proceduralWorld.totalPropsSmashed
+      };
+    };
+
+    expect(runScenario(true)).toEqual(runScenario(false));
   });
 
   it('power-shot contact strength rises with charge without changing contact score', () => {

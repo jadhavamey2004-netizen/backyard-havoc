@@ -28,6 +28,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   const engine = new GameEngine(canvas);
+  const reducedMotionPreference = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+  engine.setReducedMotion(Boolean(reducedMotionPreference?.matches));
+  reducedMotionPreference?.addEventListener?.('change', event => {
+    engine.setReducedMotion(event.matches);
+  });
 
   // UI Element Selectors
   const healthDisplay = document.getElementById('player-health-display');
@@ -45,6 +50,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // A deterministic engine bridge exists only in the local E2E build, never production.
   if (import.meta.env.MODE === 'e2e' && window.location.hostname === '127.0.0.1') {
+    engine.particles.setSeed(0xBADC0DE);
     window.__BACKYARD_TEST_ENGINE__ = engine;
   }
 

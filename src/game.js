@@ -21,6 +21,7 @@ import { sounds } from './audio.js';
 import { aiService } from './ai.js';
 import { KevinDirector } from './kevin_director.js';
 import { HavocSystem, computeHavocScoreBonus } from './havoc_system.js';
+import { VfxDirector } from './vfx_director.js';
 import {
   GAMEPLAY_TUNING,
   classifyDefense,
@@ -49,6 +50,7 @@ export class GameEngine {
     // Systems
     this.camera = new CameraTrauma(1.0, 20, 0.05, 20);
     this.particles = new ParticleSystem(400);
+    this.vfxDirector = new VfxDirector({ camera: this.camera, particles: this.particles });
     this.mapRenderer = new MapRenderer(this.width, this.height, 960);
     this.player = new Player(340, this.height - 55);
     this.npc = new NeighborKevinNPC(790, 110);
@@ -244,7 +246,7 @@ export class GameEngine {
   }
 
   resetTransientFeelState() {
-    this.particles.clearHitStop();
+    this.particles.clear();
     this.camera.reset();
     this.ballDeform = { scaleX: 1, scaleY: 1, angle: 0 };
     this.ballFeedbackTier = 'NORMAL';
@@ -324,16 +326,17 @@ export class GameEngine {
           const impactVel = { x: ball.velocity.x, y: ball.velocity.y };
           this.npc.takeDirectHit(impactVel);
 
-          this.camera.addTrauma(0.72, 0.045);
           this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_KEVIN_HIT_SECONDS);
           sounds.playKevinHit();
           sounds.playGlassShatter();
-          this.particles.spawnDebris(target.position.x, target.position.y, 28, '#0284c7', 9);
-          this.particles.spawnImpactRings(target.position.x, target.position.y, 3, '#f43f5e');
 
           const pts = 500 * this.combo;
           this.score += pts;
-          this.emitGameplayEvent('KEVIN_HIT', { score: pts, combo: this.combo, targetId: target.id });
+          this.emitGameplayEvent('KEVIN_HIT', { score: pts, combo: this.combo, targetId: target.id }, {
+            x: target.position.x,
+            y: target.position.y,
+            direction: Math.sign(impactVel.x) || this.player.facing
+          });
           this.particles.spawnPopText(target.position.x, target.position.y - 45, `🎯 BONKED KEVIN! +${pts}`, '#f43f5e', 26);
 
           // Eject ball decisively out of the window frame into the yard
@@ -385,16 +388,12 @@ export class GameEngine {
           if (isGrill) {
             sounds.playExplosion();
             this.particles.spawnFire(target.position.x, target.position.y, 40);
-            this.particles.spawnVignetteFlash('rgba(249, 115, 22, 0.4)', 0.4);
-            this.camera.addTrauma(0.65);
             this.recordTrickEvent('GRILL_BLAST');
           } else if (isGnome) {
             sounds.playGnomeBonk();
-            this.camera.addTrauma(0.35);
             this.recordTrickEvent('GNOME_BONK');
           } else {
             sounds.playShatter(isGlass, 100);
-            this.camera.addTrauma(target.traumaContribution || 0.35);
             if (isWindow) this.recordTrickEvent('WINDOW_SHATTER');
             else if (isGreenhouse) this.recordTrickEvent('GREENHOUSE_SHATTER');
             else if (isPot) this.recordTrickEvent('POT_SMASH');
@@ -441,6 +440,10 @@ export class GameEngine {
             objectName: target.objectName || target.label,
             distanceToKevin,
             nearKevin: distanceToKevin < 280
+          }, {
+            x: target.position.x,
+            y: target.position.y,
+            direction: Math.sign(impactVel.x) || this.player.facing
           });
           this.particles.spawnPopText(target.position.x, target.position.y - 20, `${popText} +${pts}`, '#fbbf24', 22);
 
@@ -478,7 +481,7 @@ export class GameEngine {
       : (Math.sign(ball.velocity.x) || -this.player.facing);
   }
 
-  emitGameplayEvent(type, payload = {}) {
+  emitGameplayEvent(type, payload = {}, presentationContext = null) {
     const event = { ...payload, type };
     const wasHavocActive = this.havocSystem.active;
     const scoreBonus = computeHavocScoreBonus(event, wasHavocActive, this.combo);
@@ -507,20 +510,39 @@ export class GameEngine {
       if (reaction.transition) {
         systemEvents.push({ type: 'KEVIN_ESCALATION_CHANGED', ...reaction.transition });
       }
-      this.camera.addTrauma(0.25);
-      this.particles.spawnShockwave(this.player.x, this.player.y - 40, 70, '#f97316', 4);
       this.particles.spawnPopText(this.player.x, this.player.y - 90, '🔥 HAVOC MODE!', '#fb923c', 26);
     }
 
-    this.publishGameplayEvent(event);
+    this.publishGameplayEvent(event, presentationContext);
     for (const systemEvent of systemEvents) this.publishGameplayEvent(systemEvent);
     return event;
   }
 
-  publishGameplayEvent(event) {
+  publishGameplayEvent(event, presentationContext = null) {
+    this.vfxDirector.handleGameplayEvent(event,
+      presentationContext || this.getVfxContext(event));
     if (typeof this.onGameplayEvent === 'function') {
       this.onGameplayEvent(event);
     }
+  }
+
+  getVfxContext(event = {}) {
+    const playerPosition = { x: this.player.x, y: this.player.y - 30 };
+    const npcPosition = { x: this.npc.x, y: this.npc.y };
+    const ballPosition = this.ball?.position || playerPosition;
+    if (event.type === 'KEVIN_HIT' || event.type === 'KEVIN_ESCALATION_CHANGED') {
+      return {
+        ...npcPosition,
+        direction: Math.sign(this.ball?.velocity.x || this.player.facing)
+      };
+    }
+    if (event.type === 'PLAYER_DAMAGED') {
+      return { ...playerPosition, direction: this.player.facing };
+    }
+    if (event.type === 'BALL_CONTACT' || event.type === 'POWER_SHOT') {
+      return { ...ballPosition, direction: Math.sign(this.ball?.velocity.x || this.player.facing) };
+    }
+    return { ...playerPosition, direction: this.player.facing };
   }
 
   setCombo(value, reason = 'UNKNOWN', { silent = false } = {}) {
@@ -599,8 +621,6 @@ export class GameEngine {
       });
       sounds.playParry();
       this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_BLOCK_SECONDS);
-      this.particles.spawnImpactRings(projectile.position.x, projectile.position.y,
-        GAMEPLAY_FEEL_TUNING.BLOCK_IMPACT_RING_COUNT, '#93c5fd');
       this.particles.spawnPopText(projectile.position.x, projectile.position.y - 30, `BLOCK! +${points}`, '#93c5fd', 22);
     } else {
       let dx = this.npc.x - projectile.position.x;
@@ -621,35 +641,21 @@ export class GameEngine {
       this.particles.triggerHitStop(isPerfectParry
         ? GAMEPLAY_FEEL_TUNING.HIT_STOP_PERFECT_PARRY_SECONDS
         : GAMEPLAY_FEEL_TUNING.HIT_STOP_PARRY_SECONDS);
-      this.particles.spawnImpactRings(projectile.position.x, projectile.position.y,
-        isPerfectParry ? GAMEPLAY_FEEL_TUNING.PERFECT_PARRY_IMPACT_RING_COUNT
-          : GAMEPLAY_FEEL_TUNING.PARRY_IMPACT_RING_COUNT,
-        isPerfectParry ? '#f97316' : '#facc15');
-      if (isPerfectParry) {
-        this.particles.spawnShockwave(projectile.position.x, projectile.position.y, 105, '#f97316', 7);
-        this.particles.spawnLightningArc(projectile.position.x, projectile.position.y, 34, 4);
-        this.particles.spawnVignetteFlash('rgba(249, 115, 22, 0.22)', 0.2);
-      } else {
-        this.particles.spawnShockwave(projectile.position.x, projectile.position.y, 68, '#facc15', 4.5);
-      }
       this.particles.spawnPopText(projectile.position.x, projectile.position.y - 30,
         `${tier === 'PERFECT_PARRY' ? 'PERFECT PARRY' : 'PARRY'}! +${points}`,
         tier === 'PERFECT_PARRY' ? '#fb923c' : '#facc15', isPerfectParry ? 30 : 24);
       this.recordTrickEvent(tier);
     }
 
-    const feedback = {
-      BLOCK: [GAMEPLAY_FEEL_TUNING.CAMERA_BLOCK_TRAUMA, GAMEPLAY_FEEL_TUNING.CAMERA_BLOCK_ZOOM],
-      PARRY: [GAMEPLAY_FEEL_TUNING.CAMERA_PARRY_TRAUMA, GAMEPLAY_FEEL_TUNING.CAMERA_PARRY_ZOOM],
-      PERFECT_PARRY: [GAMEPLAY_FEEL_TUNING.CAMERA_PERFECT_PARRY_TRAUMA,
-        GAMEPLAY_FEEL_TUNING.CAMERA_PERFECT_PARRY_ZOOM]
-    }[tier];
-    this.camera.addTrauma(...feedback);
     this.emitGameplayEvent(tier, {
       score: points,
       combo: comboAtResolution,
       projectileId: projectile.id,
       timeToContact: threat.timeToContact
+    }, {
+      x: projectile.position.x,
+      y: projectile.position.y,
+      direction: Math.sign(projectile.velocity.x) || this.player.facing
     });
     if (tier === 'PARRY') this.setCombo(comboAtResolution + 1, 'PARRY');
     if (tier === 'PERFECT_PARRY') this.setCombo(comboAtResolution + 2, 'PERFECT_PARRY');
@@ -714,7 +720,6 @@ export class GameEngine {
       const completedEvents = [...this.trickChain];
       const bonusPts = 1000 * this.combo;
       this.score += bonusPts;
-      this.particles.spawnImpactRings(this.player.x, this.player.y - 60, 4, '#a855f7');
       this.particles.spawnPopText(this.player.x, this.player.y - 80, `✨ TRICK CHAIN! +${bonusPts} BONUS!`, '#c084fc', 28);
       sounds.playComboMilestoneFanfare();
       this.trickChain = []; // Reset chain
@@ -727,8 +732,10 @@ export class GameEngine {
     }
   }
 
-  executePowerShot(charge = 1.0, targetX = this.camera.x + this.mouseScreenPos.x,
-    targetY = this.mouseScreenPos.y, contactType = null) {
+  executePowerShot(charge = 1.0,
+    targetX = this.getScreenAimWorldPoint(this.mouseScreenPos.x, this.mouseScreenPos.y).x,
+    targetY = this.getScreenAimWorldPoint(this.mouseScreenPos.x, this.mouseScreenPos.y).y,
+    contactType = null) {
     if (!this.ball || this.isGameOver) return false;
     const contactCandidate = this.player.getContactCandidate(this.ball.position);
     if (!contactCandidate || (contactType && contactType !== contactCandidate)) return false;
@@ -767,23 +774,8 @@ export class GameEngine {
     this.ballFeedbackStrength = Math.max(0, Math.min(1, charge));
 
     sounds.playPowerShotFire();
-    this.camera.addTrauma(
-      GAMEPLAY_FEEL_TUNING.CAMERA_POWER_SHOT_TRAUMA_BASE
-        + charge * GAMEPLAY_FEEL_TUNING.CAMERA_POWER_SHOT_TRAUMA_CHARGE,
-      GAMEPLAY_FEEL_TUNING.CAMERA_POWER_SHOT_ZOOM_BASE
-        + charge * GAMEPLAY_FEEL_TUNING.CAMERA_POWER_SHOT_ZOOM_CHARGE
-    );
-    this.particles.spawnPowerBeam(this.player.x, this.player.y, charge);
     this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_POWER_SHOT_BASE_SECONDS
       + charge * GAMEPLAY_FEEL_TUNING.HIT_STOP_POWER_SHOT_CHARGE_SECONDS);
-    this.particles.spawnImpactRings(ballPos.x, ballPos.y,
-      GAMEPLAY_FEEL_TUNING.POWER_SHOT_RING_BASE_COUNT
-        + Math.round(charge * GAMEPLAY_FEEL_TUNING.POWER_SHOT_RING_CHARGE_COUNT), '#f97316');
-    this.particles.spawnShockwave(ballPos.x, ballPos.y,
-      GAMEPLAY_FEEL_TUNING.POWER_SHOT_SHOCKWAVE_BASE_RADIUS
-        + charge * GAMEPLAY_FEEL_TUNING.POWER_SHOT_SHOCKWAVE_CHARGE_RADIUS,
-      '#f97316', GAMEPLAY_FEEL_TUNING.POWER_SHOT_SHOCKWAVE_BASE_WIDTH
-        + charge * GAMEPLAY_FEEL_TUNING.POWER_SHOT_SHOCKWAVE_CHARGE_WIDTH);
     this.particles.spawnPopText(ballPos.x, ballPos.y - 40, `💥 POWER SHOT! (${Math.round(charge * 100)}%)`, '#f97316', 26);
 
     this.ballGroundedDuration = 0;
@@ -796,8 +788,12 @@ export class GameEngine {
       footballContactType: contactType,
       score: points,
       combo: this.combo
+    }, { x: ballPos.x, y: ballPos.y, direction: Math.sign(launchVx) || this.player.facing });
+    this.emitGameplayEvent('POWER_SHOT', { charge, score: points, combo: this.combo }, {
+      x: ballPos.x,
+      y: ballPos.y,
+      direction: Math.sign(launchVx) || this.player.facing
     });
-    this.emitGameplayEvent('POWER_SHOT', { charge, score: points, combo: this.combo });
     this.recordTrickEvent('POWER_SHOT');
     return true;
   }
@@ -815,6 +811,23 @@ export class GameEngine {
 
   handleKeyUp(code) {
     if (this.gameState === 'PLAYING') this.player.handleKeyUp(code);
+  }
+
+  setReducedMotion(isReduced) {
+    const multiplier = isReduced ? 0.35 : 1;
+    this.camera.setMotionMultiplier(multiplier);
+    this.particles.setMotionMultiplier(multiplier);
+  }
+
+  getScreenAimWorldPoint(screenX, screenY) {
+    const transform = this.camera.getTransform(0, () => 0);
+    const zoom = Math.max(0.01, transform.zoom);
+    const centerX = this.width * 0.5;
+    const centerY = this.height * 0.5;
+    return {
+      x: this.camera.x + centerX + (screenX - centerX) / zoom,
+      y: centerY + (screenY - centerY) / zoom
+    };
   }
 
   startIntroCutscene() {
@@ -941,7 +954,7 @@ export class GameEngine {
 
     const elapsedHold = Math.max(0, (performance.now() - this.pointerDownTime) / 1000);
     const finalCharge = getPowerCharge(elapsedHold);
-    const aim = { x: this.camera.x + screenX, y: screenY };
+    const aim = this.getScreenAimWorldPoint(screenX, screenY);
 
     this.isPointerDown = false;
     this.pointerDownTime = 0;
@@ -1021,11 +1034,18 @@ export class GameEngine {
       : GAMEPLAY_TUNING.NORMAL_CONTACT_REWARD;
     const kickPts = contactBase * this.combo;
     this.score += kickPts;
+    const kickPos = contactType === 'HEADER'
+      ? this.player.getHeaderPosition()
+      : this.player.getKickPosition();
     this.emitGameplayEvent('BALL_CONTACT', {
       contactType,
       score: kickPts,
       combo: this.combo,
       perfectStrike: isPerfect
+    }, {
+      x: kickPos.x,
+      y: kickPos.y,
+      direction: Math.sign(launchVx) || this.player.facing
     });
 
     sounds.playKick(this.combo);
@@ -1033,24 +1053,6 @@ export class GameEngine {
     if (this.combo === 5 || this.combo === 10 || this.combo === 15) {
       sounds.playComboMilestoneFanfare();
     }
-
-    this.camera.addTrauma(
-      isPerfect ? GAMEPLAY_FEEL_TUNING.CAMERA_PERFECT_STRIKE_TRAUMA
-        : (contactType === 'HEADER' ? GAMEPLAY_FEEL_TUNING.CAMERA_HEADER_TRAUMA
-          : GAMEPLAY_FEEL_TUNING.CAMERA_NORMAL_KICK_TRAUMA),
-      isPerfect ? GAMEPLAY_FEEL_TUNING.CAMERA_PERFECT_STRIKE_ZOOM
-        : (contactType === 'HEADER' ? GAMEPLAY_FEEL_TUNING.CAMERA_HEADER_ZOOM
-          : GAMEPLAY_FEEL_TUNING.CAMERA_NORMAL_KICK_ZOOM)
-    );
-
-    const kickPos = contactType === 'HEADER'
-      ? this.player.getHeaderPosition()
-      : this.player.getKickPosition();
-    const impactCount = isPerfect ? 4 : (contactType === 'HEADER' ? 1 : 2);
-    const impactColor = isPerfect ? '#38bdf8' : (contactType === 'HEADER' ? '#93c5fd' : '#facc15');
-    this.particles.spawnImpactRings(kickPos.x, kickPos.y, impactCount, impactColor);
-    if (isPerfect) this.particles.spawnShockwave(kickPos.x, kickPos.y, 76, '#38bdf8', 5);
-    this.particles.spawnDebris(kickPos.x, kickPos.y, isPerfect ? 16 : (contactType === 'HEADER' ? 5 : 8), impactColor, 6);
 
     const banner = isPerfect ? `⚡ PERFECT STRIKE! ${this.combo}x (+${kickPts})` : (this.combo > 1 ? `KICK! ${this.combo}x (+${kickPts})` : `KICK! (+${kickPts})`);
     this.particles.spawnPopText(
@@ -1221,14 +1223,16 @@ export class GameEngine {
       if (proj.isParried && proj.position.y <= 135 && Math.abs(proj.position.x - this.npc.x) < 45) {
         sounds.playGnomeBonk();
         sounds.playComboMilestoneFanfare();
-        this.camera.addTrauma(0.85);
         this.particles.triggerHitStop(GAMEPLAY_FEEL_TUNING.HIT_STOP_KEVIN_HIT_SECONDS);
-        this.particles.spawnImpactRings(this.npc.x, this.npc.y, 4, '#facc15');
         this.particles.spawnPopText(this.npc.x, this.npc.y - 45, '💥 RETURN TO SENDER BONK! +1,000', '#facc15', 28);
         this.npc.takeDirectHit({ x: 0, y: -10 });
         const points = 1000 * this.combo;
         this.score += points;
-        this.emitGameplayEvent('KEVIN_HIT', { score: points, combo: this.combo, source: 'PARRIED_PROJECTILE' });
+        this.emitGameplayEvent('KEVIN_HIT', { score: points, combo: this.combo, source: 'PARRIED_PROJECTILE' }, {
+          x: this.npc.x,
+          y: this.npc.y,
+          direction: Math.sign(proj.velocity.x) || this.player.facing
+        });
         Composite.remove(this.world, proj);
         this.thrownProjectiles.splice(i, 1);
         continue;
@@ -1243,11 +1247,12 @@ export class GameEngine {
         const tookDamage = this.player.takeDamage(1);
         if (tookDamage) {
           sounds.playPlayerHurt();
-          this.camera.addTrauma(0.7);
           this.setCombo(1, 'PLAYER_DAMAGED');
-          this.emitGameplayEvent('PLAYER_DAMAGED', { health: this.player.health, damage: 1 });
-          this.particles.spawnVignetteFlash('rgba(239, 68, 68, 0.5)', 0.45);
-          this.particles.spawnDebris(this.player.x, this.player.y - 30, 25, '#ef4444', 9);
+          this.emitGameplayEvent('PLAYER_DAMAGED', { health: this.player.health, damage: 1 }, {
+            x: this.player.x,
+            y: this.player.y - 30,
+            direction: Math.sign(this.player.x - proj.position.x) || this.player.facing
+          });
           this.particles.spawnPopText(this.player.x, this.player.y - 65, '💥 DIRECT HIT! -1 ❤️', '#ef4444', 26);
 
           if (this.player.isDead()) {
@@ -1362,20 +1367,31 @@ export class GameEngine {
 
     this.updateComboGroundGrace(dt);
 
+    const trailTime = this.particles.presentationTimeSeconds + dt;
     if (this.ball) {
-      const trailColor = this.combo >= 8 ? '#f97316' : (this.combo >= 5 ? '#facc15' : '#38bdf8');
+      const specialTrail = this.ballFeedbackTier === 'POWER_SHOT' || this.havocSystem.active;
+      const trailColor = specialTrail ? '#fb923c' : '#38bdf8';
       const speedRatio = Math.min(1, Math.hypot(this.ball.velocity.x, this.ball.velocity.y)
         / GAMEPLAY_FEEL_TUNING.BALL_MAX_SPEED);
       this.particles.addTrailPoint(
         this.ball.position,
         trailColor,
-        4 + speedRatio * 8 + this.ballFeedbackStrength * 2,
-        this.combo
+        4 + speedRatio * 8 + this.ballFeedbackStrength * 2 + (this.havocSystem.active ? 2 : 0),
+        this.combo,
+        trailTime,
+        'ball',
+        !specialTrail
       );
 
-      if (this.combo >= 8 && Math.random() < 0.4) {
+      if (this.combo >= 8 && this.particles.random() < 0.4) {
         this.particles.spawnFire(this.ball.position.x, this.ball.position.y, 2);
       }
+    }
+
+    for (const projectile of this.thrownProjectiles) {
+      if (!projectile.isParried) continue;
+      this.particles.addTrailPoint(projectile.position, '#f97316', 7, 1,
+        trailTime, `projectile:${projectile.id}`, false);
     }
 
     this.particles.update(dt);
@@ -1487,6 +1503,10 @@ export class GameEngine {
     const shake = this.camera.getTransform(currentTime / 1000);
     const camX = this.camera.x;
 
+    ctx.save();
+    ctx.translate(this.width * 0.5, this.height * 0.5);
+    ctx.scale(shake.zoom, shake.zoom);
+    ctx.translate(-this.width * 0.5, -this.height * 0.5);
     this.mapRenderer.drawSkyAndSun(ctx, camX);
 
     ctx.save();
@@ -1519,9 +1539,12 @@ export class GameEngine {
     this.drawPowerMeterInCanvas(ctx);
 
     ctx.restore();
+    ctx.restore();
 
+    this.camera.drawChromaticEdges(ctx, this.width, this.height);
     // Screen-space Vignette effects
     this.particles.drawScreenVignettes(ctx, this.width, this.height);
+    this.vfxDirector.drawHavocEdge(ctx, this.width, this.height, this.havocSystem.active);
 
     // Screen-space Cinematic Cutscene Letterbox Bars & Titles
     this.drawCutsceneOverlays(ctx);
@@ -1730,8 +1753,9 @@ export class GameEngine {
     const dist = Math.hypot(dx, dy);
 
     if (dist < 150) {
-      const mouseWorldX = camX + this.mouseScreenPos.x;
-      const mouseWorldY = this.mouseScreenPos.y;
+      const mouseWorld = this.getScreenAimWorldPoint(this.mouseScreenPos.x, this.mouseScreenPos.y);
+      const mouseWorldX = mouseWorld.x;
+      const mouseWorldY = mouseWorld.y;
       const aimDx = mouseWorldX - this.ball.position.x;
       const aimDy = mouseWorldY - this.ball.position.y;
       const aimDist = Math.hypot(aimDx, aimDy);
