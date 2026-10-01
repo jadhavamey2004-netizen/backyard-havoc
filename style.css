@@ -472,6 +472,13 @@ body.character-showcase-test-mode .bottom-hud-bar {
 
 @media (prefers-reduced-motion: reduce) {
   .havoc-bar-fill { transition: none; }
+  #title-screen,
+  #gameover-modal,
+  .pulse-glow,
+  .active-combo {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 /* ==========================================================================
