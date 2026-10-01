@@ -3,7 +3,7 @@
 - **Project:** Backyard Havoc (Vite, JavaScript ES modules, Canvas 2D, Matter.js)
 - **Phase 3 baseline SHA:** `b196fb485f6268e6423280428f7cc7643cd6f66d` (`main`, merged Phase 2)
 - **Working branch:** `codex/phase-3-character-design-overhaul`
-- **Current phase:** Phase 3 implementation complete; local verification PASS; draft PR/CI pending.
+- **Current phase:** Phase 3 local verification + PR CI PASS; awaiting external review.
 - **Phase 3 scope:** Original Canvas-vector character redesign for the player and Kevin, named palettes/proportions/pose anchors, explicit production-state expression mappings, renderer extraction, deterministic Playwright character sheets and baseline comparison. Gameplay remains governed by Phase 1C rules and Phase 2 feel behavior.
 - **Phase 2 baseline:** merged to `main`; official Phase 3 baseline quality gate verified 136 unit tests, production build, and 8 Chromium scenarios before this branch was created.
 
@@ -22,7 +22,7 @@
 - **Production build:** `npm run build` PASS — Vite 5.4.21, 25 modules transformed.
 - **Playwright:** `npm run test:e2e` PASS twice — 11 Chromium scenarios per run at 1280×720 and one worker. Both runs reported zero page errors, console errors, console warnings, failed requests, and same-origin failures for every scenario.
 - **Character evidence:** each E2E run attaches a player sheet (idle, running, kick, header, hurt, charge), a Kevin sheet (repairing/neutral, watchful, irritated, angry, throwing/shouting, bonked), a live gameplay screenshot, the baseline screenshot, and per-scenario browser-health JSON. Traces, screenshots and videos remain configured for failure cases.
-- **GitHub Actions:** pending the Phase 3 draft PR.
+- **GitHub Actions:** latest Phase 3 draft PR Quality Gate passed; review the latest run and Playwright evidence artifact on PR #6.
 - **Human art review:** required. Automated tests verify rendering structure, state coverage, finite coordinates, context balance and non-mutation; they do not approve aesthetics.
 
 ## Architecture
