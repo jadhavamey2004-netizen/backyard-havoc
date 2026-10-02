@@ -31,7 +31,7 @@ jobs:
         run: npm ci
 
       - name: Install remaster runtime dependencies
-        run: npm install --save-exact pixi.js@8.22.0 poly-decomp@0.3.0
+        run: npm install --save-exact pixi.js@8.20.1 poly-decomp@0.3.0
 
       - name: Install remaster development dependencies
         run: npm install --save-dev --save-exact @assetpack/core@1.7.0 svgo@4.1.0 lil-gui@0.21.0
