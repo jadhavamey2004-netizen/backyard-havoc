@@ -144,14 +144,24 @@ describe('Phase 10 challenge evidence and unlocks', () => {
     expect(CHALLENGE_CATALOG).toHaveLength(9);
     expect(new Set(CHALLENGE_CATALOG.map(challenge => challenge.rewardCosmeticId)).size).toBe(9);
     expect(CHALLENGE_CATALOG.every(challenge => challenge.goal > 0 && challenge.name && challenge.description)).toBe(true);
+    expect(CHALLENGE_CATALOG.find(challenge => challenge.id === 'kevins-problem').description).toBe('Hit Kevin once.');
     expect(COSMETIC_CATALOG.ball).toHaveLength(4);
     expect(COSMETIC_CATALOG.trail).toHaveLength(4);
     expect(COSMETIC_CATALOG.impact).toHaveLength(4);
   });
 
+  it('does not consume canonical gameplay evidence when there is no active run', () => {
+    const meta = new MetaProgression({ storage: createStorage(), now: () => NOW });
+
+    expect(meta.handleGameplayEvent({ type: 'OBJECT_DESTROYED', material: 'WOOD' })).toBe(false);
+    expect(meta.getProfile().lifetimeStats.objectsDestroyed).toBe(0);
+    expect(meta.getProfile().unlocked).not.toContain('ball:CARBON');
+  });
+
   it('turns canonical event evidence into durable challenge progress and an idempotent unlock', () => {
     const storage = createStorage();
     const meta = new MetaProgression({ storage, now: () => NOW });
+    meta.beginRun();
 
     for (let index = 0; index < 5; index++) {
       meta.handleGameplayEvent({ type: 'OBJECT_DESTROYED', material: 'WOOD', score: 100 });
@@ -190,13 +200,80 @@ describe('Phase 10 challenge evidence and unlocks', () => {
 
     const result = meta.completeRun(stats);
     expect(result.completedChallenges.map(challenge => challenge.id)).toContain('first-run');
+    expect(result.completedChallenges).toHaveLength(1);
     expect(result.newUnlocks).toContainEqual(expect.objectContaining({ cosmeticId: 'ball:NEON' }));
+    expect(result.newUnlocks).toHaveLength(1);
     expect(meta.completeRun(stats)).toEqual({ completedChallenges: [], newUnlocks: [] });
+    expect(meta.getProfile().lifetimeStats.runsCompleted).toBe(1);
     expect(meta.getProfile().lifetimeStats).toMatchObject({
       runsCompleted: 1,
       totalScore: 1200,
       highestComboObserved: 4
     });
+  });
+
+  it('keeps a restarted run clean while retaining an abandoned run unlock', () => {
+    const meta = new MetaProgression({ storage: createStorage(), now: () => NOW });
+    const stats = { score: 0, peakCombo: 1, distanceMeters: 0, survivalSeconds: 1 };
+
+    meta.beginRun();
+    meta.completeRun(stats);
+    meta.beginRun();
+    for (let index = 0; index < 5; index++) {
+      meta.handleGameplayEvent({ type: 'OBJECT_DESTROYED', material: 'WOOD' });
+    }
+    expect(meta.getProfile().unlocked).toContain('ball:CARBON');
+
+    meta.abandonRun();
+    expect(meta.runActive).toBe(false);
+    expect(meta.getProfile().lifetimeStats).toMatchObject({ runsCompleted: 1, objectsDestroyed: 5 });
+    meta.beginRun();
+    expect(meta.runActive).toBe(true);
+    const runBResults = meta.completeRun(stats);
+
+    expect(runBResults).toEqual({ completedChallenges: [], newUnlocks: [] });
+    expect(meta.getProfile().unlocked).toContain('ball:CARBON');
+    expect(meta.getProfile().completedChallenges).toContain('yard-wrecker');
+    expect(meta.getProfile().lifetimeStats.runsCompleted).toBe(2);
+  });
+
+  it('keeps a new main-menu run clean while retaining an abandoned run unlock', () => {
+    const meta = new MetaProgression({ storage: createStorage(), now: () => NOW });
+    const stats = { score: 0, peakCombo: 1, distanceMeters: 0, survivalSeconds: 1 };
+
+    meta.beginRun();
+    meta.completeRun(stats);
+    meta.beginRun();
+    for (let index = 0; index < 5; index++) {
+      meta.handleGameplayEvent({ type: 'OBJECT_DESTROYED', material: 'WOOD' });
+    }
+    expect(meta.getProfile().unlocked).toContain('ball:CARBON');
+
+    meta.abandonRun();
+    expect(meta.runActive).toBe(false);
+    expect(meta.getProfile().lifetimeStats.objectsDestroyed).toBe(5);
+    expect(meta.getProfile().unlocked).toContain('ball:CARBON');
+    meta.beginRun();
+    const runBResults = meta.completeRun(stats);
+
+    expect(runBResults).toEqual({ completedChallenges: [], newUnlocks: [] });
+    expect(meta.getProfile().unlocked).toContain('ball:CARBON');
+  });
+
+  it('clears stale Results feedback when a new run begins defensively', () => {
+    const meta = new MetaProgression({ storage: createStorage(), now: () => NOW });
+    const stats = { score: 0, peakCombo: 1, distanceMeters: 0, survivalSeconds: 1 };
+
+    meta.beginRun();
+    meta.completeRun(stats);
+    meta.beginRun();
+    for (let index = 0; index < 5; index++) {
+      meta.handleGameplayEvent({ type: 'OBJECT_DESTROYED', material: 'WOOD' });
+    }
+    meta.beginRun();
+
+    expect(meta.completeRun(stats)).toEqual({ completedChallenges: [], newUnlocks: [] });
+    expect(meta.getProfile().unlocked).toContain('ball:CARBON');
   });
 
   it('rejects locked equipment, persists valid equipment, and does not expose physics modifiers', () => {

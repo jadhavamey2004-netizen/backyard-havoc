@@ -241,11 +241,84 @@ test('Phase 10 canonical progress unlocks local cosmetics, survives reload/resta
   expect(impactResult.ringColors).toContain('#fde047');
 
   await page.locator('#btn-pause-game').click();
+  expect(await page.evaluate(() => window.__BACKYARD_TEST_META__.runActive)).toBe(true);
   await page.locator('#btn-restart-paused').click();
   await expect(page.locator('#screen-overlay')).toBeHidden();
   await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.cosmeticSelection.ball)).toBe('NEON');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('backyard_meta_profile')).unlocked)).toContain('impact:COMIC');
   await expect(page.locator('#btn-pause-game')).toBeVisible();
+});
+
+test('Phase 10 restart preserves an abandoned unlock without leaking its Results feedback', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#btn-start-game').click();
+  await page.keyboard.press('Space');
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('PLAYING');
+  await page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.triggerGameOver());
+  await expect(page.locator('#progression-updates')).toContainText('First Run');
+  await page.locator('#btn-restart-run').click();
+  await expect(page.locator('#screen-overlay')).toBeHidden();
+  await expect(page.locator('#game-canvas')).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('PLAYING');
+
+  await page.evaluate(() => {
+    const engine = window.__BACKYARD_TEST_ENGINE__;
+    for (let index = 0; index < 5; index++) {
+      engine.emitGameplayEvent('OBJECT_DESTROYED', { material: 'WOOD', propKey: `abandoned-${index}` });
+    }
+  });
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('backyard_meta_profile')).unlocked)).toContain('ball:CARBON');
+
+  await page.locator('#btn-pause-game').click();
+  await page.locator('#btn-restart-paused').click();
+  await expect(page.locator('#screen-overlay')).toBeHidden();
+  await expect(page.locator('#game-canvas')).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('PLAYING');
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.isPaused)).toBe(false);
+  expect(await page.evaluate(() => window.__BACKYARD_TEST_META__.runActive)).toBe(true);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('backyard_meta_profile')).unlocked)).toContain('ball:CARBON');
+
+  await page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.triggerGameOver());
+  await expect(page.locator('#gameover-modal')).toBeVisible();
+  await expect(page.locator('#progression-summary')).toBeHidden();
+  await expect(page.locator('#progression-updates')).toBeEmpty();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('backyard_meta_profile')).unlocked)).toContain('ball:CARBON');
+});
+
+test('Phase 10 return to main menu preserves an abandoned unlock without leaking into the next Results', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#btn-start-game').click();
+  await page.keyboard.press('Space');
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('PLAYING');
+  await page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.triggerGameOver());
+  await expect(page.locator('#progression-updates')).toContainText('First Run');
+  await page.locator('#btn-restart-run').click();
+  await expect(page.locator('#screen-overlay')).toBeHidden();
+  await expect(page.locator('#game-canvas')).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('PLAYING');
+
+  await page.evaluate(() => {
+    const engine = window.__BACKYARD_TEST_ENGINE__;
+    for (let index = 0; index < 5; index++) {
+      engine.emitGameplayEvent('OBJECT_DESTROYED', { material: 'WOOD', propKey: `menu-abandoned-${index}` });
+    }
+  });
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('backyard_meta_profile')).unlocked)).toContain('ball:CARBON');
+
+  await page.locator('#btn-pause-game').click();
+  await page.locator('#btn-main-menu').click();
+  await expect(page.locator('#title-screen')).toBeVisible();
+  expect(await page.evaluate(() => window.__BACKYARD_TEST_META__.runActive)).toBe(false);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('backyard_meta_profile')).unlocked)).toContain('ball:CARBON');
+
+  await page.locator('#btn-start-game').click();
+  await page.keyboard.press('Space');
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('PLAYING');
+  await page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.triggerGameOver());
+  await expect(page.locator('#gameover-modal')).toBeVisible();
+  await expect(page.locator('#progression-summary')).toBeHidden();
+  await expect(page.locator('#progression-updates')).toBeEmpty();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('backyard_meta_profile')).unlocked)).toContain('ball:CARBON');
 });
 
 test('Phase 10 boots and plays when browser localStorage is unavailable', async ({ page }) => {

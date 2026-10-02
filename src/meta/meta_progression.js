@@ -13,10 +13,17 @@ export class MetaProgression {
   }
 
   beginRun() {
+    this.pendingSummary = EMPTY_SUMMARY();
     this.runActive = true;
   }
 
+  abandonRun() {
+    this.runActive = false;
+    this.pendingSummary = EMPTY_SUMMARY();
+  }
+
   handleGameplayEvent(event) {
+    if (!this.runActive) return false;
     const result = applyGameplayEvidence(this.store.getProfile(), event);
     if (!result.changed) return false;
     this.store.save(result.profile);
@@ -25,7 +32,7 @@ export class MetaProgression {
   }
 
   completeRun(stats) {
-    if (!this.runActive) return this.takeRunSummary();
+    if (!this.runActive) return EMPTY_SUMMARY();
     this.runActive = false;
     const result = applyCompletedRunEvidence(this.store.getProfile(), stats);
     if (result.changed) {

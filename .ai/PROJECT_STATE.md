@@ -9,7 +9,7 @@
 - `src/meta/` owns version-1 profile validation/storage, static challenge and cosmetic catalogs, canonical-evidence tracking, and progression coordination. `src/main.js` observes existing gameplay events and run results; `GameEngine` remains gameplay authority.
 - Garage and Challenges are exclusive, title-only Phase 9 UI screens. Results present compact challenge/unlock feedback. The VideoGen referral URL and click contract remain unchanged.
 - Cosmetics affect Canvas ball palettes, the existing bounded ball-trail path, and canonical impact palette colors only. No Matter body, gameplay rule, score, combo, Kevin, Havoc, destruction, camera, or audio behavior is changed. No dependencies or package-lock files changed.
-- **Phase 10 local verification:** `npm test` PASS — 308/308 across 34 files; `npm run build` PASS — 44 modules; `npm run test:e2e` PASS — 29/29 Chromium in three full runs. All browser-health counters were zero for every scenario in all runs. The Playwright report includes responsive Garage/Challenges screenshots at the five required viewports and the equipped-cosmetic state.
+- **Phase 10 local verification:** After the external-review lifecycle correction, `npm test` PASS — 312/312 across 34 files; `npm run build` PASS — 44 modules; `npm run test:e2e` PASS — 31/31 Chromium. The original 29-scenario Phase 10 suite passed four full local runs during implementation; the expanded 31-scenario suite passed once for this correction. Every browser-health counter was zero in all 31 scenarios in the latest full run. The Playwright report includes responsive Garage/Challenges screenshots at the five required viewports and the equipped-cosmetic state.
 
 ## Phase 9 — UI/UX overhaul
 

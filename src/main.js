@@ -60,6 +60,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     onPause: () => engine.setPaused(true),
     onResume: () => engine.setPaused(false),
     onRestart: () => {
+      metaProgression.abandonRun();
       engine.resetEnvironment();
       engine.startIntroCutscene();
       sounds.resetTransientAudio();
@@ -68,6 +69,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       return true;
     },
     onMainMenu: () => {
+      metaProgression.abandonRun();
       engine.resetEnvironment();
       return true;
     },
