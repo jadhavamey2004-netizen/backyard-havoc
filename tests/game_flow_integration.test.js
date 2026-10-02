@@ -69,6 +69,92 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.distanceTraveledMeters).toBeGreaterThan(0);
   });
 
+  it('keeps cosmetics presentation-only and preserves the live ball physics body', () => {
+    const ball = game.ball;
+    const ballPhysics = {
+      id: ball.id,
+      density: ball.density,
+      restitution: ball.restitution,
+      friction: ball.friction,
+      frictionAir: ball.frictionAir,
+      circleRadius: ball.circleRadius,
+      mass: ball.mass,
+      inertia: ball.inertia,
+      position: { ...ball.position },
+      velocity: { ...ball.velocity }
+    };
+    const gameplayTuning = structuredClone(GAMEPLAY_TUNING);
+
+    game.setCosmeticSelection({ ball: 'CLASSIC', trail: 'CLASSIC', impact: 'CLASSIC' });
+    expect(game.vfxDirector.impactPalette).toBeNull();
+    game.setCosmeticSelection({ ball: 'NEON', trail: 'EMBER', impact: 'HEAVY' });
+    game.setCosmeticSelection({ ball: 'CARBON', trail: 'ELECTRIC', impact: 'COMIC' });
+
+    expect(game.ball).toBe(ball);
+    expect({
+      id: ball.id,
+      density: ball.density,
+      restitution: ball.restitution,
+      friction: ball.friction,
+      frictionAir: ball.frictionAir,
+      circleRadius: ball.circleRadius,
+      mass: ball.mass,
+      inertia: ball.inertia,
+      position: { ...ball.position },
+      velocity: { ...ball.velocity }
+    }).toEqual(ballPhysics);
+    expect(GAMEPLAY_TUNING).toEqual(gameplayTuning);
+  });
+
+  it('boots and advances a run when localStorage access is unavailable', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get() { throw new Error('storage unavailable'); }
+    });
+
+    try {
+      const storageFreeGame = new GameEngine(createMockCanvas());
+      storageFreeGame.gameState = 'PLAYING';
+      storageFreeGame.update(1 / 60);
+      expect(storageFreeGame.gameState).toBe('PLAYING');
+      expect(storageFreeGame.highScore).toBe(0);
+      expect(storageFreeGame.bestCombo).toBe(1);
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
+      else delete globalThis.localStorage;
+    }
+  });
+
+  it('reads and updates legacy high-score and best-combo records without resetting them', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    const records = new Map([
+      ['backyard_high_score', '4321'],
+      ['backyard_best_combo', '12']
+    ]);
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: key => records.get(key) ?? null,
+        setItem: (key, value) => records.set(key, String(value))
+      }
+    });
+
+    try {
+      const legacyGame = new GameEngine(createMockCanvas());
+      expect(legacyGame.highScore).toBe(4321);
+      expect(legacyGame.bestCombo).toBe(12);
+      legacyGame.score = 4200;
+      legacyGame.peakCombo = 13;
+      legacyGame.triggerGameOver();
+      expect(records.get('backyard_high_score')).toBe('4321');
+      expect(records.get('backyard_best_combo')).toBe('13');
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
+      else delete globalThis.localStorage;
+    }
+  });
+
   it('keeps intro and ending updates cinematic without gameplay or Kevin attacks', () => {
     game.npc.rageMeter = 100;
     game.startIntroCutscene();

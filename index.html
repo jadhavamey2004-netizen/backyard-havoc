@@ -58,6 +58,10 @@
           <h1 id="title-heading" class="title-logo">BACKYARD<br /><span>HAVOC</span></h1>
           <p class="title-fantasy">Kick the ball. Wreck the yard. Don't let Kevin win.</p>
           <button id="btn-start-game" class="primary-button start-button" type="button"><span aria-hidden="true">⚽</span> PLAY</button>
+          <nav class="title-meta-actions" aria-label="Progression menus">
+            <button id="btn-title-garage" class="secondary-button" type="button">GARAGE</button>
+            <button id="btn-title-challenges" class="secondary-button" type="button">CHALLENGES</button>
+          </nav>
           <details class="title-controls-card">
             <summary>HOW TO PLAY <span aria-hidden="true">＋</span></summary>
             <div class="controls-list">
@@ -94,6 +98,35 @@
           <button id="btn-settings-back" class="secondary-button back-button" type="button">BACK</button>
         </section>
 
+        <section id="garage-screen" class="screen-panel collection-panel" aria-labelledby="garage-heading" hidden>
+          <div class="title-stamp">MAKE IT YOURS</div>
+          <h2 id="garage-heading" class="panel-heading">GARAGE</h2>
+          <p class="panel-copy">Every style is visual only. Earn a look, then take it for a run.</p>
+          <div class="garage-groups">
+            <section class="garage-group" aria-labelledby="garage-ball-heading">
+              <h3 id="garage-ball-heading">BALL</h3>
+              <div id="garage-ball-list" class="cosmetic-grid"></div>
+            </section>
+            <section class="garage-group" aria-labelledby="garage-trail-heading">
+              <h3 id="garage-trail-heading">TRAIL</h3>
+              <div id="garage-trail-list" class="cosmetic-grid"></div>
+            </section>
+            <section class="garage-group" aria-labelledby="garage-impact-heading">
+              <h3 id="garage-impact-heading">IMPACT</h3>
+              <div id="garage-impact-list" class="cosmetic-grid"></div>
+            </section>
+          </div>
+          <button id="btn-garage-back" class="secondary-button back-button" type="button">BACK</button>
+        </section>
+
+        <section id="challenges-screen" class="screen-panel collection-panel challenge-panel" aria-labelledby="challenges-heading" hidden>
+          <div class="title-stamp">ONE MORE RUN</div>
+          <h2 id="challenges-heading" class="panel-heading">CHALLENGES</h2>
+          <p class="panel-copy">Master the backyard. Earn new looks.</p>
+          <div id="challenge-list" class="challenge-list"></div>
+          <button id="btn-challenges-back" class="secondary-button back-button" type="button">BACK</button>
+        </section>
+
         <section id="gameover-modal" class="screen-panel results-panel hidden" aria-labelledby="results-heading" hidden>
           <div class="title-stamp results-stamp">KEVIN GOT YOU THIS TIME</div>
           <h2 id="results-heading" class="panel-heading">RUN OVER!</h2>
@@ -105,6 +138,10 @@
             <div><dt>PEAK COMBO</dt><dd id="go-combo">1x</dd></div>
             <div><dt>DISTANCE</dt><dd id="go-yards">0m</dd></div>
           </dl>
+          <section id="progression-summary" class="progression-summary" aria-label="New challenge and cosmetic progress" hidden>
+            <h3 id="progression-summary-heading"></h3>
+            <ul id="progression-updates"></ul>
+          </section>
           <div class="results-actions">
             <button id="btn-restart-run" class="primary-button" type="button">⚽ PLAY AGAIN</button>
             <button id="btn-share-score" class="secondary-button" type="button">SHARE SCORE</button>
