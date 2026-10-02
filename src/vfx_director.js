@@ -229,11 +229,28 @@ export class VfxDirector {
   constructor({ camera, particles }) {
     this.camera = camera;
     this.particles = particles;
+    this.impactPalette = null;
+  }
+
+  setImpactPalette(palette) {
+    const validColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
+    this.impactPalette = palette && validColor(palette.ringColor)
+      && validColor(palette.shockwaveColor) && validColor(palette.burstColor)
+      ? {
+          ringColor: palette.ringColor,
+          shockwaveColor: palette.shockwaveColor,
+          burstColor: palette.burstColor
+        }
+      : null;
   }
 
   present(name, options = {}) {
-    const profile = resolveVfxProfile(name, options);
-    if (!profile) return null;
+    const sourceProfile = resolveVfxProfile(name, options);
+    if (!sourceProfile) return null;
+    const paletteCanApply = name !== 'OBJECT_DESTROYED';
+    const profile = this.impactPalette && paletteCanApply
+      ? { ...sourceProfile, ...this.impactPalette }
+      : sourceProfile;
 
     const x = Number.isFinite(options.x) ? options.x : 0;
     const y = Number.isFinite(options.y) ? options.y : 0;

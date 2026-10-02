@@ -3,6 +3,21 @@ import { createUiState, transitionUiState } from '../src/ui/ui_state.js';
 import { formatDuration, formatHealth, formatDistance, createHudViewModel } from '../src/ui/ui_formatters.js';
 
 describe('UI presentation state', () => {
+  it('opens and closes Garage and Challenges as exclusive title screens', () => {
+    const title = createUiState();
+    const garage = transitionUiState(title, { type: 'OPEN_GARAGE' });
+    expect(garage).toMatchObject({ screen: 'GARAGE', settingsReturnTo: null });
+    expect(transitionUiState(garage, { type: 'CLOSE_GARAGE' }).screen).toBe('TITLE');
+
+    const challenges = transitionUiState(title, { type: 'OPEN_CHALLENGES' });
+    expect(challenges).toMatchObject({ screen: 'CHALLENGES', settingsReturnTo: null });
+    expect(transitionUiState(challenges, { type: 'CLOSE_CHALLENGES' }).screen).toBe('TITLE');
+
+    const playing = transitionUiState(title, { type: 'START' });
+    expect(transitionUiState(playing, { type: 'OPEN_GARAGE' })).toBe(playing);
+    expect(transitionUiState(playing, { type: 'OPEN_CHALLENGES' })).toBe(playing);
+  });
+
   it('keeps settings attached to the screen that opened them', () => {
     const titleSettings = transitionUiState(createUiState(), { type: 'OPEN_SETTINGS' });
     expect(titleSettings).toMatchObject({ screen: 'SETTINGS', settingsReturnTo: 'TITLE' });

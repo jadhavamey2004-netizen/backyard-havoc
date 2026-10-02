@@ -4,6 +4,7 @@ import { GameEngine } from './game.js';
 import { sounds } from './audio.js';
 import { mountAffiliateLink } from './affiliate_links.js';
 import { UiController } from './ui/ui_controller.js';
+import { MetaProgression } from './meta/meta_progression.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
   const canvas = document.getElementById('game-canvas');
@@ -24,6 +25,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   const engine = new GameEngine(canvas);
+  const metaProgression = new MetaProgression();
+  engine.setCosmeticSelection(metaProgression.getEquipped());
   const reducedMotionPreference = window.matchMedia?.('(prefers-reduced-motion: reduce)');
   let reducedMotionOverride = null;
   try {
@@ -51,6 +54,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     onStart: () => {
       sounds.init();
       engine.startIntroCutscene();
+      metaProgression.beginRun();
       return true;
     },
     onPause: () => engine.setPaused(true),
@@ -60,6 +64,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       engine.startIntroCutscene();
       sounds.resetTransientAudio();
       engine.skipOrEndIntroCutscene();
+      metaProgression.beginRun();
       return true;
     },
     onMainMenu: () => {
@@ -93,21 +98,31 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
       return 'SHARING UNAVAILABLE';
     },
+    getGarageItems: () => metaProgression.getGarageItems(),
+    getChallenges: () => metaProgression.getChallenges(),
+    onEquipCosmetic: (category, id) => {
+      if (!metaProgression.equip(category, id)) return false;
+      engine.setCosmeticSelection(metaProgression.getEquipped());
+      return true;
+    },
     muted: sounds.isMuted,
     reducedMotion: getReducedMotion()
   });
 
   const affiliatePlacement = document.getElementById('affiliate-placement');
   engine.onGameOverCallback = stats => {
+    const progressionSummary = metaProgression.completeRun(stats);
     mountAffiliateLink(affiliatePlacement);
-    ui.showResults(stats);
+    ui.showResults(stats, progressionSummary);
   };
+  engine.onGameplayEvent = event => metaProgression.handleGameplayEvent(event);
 
   // A deterministic engine and UI bridge exists only in the local E2E build.
   if (import.meta.env.MODE === 'e2e' && window.location.hostname === '127.0.0.1') {
     engine.particles.setSeed(0xBADC0DE);
     window.__BACKYARD_TEST_ENGINE__ = engine;
     window.__BACKYARD_TEST_UI__ = ui;
+    window.__BACKYARD_TEST_META__ = metaProgression;
   }
 
   window.addEventListener('keydown', event => {

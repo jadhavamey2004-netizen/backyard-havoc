@@ -23,6 +23,7 @@ import { aiService } from './ai.js';
 import { KevinDirector } from './kevin_director.js';
 import { HavocSystem, computeHavocScoreBonus } from './havoc_system.js';
 import { VfxDirector } from './vfx_director.js';
+import { DEFAULT_EQUIPMENT, getCosmetic } from './meta/cosmetic_catalog.js';
 import {
   GAMEPLAY_TUNING,
   classifyDefense,
@@ -35,6 +36,25 @@ const { Engine, Bodies, Body, Composite, Events } = Matter;
 const FIXED_STEP_SECONDS = 1 / 60;
 const MAX_PHYSICS_TICKS_PER_UPDATE = 3;
 const MAX_SIMULATION_DT = FIXED_STEP_SECONDS * MAX_PHYSICS_TICKS_PER_UPDATE;
+
+function readLegacyRecord(key, fallback) {
+  try {
+    const raw = globalThis.localStorage?.getItem(key);
+    if (raw === null || raw === undefined) return fallback;
+    const value = Number.parseInt(raw, 10);
+    return Number.isFinite(value) && value >= 0 ? value : fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
+
+function writeLegacyRecord(key, value) {
+  try {
+    globalThis.localStorage?.setItem(key, String(value));
+  } catch (_) {
+    // Existing records remain best-effort when browser storage is restricted.
+  }
+}
 
 export class GameEngine {
   constructor(canvas) {
@@ -52,6 +72,13 @@ export class GameEngine {
     this.camera = new CameraTrauma(1.0, 20, 0.05, 20);
     this.particles = new ParticleSystem(400);
     this.vfxDirector = new VfxDirector({ camera: this.camera, particles: this.particles });
+    this.isReducedMotion = false;
+    this.cosmeticSelection = { ...DEFAULT_EQUIPMENT };
+    this.cosmeticPresentation = {
+      ball: getCosmetic('ball', DEFAULT_EQUIPMENT.ball),
+      trail: getCosmetic('trail', DEFAULT_EQUIPMENT.trail),
+      impact: getCosmetic('impact', DEFAULT_EQUIPMENT.impact)
+    };
     this.mapRenderer = new MapRenderer(this.width, this.height, 960);
     this.player = new Player(340, this.height - 55);
     this.npc = new NeighborKevinNPC(790, 110);
@@ -97,9 +124,8 @@ export class GameEngine {
     this.trickChainTimer = 0;
 
     // Local High Scores
-    const storage = typeof localStorage !== 'undefined' ? localStorage : null;
-    this.highScore = parseInt((storage && storage.getItem('backyard_high_score')) || '0', 10);
-    this.bestCombo = parseInt((storage && storage.getItem('backyard_best_combo')) || '1', 10);
+    this.highScore = readLegacyRecord('backyard_high_score', 0);
+    this.bestCombo = readLegacyRecord('backyard_best_combo', 1);
 
     // Cinematic Cutscenes & Game State
     this.gameState = 'IDLE'; // 'IDLE', 'INTRO_CUTSCENE', 'PLAYING', 'ENDING_CUTSCENE', 'GAME_OVER'
@@ -828,9 +854,20 @@ export class GameEngine {
   }
 
   setReducedMotion(isReduced) {
+    this.isReducedMotion = Boolean(isReduced);
     const multiplier = isReduced ? 0.35 : 1;
     this.camera.setMotionMultiplier(multiplier);
     this.particles.setMotionMultiplier(multiplier);
+  }
+
+  setCosmeticSelection(selection = {}) {
+    const ball = getCosmetic('ball', selection.ball);
+    const trail = getCosmetic('trail', selection.trail);
+    const impact = getCosmetic('impact', selection.impact);
+    this.cosmeticSelection = { ball: ball.id, trail: trail.id, impact: impact.id };
+    this.cosmeticPresentation = { ball, trail, impact };
+    this.vfxDirector.setImpactPalette(impact.id === 'CLASSIC' ? null : impact.palette);
+    return { ...this.cosmeticSelection };
   }
 
   getScreenAimWorldPoint(screenX, screenY) {
@@ -1432,7 +1469,11 @@ export class GameEngine {
     const trailTime = this.particles.presentationTimeSeconds + dt;
     if (this.ball) {
       const specialTrail = this.ballFeedbackTier === 'POWER_SHOT' || this.havocSystem.active;
-      const trailColor = specialTrail ? '#fb923c' : '#38bdf8';
+      const trail = this.cosmeticPresentation.trail;
+      const customTrailEnabled = !this.isReducedMotion && trail.id !== 'CLASSIC';
+      const trailColor = customTrailEnabled
+        ? (specialTrail ? trail.specialColor : trail.color)
+        : (specialTrail ? '#fb923c' : '#38bdf8');
       const speedRatio = Math.min(1, Math.hypot(this.ball.velocity.x, this.ball.velocity.y)
         / GAMEPLAY_FEEL_TUNING.BALL_MAX_SPEED);
       this.particles.addTrailPoint(
@@ -1442,7 +1483,7 @@ export class GameEngine {
         this.combo,
         trailTime,
         'ball',
-        !specialTrail
+        !specialTrail && !customTrailEnabled
       );
 
       if (this.combo >= 8 && this.particles.random() < 0.4) {
@@ -1470,14 +1511,13 @@ export class GameEngine {
     sounds.speakKevinVoice("THAT'LL TEACH YA! Call the ambulance!", 'RAGE', 0);
 
     // Save High Scores
-    const storage = typeof localStorage !== 'undefined' ? localStorage : null;
     if (this.score > this.highScore) {
       this.highScore = this.score;
-      if (storage) storage.setItem('backyard_high_score', this.highScore.toString());
+      writeLegacyRecord('backyard_high_score', this.highScore);
     }
     if (this.peakCombo > this.bestCombo) {
       this.bestCombo = this.peakCombo;
-      if (storage) storage.setItem('backyard_best_combo', this.bestCombo.toString());
+      writeLegacyRecord('backyard_best_combo', this.bestCombo);
     }
 
     if (this.onGameOverCallback) {
@@ -1973,6 +2013,7 @@ export class GameEngine {
   drawBall(ctx) {
     if (!this.ball) return;
     const pos = this.ball.position;
+    const palette = this.cosmeticPresentation.ball.palette;
     const radius = 14;
     const vx = Number.isFinite(this.ball.velocity.x) ? this.ball.velocity.x : 0;
     const vy = Number.isFinite(this.ball.velocity.y) ? this.ball.velocity.y : 0;
@@ -2011,14 +2052,14 @@ export class GameEngine {
 
     // 3D Spherical Light Gradient
     const sphereGrad = ctx.createRadialGradient(-radius * 0.35, -radius * 0.35, radius * 0.1, 0, 0, radius);
-    sphereGrad.addColorStop(0, '#ffffff');
-    sphereGrad.addColorStop(0.65, '#f8fafc');
-    sphereGrad.addColorStop(1, '#94a3b8');
+    sphereGrad.addColorStop(0, palette.highlight);
+    sphereGrad.addColorStop(0.65, palette.mid);
+    sphereGrad.addColorStop(1, palette.shadow);
 
     ctx.fillStyle = sphereGrad;
     ctx.strokeStyle = this.ballFeedbackTier === 'POWER_SHOT'
       ? '#f97316'
-      : (this.ballFeedbackTier === 'PERFECT_STRIKE' ? '#38bdf8' : '#0f172a');
+      : (this.ballFeedbackTier === 'PERFECT_STRIKE' ? '#38bdf8' : palette.outline);
     ctx.lineWidth = 2.5 + this.ballFeedbackStrength;
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
@@ -2026,7 +2067,7 @@ export class GameEngine {
     ctx.stroke();
 
     // Center Black Pentagon
-    ctx.fillStyle = '#0f172a';
+    ctx.fillStyle = palette.seam;
     ctx.beginPath();
     for (let i = 0; i < 5; i++) {
       const a = (i * Math.PI * 2) / 5 - Math.PI / 2;
@@ -2039,7 +2080,7 @@ export class GameEngine {
     ctx.fill();
 
     // Surrounding Hexagonal Stitched Seams
-    ctx.strokeStyle = '#0f172a';
+    ctx.strokeStyle = palette.seam;
     ctx.lineWidth = 1.8;
     for (let i = 0; i < 5; i++) {
       const a = (i * Math.PI * 2) / 5 - Math.PI / 2;

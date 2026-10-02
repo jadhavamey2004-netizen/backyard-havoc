@@ -64,4 +64,22 @@ describe('Phase 7 VFX feedback profiles', () => {
     expect(particles.shockwaves).toHaveLength(1);
     expect(event).toEqual({ type: 'BALL_CONTACT', contactType: 'KICK', score: 150, combo: 2, perfectStrike: true });
   });
+
+  it('applies an impact cosmetic palette to canonical feedback without changing camera timing or counts', () => {
+    const camera = new CameraTrauma(1, 20, 0.05, 20);
+    const particles = new ParticleSystem();
+    const director = new VfxDirector({ camera, particles });
+    director.setImpactPalette({ ringColor: '#22d3ee', shockwaveColor: '#a5f3fc', burstColor: '#67e8f9' });
+
+    const profile = director.handleGameplayEvent(
+      { type: 'PERFECT_PARRY', score: 1000, combo: 4 },
+      { x: 12, y: 24, direction: 1 }
+    );
+
+    expect(particles.impactRings).toHaveLength(6);
+    expect(particles.impactRings.every(ring => ring.color === '#22d3ee')).toBe(true);
+    expect(particles.shockwaves[0].color).toBe('#a5f3fc');
+    expect(profile.cameraTrauma).toBeCloseTo(0.78);
+    expect(camera.trauma).toBeCloseTo(0.78);
+  });
 });
