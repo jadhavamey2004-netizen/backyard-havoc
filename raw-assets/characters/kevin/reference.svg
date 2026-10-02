@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="140" viewBox="0 0 160 140">
+  <title>Kevin silhouette reference, Phase 13</title>
+  <metadata>Original authored reference placeholder for future sprite and pose work; not gameplay collision art.</metadata>
+  <path d="M27 117V29h106v88Z" fill="#29323b" stroke="#242433" stroke-width="6"/>
+  <path d="M36 38h88v75H36Z" fill="#c8aa6b"/>
+  <path d="M47 113V76q0-12 11-12h44q11 0 11 12v37" fill="#55465f" stroke="#242433" stroke-width="5"/>
+  <ellipse cx="81" cy="48" rx="22" ry="23" fill="#d29a70" stroke="#242433" stroke-width="4"/>
+  <path d="M60 43q3-23 24-21 15 1 21 17l-5 5q-17-9-40 4Z" fill="#d8d4c6" stroke="#242433" stroke-width="3"/>
+  <path d="M65 48h13m8 0h13m-14 0h-6" stroke="#362c35" stroke-width="3"/>
+  <path d="M69 65q12-14 24 0" fill="#96969b" stroke="#242433" stroke-width="3"/>
+  <path d="M32 116h96" stroke="#76533b" stroke-width="9"/>
+</svg>

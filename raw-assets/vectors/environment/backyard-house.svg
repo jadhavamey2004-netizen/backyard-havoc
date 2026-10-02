@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="300" viewBox="0 0 480 300">
+  <title>Backyard house facade, Phase 13 authored source</title>
+  <metadata>Original Backyard Havoc vector artwork authored for Phase 13.</metadata>
+  <defs>
+    <linearGradient id="siding" x2="0" y2="1"><stop stop-color="#f0e5c9"/><stop offset="1" stop-color="#cfb991"/></linearGradient>
+    <linearGradient id="roof" x2="0.08" y2="1"><stop stop-color="#386452"/><stop offset="1" stop-color="#203f36"/></linearGradient>
+    <linearGradient id="glass" x2="0" y2="1"><stop stop-color="#acd7dc"/><stop offset="1" stop-color="#557f82"/></linearGradient>
+  </defs>
+  <ellipse cx="243" cy="285" rx="221" ry="12" fill="#162b25" opacity=".2"/>
+  <path d="M19 121 236 20l225 102v163H19Z" fill="url(#siding)" stroke="#34463c" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M4 125 236 10l239 117-15 20L236 38 17 147Z" fill="url(#roof)" stroke="#263d34" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M36 147h403M36 171h403M36 195h403M36 219h403M36 243h403" stroke="#bba77e" stroke-width="3" opacity=".75"/>
+  <path d="M205 286v-82q0-9 9-9h44q9 0 9 9v82" fill="#76533b" stroke="#34463c" stroke-width="6"/>
+  <circle cx="251" cy="244" r="4" fill="#e2bd6b"/>
+  <g stroke="#34463c" stroke-width="6">
+    <rect x="54" y="150" width="84" height="73" rx="3" fill="url(#glass)"/>
+    <path d="M96 151v71M55 186h82" fill="none"/>
+    <rect x="334" y="150" width="78" height="73" rx="3" fill="url(#glass)"/>
+    <path d="M373 151v71M335 186h76" fill="none"/>
+  </g>
+  <path d="M48 229h96M328 229h90" stroke="#76533b" stroke-width="9" stroke-linecap="round"/>
+  <path d="M42 276h390" stroke="#8f7652" stroke-width="7" stroke-linecap="round"/>
+  <path d="M30 283h420" stroke="#f1d99b" stroke-width="3" opacity=".75"/>
+</svg>

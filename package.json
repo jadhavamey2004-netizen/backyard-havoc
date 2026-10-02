@@ -5,7 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "build:remaster-assets": "node scripts/build-remaster-assets.mjs",
+    "build:pixi-spike": "npm run build:remaster-assets && vite build --mode phase13-pixi-spike --outDir dist-pixi-spike",
+    "compare:remaster-collision": "node scripts/phase13-collision-comparison.mjs",
+    "prebuild": "npm run build:remaster-assets",
     "build": "vite build",
+    "prebuild:e2e": "npm run build:remaster-assets",
     "build:e2e": "vite build --mode e2e --outDir dist-e2e",
     "preview": "vite preview",
     "test": "vitest run",

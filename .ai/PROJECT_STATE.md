@@ -1,5 +1,16 @@
 # Project State
 
+## Post-release Visual Remaster — Phase 13
+
+- **Original Phase 1–12 overhaul:** Complete and release-verified; this is a new remaster track, not unfinished v1 work.
+- **Verified v1 production baseline:** `802654e517ad28ef5f49d014786f26e5ef50edf0`.
+- **Current track:** Post-release Visual Remaster, Phase 13 — visual remaster foundation, art bible, and renderer feasibility.
+- **Branch:** `codex/phase-13-visual-remaster-toolchain`.
+- **Prepared branch head:** `87aaf06929348acff538291f094ad756d49bf8ba` (descendant of the v1 baseline; Phase 13 work is built on the existing prepared toolchain commits).
+- **Status:** Local verification PASS for 324/324 Vitest tests, production build/hygiene, and 63/63 Chromium E2E projects; the six Phase 13 browser/touch checks and three visual comparisons were re-run after final-source cleanup. Cached Firefox/WebKit binaries do not match Playwright 1.63; downloads timed out, so exact-head GitHub CI must provide cross-browser verification. Draft PR and exact-head CI/Preview are pending; no production deployment has been made.
+- The Canvas2D renderer remains the default production renderer. PixiJS is isolated to development/E2E and the dedicated `phase13-pixi-spike` build until external review approves a later direction.
+- `.ai/PHASE13_RENDERER_FEASIBILITY_AUDIT.md`, `.ai/VISUAL_ART_BIBLE.md`, `.ai/PHASE13_VIDEO_DEFECT_MATRIX.md`, `.ai/PHASE13_RENDERER_DECISION.md`, and `.ai/PHASE13_VISUAL_REMASTER_FOUNDATION.md` record the audit, standards, decision evidence, and remaster handoff. `.ai/CROSS_PHASE_REMEDIATION_LOG.md` records whether Phase 13 needed inherited-system corrections.
+
 ## Phase 11 — Mobile input and accessibility hardening
 
 - **Branch:** `codex/phase-11-mobile-accessibility-hardening`.
@@ -103,4 +114,4 @@ The Phase 1C contact and timing rules, Phase 2 gameplay feel, Phase 3 character 
 
 ## Deferred
 
-Phases 9, 10, and 11 are merged and release-verified. Phase 12 is active on `codex/phase-12-final-release-hardening`. Phase 12 is a release-hardening phase; it does not begin Phase 13. Production deployment, release tagging, and the external Final Release Gate remain pending and are not part of this branch.
+Historical Phase 12 handoff status above is retained for provenance. Phase 12 and the original Phase 1–12 overhaul are complete and release-verified; the current work is the separate post-release Visual Remaster track described at the top of this file. Phase 13 does not deploy production or begin Phase 14.

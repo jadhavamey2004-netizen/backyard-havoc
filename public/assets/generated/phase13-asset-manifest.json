@@ -1,0 +1,66 @@
+{
+  "pipeline": [
+    "raw SVG",
+    "SVGO 4.1.0",
+    "@assetpack/core 1.7.0 final-copy pipe"
+  ],
+  "generatedAt": "reproducible build output; timestamp intentionally omitted",
+  "assets": [
+    {
+      "source": "characters/kevin/reference.svg",
+      "sourceBytes": 920,
+      "svgoBytes": 767,
+      "runtimePath": "/assets/generated/characters/kevin/reference.svg",
+      "generatedBytes": 767,
+      "sha256": "7f2f39fd9dbcafed007b338220ddc16ff4999825233e1ffda41c080d05ce27da"
+    },
+    {
+      "source": "characters/player/reference.svg",
+      "sourceBytes": 1040,
+      "svgoBytes": 882,
+      "runtimePath": "/assets/generated/characters/player/reference.svg",
+      "generatedBytes": 882,
+      "sha256": "2204a97d0e19e3baad9cf331e5e82da0c30cbb731af357d319ffba2826e65a1f"
+    },
+    {
+      "source": "vectors/environment/backyard-house.svg",
+      "sourceBytes": 1806,
+      "svgoBytes": 1610,
+      "runtimePath": "/assets/generated/vectors/environment/backyard-house.svg",
+      "generatedBytes": 1610,
+      "sha256": "b55234469356625582007d55340e1c5ee620e97e7550d618cb2283360fc8d78f"
+    },
+    {
+      "source": "vectors/environment/cedar-fence-segment.svg",
+      "sourceBytes": 1054,
+      "svgoBytes": 918,
+      "runtimePath": "/assets/generated/vectors/environment/cedar-fence-segment.svg",
+      "generatedBytes": 918,
+      "sha256": "4d6b18702ecd2e3975730ae4a2fbe8aa513e0a93df37286c0a42a3b14545261c"
+    },
+    {
+      "source": "vectors/environment/foreground-garden.svg",
+      "sourceBytes": 999,
+      "svgoBytes": 879,
+      "runtimePath": "/assets/generated/vectors/environment/foreground-garden.svg",
+      "generatedBytes": 879,
+      "sha256": "9ddfe7ef17cb07cbc8bcdfe1b4a21f4d579af7a27cf0d92be05b12a661d15072"
+    },
+    {
+      "source": "vectors/environment/garden-hedge.svg",
+      "sourceBytes": 967,
+      "svgoBytes": 862,
+      "runtimePath": "/assets/generated/vectors/environment/garden-hedge.svg",
+      "generatedBytes": 862,
+      "sha256": "c4104678969177bc23df82209bd08b0c2dcf924031f8eba4767dd98feda3376f"
+    },
+    {
+      "source": "vectors/props/hydrangea-planter.svg",
+      "sourceBytes": 1786,
+      "svgoBytes": 1603,
+      "runtimePath": "/assets/generated/vectors/props/hydrangea-planter.svg",
+      "generatedBytes": 1603,
+      "sha256": "d7a062aa30ed29539cf0f6158413239aed0605bdfb231a5aa0537240d9fb4990"
+    }
+  ]
+}

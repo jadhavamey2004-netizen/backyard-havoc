@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="168" height="102" viewBox="0 0 168 102">
+  <title>Hydrangea terracotta planter, Phase 13 authored source</title>
+  <metadata>Original Backyard Havoc vector artwork authored for Phase 13.</metadata>
+  <defs>
+    <linearGradient id="ceramic" x2=".15" y2="1"><stop stop-color="#dd815a"/><stop offset=".54" stop-color="#b85b3d"/><stop offset="1" stop-color="#803d31"/></linearGradient>
+    <linearGradient id="leaf" x2=".2" y2="1"><stop stop-color="#91a86b"/><stop offset="1" stop-color="#46664b"/></linearGradient>
+  </defs>
+  <ellipse cx="84" cy="95" rx="67" ry="6" fill="#14231e" opacity=".24"/>
+  <g fill="none" stroke="#486a4f" stroke-width="5" stroke-linecap="round"><path d="M77 63 61 22M86 62 94 15M93 63 119 27M72 64 42 36"/></g>
+  <g fill="url(#leaf)" stroke="#355643" stroke-width="3">
+    <path d="M60 30q-25-1-23-21 18-5 27 15 5-20 22-20 8 18-13 29Z"/>
+    <path d="M92 23q0-21 18-22 12 17-5 31 20-12 33 1-7 19-29 13Z"/>
+    <path d="M54 48q-25-11-17-27 20 2 26 21 2-20 20-23 11 17-7 32Z"/>
+    <path d="M96 43q9-22 27-17 6 19-15 28 20-6 29 10-13 16-33 4Z"/>
+  </g>
+  <path d="M33 54h102l-9 32q-2 7-11 8H54q-10-1-12-8Z" fill="url(#ceramic)" stroke="#65382e" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M30 51q1-7 9-7h91q8 0 9 7l-3 8H33Z" fill="#e79a6c" stroke="#65382e" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M47 66h75M50 72h70" stroke="#edaa7a" stroke-width="3" opacity=".7"/>
+  <path d="M56 87h57" stroke="#64382d" stroke-width="4" opacity=".65"/>
+  <g fill="#d5bb79" stroke="#6b583c" stroke-width="2"><circle cx="45" cy="40" r="5"/><circle cx="53" cy="36" r="5"/><circle cx="60" cy="42" r="5"/><circle cx="118" cy="38" r="5"/><circle cx="126" cy="34" r="5"/><circle cx="133" cy="41" r="5"/></g>
+</svg>

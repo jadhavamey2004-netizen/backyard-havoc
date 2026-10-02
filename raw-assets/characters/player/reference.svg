@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="160" viewBox="0 0 128 160">
+  <title>Player silhouette reference, Phase 13</title>
+  <metadata>Original authored reference placeholder for future sprite and pose work; not gameplay collision art.</metadata>
+  <ellipse cx="63" cy="151" rx="34" ry="6" fill="#172821" opacity=".2"/>
+  <path d="m45 69-11 29 13 5 16-23M79 69l15 24-11 8-18-19" fill="none" stroke="#273343" stroke-width="11" stroke-linecap="round"/>
+  <path d="m52 93-12 34 13 4 16-30M75 94l3 35 14 1 2-39" fill="none" stroke="#b97855" stroke-width="10" stroke-linecap="round"/>
+  <path d="M37 130q12-4 19 2l-8 11H30ZM79 128q12 1 16 7l-4 8H77Z" fill="#243447" stroke="#1f2834" stroke-width="3"/>
+  <path d="M42 35q21-16 44 0l8 38q-28 17-57 0Z" fill="#d35e59" stroke="#273343" stroke-width="5"/>
+  <circle cx="64" cy="20" r="15" fill="#bd805d" stroke="#273343" stroke-width="4"/>
+  <path d="M48 17q4-16 20-13 10 2 14 10l-3 4q-13-8-30 2Z" fill="#292536"/>
+  <path d="M44 34h40" stroke="#f0c15b" stroke-width="5"/>
+</svg>

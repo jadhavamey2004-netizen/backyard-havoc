@@ -25,9 +25,18 @@ const files = [];
 const forbiddenGlobals = [
   '__BACKYARD_TEST_ENGINE__',
   '__BACKYARD_TEST_UI__',
-  '__BACKYARD_TEST_META__'
+  '__BACKYARD_TEST_META__',
+  '__BACKYARD_TEST_RENDERER__'
+];
+const forbiddenToolMarkers = [
+  'phase13DevTool',
+  'MatterDebugOverlay',
+  'lil-gui',
+  'PixiFeasibilityRenderer',
+  'renderer=pixi'
 ];
 const foundGlobals = new Set();
+const foundToolMarkers = new Set();
 const foundLocalPaths = new Set();
 const forbiddenPathSegments = new Set();
 const localPathPatterns = [/D:\\Backyard Havock/i, /C:\\Users\\/i];
@@ -64,6 +73,9 @@ for (const absolutePath of absoluteFiles) {
   for (const globalName of forbiddenGlobals) {
     if (decoded.includes(globalName)) foundGlobals.add(globalName);
   }
+  for (const marker of forbiddenToolMarkers) {
+    if (decoded.includes(marker)) foundToolMarkers.add(marker);
+  }
   for (const pattern of localPathPatterns) {
     if (pattern.test(decoded)) foundLocalPaths.add(pattern.source);
   }
@@ -71,6 +83,7 @@ for (const absolutePath of absoluteFiles) {
 }
 
 assert.deepEqual([...foundGlobals], [], 'Production bundle contains a test bridge global.');
+assert.deepEqual([...foundToolMarkers], [], 'Production bundle contains a development-only renderer or tuning tool.');
 assert.deepEqual([...foundLocalPaths], [], 'Production bundle contains a local development path.');
 assert.deepEqual([...forbiddenPathSegments], [], 'Production bundle contains a forbidden test, report, env, or source-map path.');
 
@@ -83,6 +96,7 @@ const report = {
   cssBytes,
   staticBytes,
   testGlobalsPresent: Object.fromEntries(forbiddenGlobals.map(name => [name, foundGlobals.has(name)])),
+  developmentToolMarkersPresent: Object.fromEntries(forbiddenToolMarkers.map(marker => [marker, foundToolMarkers.has(marker)])),
   localPathPatternsPresent: Object.fromEntries(localPathPatterns.map(pattern => [pattern.source, foundLocalPaths.has(pattern.source)])),
   forbiddenPaths: [...forbiddenPathSegments],
   sourceMaps: files.filter(file => file.path.endsWith('.map')).map(file => file.path),
