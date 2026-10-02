@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "matter-js": "^0.20.0",
-    "pixi.js": "8.22.0",
+    "pixi.js": "8.20.1",
     "poly-decomp": "0.3.0"
   },
   "devDependencies": {
