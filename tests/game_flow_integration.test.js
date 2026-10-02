@@ -6,6 +6,7 @@ import { sounds } from '../src/audio.js';
 import { aiService } from '../src/ai.js';
 import { GAMEPLAY_TUNING } from '../src/gameplay_rules.js';
 import { GAMEPLAY_FEEL_TUNING } from '../src/gameplay_feel.js';
+import { COSMETIC_CATALOG } from '../src/meta/cosmetic_catalog.js';
 
 const createMockCanvas = () => ({
   getContext: () => ({
@@ -71,39 +72,50 @@ describe('Game Flow & Integration Lifecycle', () => {
 
   it('keeps cosmetics presentation-only and preserves the live ball physics body', () => {
     const ball = game.ball;
-    const ballPhysics = {
-      id: ball.id,
-      density: ball.density,
-      restitution: ball.restitution,
-      friction: ball.friction,
-      frictionAir: ball.frictionAir,
-      circleRadius: ball.circleRadius,
-      mass: ball.mass,
-      inertia: ball.inertia,
-      position: { ...ball.position },
-      velocity: { ...ball.velocity }
-    };
-    const gameplayTuning = structuredClone(GAMEPLAY_TUNING);
+    game.score = 1250;
+    game.combo = 6;
+    game.peakCombo = 8;
+    game.player.vx = 1.25;
+    game.havocSystem.meter = 65;
+    game.kevinDirector.rage = 42;
+    game.npc.rageMeter = 42;
 
-    game.setCosmeticSelection({ ball: 'CLASSIC', trail: 'CLASSIC', impact: 'CLASSIC' });
-    expect(game.vfxDirector.impactPalette).toBeNull();
-    game.setCosmeticSelection({ ball: 'NEON', trail: 'EMBER', impact: 'HEAVY' });
-    game.setCosmeticSelection({ ball: 'CARBON', trail: 'ELECTRIC', impact: 'COMIC' });
+    const gameplaySnapshot = () => ({
+      ball: {
+        id: game.ball.id,
+        density: game.ball.density,
+        restitution: game.ball.restitution,
+        friction: game.ball.friction,
+        frictionAir: game.ball.frictionAir,
+        circleRadius: game.ball.circleRadius,
+        mass: game.ball.mass,
+        inertia: game.ball.inertia,
+        collisionFilter: { ...game.ball.collisionFilter },
+        position: { ...game.ball.position },
+        velocity: { ...game.ball.velocity }
+      },
+      player: { x: game.player.x, y: game.player.y, vx: game.player.vx, vy: game.player.vy, speed: game.player.speed },
+      score: game.score,
+      combo: game.combo,
+      peakCombo: game.peakCombo,
+      havoc: game.havocSystem.getSnapshot(),
+      kevinRage: game.kevinDirector.rage,
+      gameplayTuning: structuredClone(GAMEPLAY_TUNING)
+    });
+    const baseline = gameplaySnapshot();
+
+    for (const ballStyle of COSMETIC_CATALOG.ball) {
+      for (const trailStyle of COSMETIC_CATALOG.trail) {
+        for (const impactStyle of COSMETIC_CATALOG.impact) {
+          game.setCosmeticSelection({ ball: ballStyle.id, trail: trailStyle.id, impact: impactStyle.id });
+          expect(gameplaySnapshot()).toEqual(baseline);
+          if (impactStyle.id === 'CLASSIC') expect(game.vfxDirector.impactPalette).toBeNull();
+          else expect(game.vfxDirector.impactPalette).toEqual(impactStyle.palette);
+        }
+      }
+    }
 
     expect(game.ball).toBe(ball);
-    expect({
-      id: ball.id,
-      density: ball.density,
-      restitution: ball.restitution,
-      friction: ball.friction,
-      frictionAir: ball.frictionAir,
-      circleRadius: ball.circleRadius,
-      mass: ball.mass,
-      inertia: ball.inertia,
-      position: { ...ball.position },
-      velocity: { ...ball.velocity }
-    }).toEqual(ballPhysics);
-    expect(GAMEPLAY_TUNING).toEqual(gameplayTuning);
   });
 
   it('boots and advances a run when localStorage access is unavailable', () => {
@@ -1581,5 +1593,24 @@ describe('Game Flow & Integration Lifecycle', () => {
     expect(game.proceduralWorld.totalPropsSmashed).toBe(0);
     expect(game.proceduralWorld.getAllActiveProps().some(prop => prop.propKey === target.propKey)).toBe(true);
     expect(game.proceduralWorld.getAllActiveProps().some(prop => prop.propKey === secondTarget.propKey)).toBe(true);
+  });
+
+  it('removes expired physical fragment bodies after their simulation lifetime', () => {
+    const target = game.proceduralWorld.activeChunks.get(0).props.find(prop => prop.material === 'WOOD');
+    game.engine.gravity.scale = 0;
+    game.ball.velocity.x = 8;
+    game.ball.velocity.y = -2;
+
+    game.collisionHandler({ pairs: [{ bodyA: game.ball, bodyB: target }] });
+    const shardIds = game.activeShards.map(shard => shard.id);
+    expect(shardIds.length).toBeGreaterThan(0);
+    expect(shardIds.every(id => Matter.Composite.allBodies(game.world).some(body => body.id === id))).toBe(true);
+
+    for (let frame = 0; frame < 240 && game.activeShards.length > 0; frame += 1) {
+      game.update(1 / 60);
+    }
+
+    expect(game.activeShards).toHaveLength(0);
+    expect(Matter.Composite.allBodies(game.world).some(body => shardIds.includes(body.id))).toBe(false);
   });
 });

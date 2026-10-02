@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { EdgeAIService, KEVIN_DIALOGUE_POOL } from '../src/ai.js';
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 describe('Edge AI Dialogue & Telemetry Service (Section 9)', () => {
   it('should contain rich dialogue pools across multiple categories', () => {
@@ -42,5 +47,76 @@ describe('Edge AI Dialogue & Telemetry Service (Section 9)', () => {
 
     expect(receivedEmotion).toBeDefined();
     expect(receivedPriority).toBe(2); // MED priority for grill
+  });
+
+  it('does not emit a delayed response from a previous session after reset', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-02T10:00:00.000Z'));
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const ai = new EdgeAIService();
+    const dialogue = vi.fn();
+    ai.onDialogue(dialogue);
+    ai.setNpcRage(70);
+    ai.hasWarnedEscalation = true;
+    ai.dispatchTelemetry({ impact_object: '2nd-Story Bedroom Window' });
+
+    expect(ai.recentDestructions).toHaveLength(1);
+    expect(ai.destructionCounts.window).toBe(1);
+    ai.resetSession();
+    vi.advanceTimersByTime(100);
+
+    expect(dialogue).not.toHaveBeenCalled();
+    expect(ai.recentDestructions).toEqual([]);
+    expect(ai.destructionCounts).toEqual({
+      window: 0,
+      greenhouse: 0,
+      grill: 0,
+      garden: 0,
+      gnome: 0,
+      trashcan: 0,
+      bicycle: 0,
+      total: 0
+    });
+    expect(ai.hasFirstHitHappened).toBe(false);
+    expect(ai.hasWarnedEscalation).toBe(false);
+    expect(ai.currentNpcRage).toBe(0);
+  });
+
+  it('allows a fresh session response after invalidating old delayed work', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-02T10:00:00.000Z'));
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const ai = new EdgeAIService();
+    const dialogue = vi.fn();
+    ai.onDialogue(dialogue);
+    ai.dispatchTelemetry({ impact_object: '2nd-Story Bedroom Window' });
+    ai.resetSession();
+    ai.dispatchTelemetry({ impact_object: '2nd-Story Bedroom Window' });
+
+    vi.advanceTimersByTime(100);
+
+    expect(dialogue).toHaveBeenCalledTimes(1);
+    expect(ai.destructionCounts.window).toBe(1);
+  });
+
+  it('does not carry a previous session dialogue rate limit into the next run', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-02T10:00:00.000Z'));
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const ai = new EdgeAIService();
+    const dialogue = vi.fn();
+    ai.onDialogue(dialogue);
+    ai.dispatchTelemetry({ impact_object: '2nd-Story Bedroom Window' });
+    vi.advanceTimersByTime(100);
+    expect(dialogue).toHaveBeenCalledTimes(1);
+
+    ai.resetSession();
+    ai.dispatchTelemetry({ impact_object: '2nd-Story Bedroom Window' });
+    vi.advanceTimersByTime(100);
+
+    expect(dialogue).toHaveBeenCalledTimes(2);
   });
 });

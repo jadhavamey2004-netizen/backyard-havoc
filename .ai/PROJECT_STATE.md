@@ -4,7 +4,7 @@
 
 - **Branch:** `codex/phase-11-mobile-accessibility-hardening`.
 - **Baseline:** Phase 10 merged/release-verified `main` at `cc3d879df856af6915d470c4f804d790648b73c5`.
-- **Status:** Local verification PASS — `npm test` 312/312 across 34 files; `npm run build` PASS (44 modules); `npm run test:e2e` PASS (50/50: 38 desktop contexts and 12 touch contexts, including one touch-emulated affiliate scenario). All 50 browser-health records have zero page errors, console errors, console warnings, failed requests, and same-origin failures. Draft PR #14 is open for external review; final-head Quality Gate and Vercel Preview evidence are recorded on the PR. Do not merge or begin Phase 12.
+- **Status:** `MERGED + RELEASE VERIFIED` on `main` at `a9fc5204e51f6aa3af4f44d2a4139c9064002e3a`. PR #14's reviewed branch head was `061fd1c0649d691e998d422b8385f584bed78a11`. Post-merge Quality Gate `36969145820` succeeded; the exact-baseline Playwright artifact was `11210009878` (34,079,032 bytes; SHA-256 `a4c6ad33c203cb552a7d0e027ee7bd0b2ea66d2cd2d2f50e5226d1ed97615168`). The verified local baseline was 312/312 Vitest tests across 34 files, a 44-module production build, and 50/50 Chromium desktop/touch browser scenarios with all browser-health counters zero.
 - `.ai/PHASE11_MOBILE_ACCESSIBILITY_AUDIT.md` captures the source audit and accessibility review matrix. `.ai/PHASE11_MOBILE_ACCESSIBILITY.md` documents the input model, touch behavior, responsive strategy, accessibility evidence, verification matrix, and limitations.
 
 ## Phase 10 — Local progression, Garage, and Challenges
@@ -30,7 +30,7 @@
 - Active HUD retains score, health, combo, Havoc, and Kevin state. Results retain the five existing run statistics, Share Score, and the unchanged results-only VideoGen referral. Settings expose only existing global mute and reduced motion.
 - **Phase 9 tests:** `npm test` passed 293/293 across 33 files; `npm run build` passed; `npm run test:e2e` passed 26/26. The Phase 9 Chromium suite captures 27 screenshots over the five required viewports plus keyboard and reduced-motion evidence. All browser-health counters were zero in all 26 scenario records.
 - No dependencies or lockfile changes. The 16:9 Canvas and mobile gameplay controls remain unchanged; independent audio channel sliders and automated axe/screen-reader scanning are deferred. See the UI overhaul document for further limits and Phase 10+ deferrals.
-- **Release:** Phase 9 is merged and release-verified. Phase 10 is also merged and release-verified at `cc3d879df856af6915d470c4f804d790648b73c5`; Phase 11 is isolated on its own branch.
+- **Release:** Phases 9 and 10 are merged and release-verified. Phase 11 is merged and release-verified at `a9fc5204e51f6aa3af4f44d2a4139c9064002e3a`.
 
 ## Phase 8 — Reactive audio and VideoGen referral migration
 
@@ -45,9 +45,10 @@
 
 - **Project:** Backyard Havoc (Vite, JavaScript ES modules, Canvas 2D, Matter.js)
 - **Phase 8 merged baseline:** `1e050247b0d135a6d2ed61c6848599258b78bd12` on `main`.
-- **Current working branch:** `codex/phase-11-mobile-accessibility-hardening`.
-- **Current phase:** Phase 11 — mobile input and accessibility hardening.
-- **Phase 8 status:** Complete, merged into `main`, and release-verified at the Phase 9 baseline SHA.
+- **Current working branch:** `codex/phase-12-final-release-hardening`.
+- **Current phase:** Phase 12 — final release QA / hardening.
+- **Official Phase 12 baseline:** `a9fc5204e51f6aa3af4f44d2a4139c9064002e3a` on `main` and the existing Phase 12 branch.
+- **Phase 11 status:** Complete, merged into `main`, and release-verified at the official Phase 12 baseline.
 
 ## Phase 7 implementation
 
@@ -101,4 +102,4 @@ The Phase 1C contact and timing rules, Phase 2 gameplay feel, Phase 3 character 
 
 ## Deferred
 
-Phases 9 and 10 are merged and release-verified. Phase 11 is active on `codex/phase-11-mobile-accessibility-hardening`; its release is held for the requested draft-PR review and human merge. No Phase 11 production deployment or Phase 12 work is included here.
+Phases 9, 10, and 11 are merged and release-verified. Phase 12 is active on `codex/phase-12-final-release-hardening`. Phase 12 is a release-hardening phase; it does not begin Phase 13. Production deployment, release tagging, and the external Final Release Gate remain pending and are not part of this branch.
