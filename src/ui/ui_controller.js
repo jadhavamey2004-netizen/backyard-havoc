@@ -51,6 +51,10 @@ export class UiController {
     this.focusBeforeGarage = null;
     this.focusBeforeChallenges = null;
     this.elements = this.collectElements();
+    this.shareFeedbackTimer = null;
+    this.shareInProgress = false;
+    this.shareGeneration = 0;
+    this.shareDefaultLabel = this.elements.share?.textContent || 'SHARE SCORE';
     this.bindEvents();
     this.syncSettings({ muted, reducedMotion });
     this.applyState();
@@ -99,11 +103,28 @@ export class UiController {
     on('btn-settings-back', () => this.closeSettings());
     on('btn-restart-run', () => this.restart());
     this.elements.share?.addEventListener('click', async () => {
-      const original = this.elements.share.textContent;
-      const result = await this.onShare();
-      if (result) {
+      if (this.shareInProgress) return;
+      this.clearShareFeedback();
+      const requestGeneration = this.shareGeneration;
+      this.shareInProgress = true;
+      this.elements.share.disabled = true;
+      let result = false;
+      try {
+        result = await this.onShare();
+      } catch (_) {
+        result = 'SHARING UNAVAILABLE';
+      } finally {
+        this.shareInProgress = false;
+        this.elements.share.disabled = false;
+      }
+      if (result && this.state.screen === 'RESULTS' && requestGeneration === this.shareGeneration) {
         setText(this.elements.share, String(result));
-        setTimeout(() => setText(this.elements.share, original), 1800);
+        this.shareFeedbackTimer = setTimeout(() => {
+          this.shareFeedbackTimer = null;
+          if (this.state.screen === 'RESULTS' && requestGeneration === this.shareGeneration) {
+            setText(this.elements.share, this.shareDefaultLabel);
+          }
+        }, 1800);
       }
     });
     this.elements.muteSetting?.addEventListener('change', event => {
@@ -410,8 +431,20 @@ export class UiController {
     this.document.getElementById(id)?.focus();
   }
 
+  clearShareFeedback() {
+    if (this.shareFeedbackTimer !== null) {
+      clearTimeout(this.shareFeedbackTimer);
+      this.shareFeedbackTimer = null;
+    }
+    setText(this.elements.share, this.shareDefaultLabel);
+  }
+
   applyState({ focus = true } = {}) {
     const screen = this.state.screen;
+    if (screen !== 'RESULTS') {
+      this.shareGeneration += 1;
+      this.clearShareFeedback();
+    }
     const overlayVisible = screen !== 'PLAYING';
     const activePanelId = PANEL_BY_SCREEN[screen];
     for (const [id, panel] of Object.entries(this.elements.panels)) {

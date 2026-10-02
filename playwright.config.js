@@ -22,7 +22,7 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: '**/phase11_touch.e2e.js',
+      testIgnore: ['**/phase11_touch.e2e.js', '**/phase12_release_smoke.e2e.js'],
     },
     {
       name: 'chromium-touch',
@@ -34,6 +34,21 @@ export default defineConfig({
         hasTouch: true,
         deviceScaleFactor: 2,
       },
+    },
+    {
+      name: 'chromium-release',
+      testMatch: '**/phase12_release_smoke.e2e.js',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox-release',
+      testMatch: '**/phase12_release_smoke.e2e.js',
+      use: { browserName: 'firefox' },
+    },
+    {
+      name: 'webkit-release',
+      testMatch: '**/phase12_release_smoke.e2e.js',
+      use: { browserName: 'webkit' },
     },
   ],
   webServer: {

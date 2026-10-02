@@ -128,6 +128,8 @@ export class EdgeAIService {
     this.bubbleTimeout = null;
     this.dialogueListeners = [];
     this.telemetryListeners = [];
+    this.sessionGeneration = 0;
+    this.pendingResponseTimers = new Set();
 
     // Session Memory & Rampage Tracking
     this.destructionCounts = {
@@ -159,6 +161,9 @@ export class EdgeAIService {
   }
 
   resetSession() {
+    this.sessionGeneration++;
+    for (const timer of this.pendingResponseTimers) clearTimeout(timer);
+    this.pendingResponseTimers.clear();
     this.destructionCounts = {
       window: 0,
       greenhouse: 0,
@@ -172,6 +177,8 @@ export class EdgeAIService {
     this.recentDestructions = [];
     this.hasWarnedEscalation = false;
     this.hasFirstHitHappened = false;
+    this.currentNpcRage = 0;
+    this.lastDialogueDispatch = null;
   }
 
   /**
@@ -227,9 +234,13 @@ export class EdgeAIService {
     if (isHeadshot) return;
 
     // Preserve the local cosmetic response delay; it cannot affect gameplay state.
-    setTimeout(() => {
+    const sessionGeneration = this.sessionGeneration;
+    const timer = setTimeout(() => {
+      this.pendingResponseTimers.delete(timer);
+      if (sessionGeneration !== this.sessionGeneration) return;
       this.handleEdgeResponse(payload);
     }, payload.edge_latency_ms);
+    this.pendingResponseTimers.add(timer);
   }
 
   handleEdgeResponse(payload) {

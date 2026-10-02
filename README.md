@@ -1,167 +1,64 @@
 # Backyard Havoc
 
 [![Live Demo](https://img.shields.io/badge/Play_Live_Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://backyard-havoc.vercel.app)
-[![Tests Passing](https://img.shields.io/badge/Vitest-passing-brightgreen?style=for-the-badge&logo=vitest)](https://github.com/jadhavamey2004-netizen/backyard-havoc)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
-A 2D physics-arcade football and destruction game. Survive Kevin's attacks, land ball contacts to build combo, and aim shots at backyard targets.
+Backyard Havoc is a 2D Canvas and Matter.js arcade game. Keep the ball in play, break Kevin's backyard, defend against his throws, and chase a high score. The live demo is at <https://backyard-havoc.vercel.app>.
 
-- **Playable Live Web Game (One-Click)**: https://backyard-havoc.vercel.app
-- **GitHub Repository**: https://github.com/jadhavamey2004-netizen/backyard-havoc
+## Play
 
----
+| Input | Action |
+| --- | --- |
+| A / D or Left / Right | Move |
+| Shift | Sprint |
+| Mouse / pointer | Aim; click/tap to act |
+| Hold click/tap, optionally drag | Charge a Power Shot and adjust aim |
+| Space | Skip the intro |
+| Escape | Pause or resume |
+| M | Toggle game audio |
 
-## Gameplay Mechanics and Controls
+On touch devices, the two on-screen buttons move left and right. Tap the playfield to aim and act; hold to charge and drag while held to adjust aim. Touch movement and playfield action can use separate fingers. Cancelled or interrupted input is released when the page is hidden, blurred, or paused.
 
-| Input | Action | Description |
-| :--- | :--- | :--- |
-| **A / D** or **Left / Right** | **Move** | Reposition the footballer. |
-| **Shift** | **Optional sprint** | Advanced movement boost. |
-| **Mouse / pointer** | **Aim** | Point where the football action should aim. |
-| **Primary click** | **Contextual action** | An eligible incoming projectile resolves as a block/parry first. Otherwise, a kick or contextual header can score only on ball contact during the strike phase. |
-| **Hold primary for about 0.41 s** | **Charge a power shot** | A power shot uses the same contact rule and base contact score as a normal kick. A miss does not score. |
-| **Space** | **Skip intro / restart after defeat** | Space is not a gameplay kick. |
-| **M** | **Toggle sound** | Mute or unmute audio. |
+Primary action is contextual: a forecasted incoming Kevin projectile gets defense priority; otherwise a kick or header can affect the ball only during its valid contact window. A charged shot still requires real ball contact. Runs end when the player's three health points are lost. There is no standard-run countdown. Combo continues across airborne ball bounces and drops after the ball remains grounded beyond its grace period.
 
-Standard runs begin when the intro ends and continue until the player's three health points are lost. There is no run countdown. Elapsed run time is shown in the results. The initial 0.8-second combo grace applies only while the ball stays continuously grounded; a bounce alone does not reset combo.
+## Progression and settings
 
----
+The title screen provides Garage, Challenges, and Settings. The game has nine cumulative, event-backed challenges with direct cosmetic rewards. Ball, trail, and impact cosmetics change presentation only; they do not change physics, scoring, movement, defense timing, or Kevin's behavior. Progress, high score, and best combo are stored locally in the browser. There are no accounts, cloud saves, currencies, purchases, online leaderboards, or analytics.
 
-## Core Game Loop
+Settings control game audio and reduced motion. Audio uses the browser's Web Audio API; optional Kevin speech depends on browser support. The exact VideoGen referral link is shown only on Results, has an adjacent affiliate disclosure, and opens only after the player activates the link. It has no progression or gameplay effect.
 
-```
-+------------------------------------------------------------------------+
-|                               CORE LOOP                                |
-|                                                                        |
-|   1. LAND CONTACT  --->  2. AIM & SMASH  --->  3. READ & DEFEND      |
-|   Keep skill combo       Kick or header         One action blocks,     |
-|   through ball play      backyard targets       parries or misses      |
-+------------------------------------------------------------------------+
-```
+## Runtime architecture
 
-1. **Land ball contacts and build combo**:
-   - Valid kicks, headers, parries and perfect parries advance combo. Blocks, destruction, and Kevin impacts do not. There is no fixed combo cap in the runtime contract.
-2. **Aim and Destroy Backyard Targets**:
-   - Aim high into Neighbor Kevin's second-story window, shatter garden gnomes, pop patio lights, and detonate barbecue propane grills with chain-reaction physics.
-3. **Read and defend against counterattacks**:
-   - An incoming projectile takes priority at primary-action release. Its predicted time to player contact determines BLOCK, PARRY, or PERFECT PARRY. A projectile that has already reached the player is handled as a normal hit.
+- `src/game.js` coordinates the run, Matter.js world, collisions, and gameplay events.
+- `src/player.js`, `src/gameplay_rules.js`, and `src/gameplay_feel.js` own player actions and their approved rule/tuning sources.
+- `src/procedural_world.js` streams yards and retains destruction history for the current run; active world bodies are unloaded as the player moves.
+- `src/destruction_system.js` creates bounded, temporary physical fragments. `src/particles.js`, `src/camera.js`, and `src/vfx_director.js` own bounded presentation effects.
+- `src/npc.js` and `src/kevin_director.js` implement Kevin's in-game escalation and projectile behavior. `src/ai.js` is a local, rule-based cosmetic dialogue and telemetry simulation; it has no network client and is not gameplay AI.
+- `src/audio.js`, `src/audio_director.js`, and `src/audio_mix.js` manage browser audio. `src/ui/` owns screen transitions, focus, overlays, and menu presentation. `src/meta/` owns local progression records.
 
----
+The production app requests Bebas Neue and Outfit from Google Fonts. The VideoGen referral is the only user-initiated external destination from the game. There is no analytics, LLM API, authentication service, remote telemetry, cloud save, or ad network.
 
-## Architecture and Technology Stack
+## Development and verification
 
-- **Physics Engine (`src/game.js`, Matter.js)**: Matter.js drives the game world with 240 Hz sub-stepping; `src/physics.js` also contains standalone physics formula utilities.
-- **Adaptive NPC Behavioral State Machine (`src/ai.js`, `src/npc.js`)**: 6-state dynamic behavior controller tracking player accuracy, distance, and combo level in real time.
-- **Audio and Generative Procedural Music (`src/audio.js`, `src/audio_assets.js`)**:
-  - Web Audio API master dynamics compressor and speech presence EQ filter.
-  - Multi-clause emotional inflection engine with phonetic normalization (zero robotic speech artifacts).
-  - Procedural generative funk bassline scaling tempo dynamically from 88 BPM to 150 BPM with combo tiers.
-- **Visual Effects and Camera Juice (`src/particles.js`, `src/camera.js`)**:
-  - Non-linear camera trauma decay formula (`offset = trauma^2 * maxShake`).
-  - Concentric impact shockwaves, chromatic hit-freeze frames, speed lines, and wind slashes.
-- **Automated Test Suite (`tests/`)**: 19 test files (107 automated unit and integration tests) running on Vitest.
-
----
-
-## Historical prototype vision (superseded where it differs from the runtime)
-
-The following archived design notes describe earlier concepts. Bullet-time headers, 90-second standard runs, fixed combo caps, daily modes, and other roadmap concepts are not current runtime behavior.
-
-### Question #1: Build a Playable Prototype (Design and Strategy)
-
-### 1. The Pitch
-- **What it is**: *Backyard Havoc* is a fast-paced physics-arcade soccer juggler and comedic destruction game where you juggle a street football to charge high-velocity trick shots, smash your grumpy neighbor Kevin’s windows and backyard ornaments, and parry his retaliatory flowerpot counterattacks back at him.
-- **Who it is for**: Casual and mid-core arcade gamers who love physics trick-shot games (*Angry Birds*, *Brawl Stars*), combo-chaining arcade titles (*Tony Hawk*, *OlliOlli*), and slapstick neighbor-prank games (*Untitled Goose Game*, *Neighbors from Hell*).
-- **Why someone plays it**: Instant kinetic satisfaction. The tactile kick physics, slow-motion bullet-time headers, escalating destruction chains, and the comedic satisfaction of provoking a grumpy neighbor into an over-the-top rage tantrum create an immediate, addictive dopamine loop.
-
----
-
-### 2. Core Loop and First Session
-- **First 3 Minutes**:
-  1. The player starts juggling the football, discovering that keeping it aloft builds combo multipliers and dynamic musical energy.
-  2. Aiming upward unleashes high-trajectory shots that shatter garden gnomes, conservatory glass, and barbecue grills with explosive physics.
-  3. Neighbor Kevin slams open his second-story window in fury, throwing flowerpots and boots. The player learns to **time a volley kick to parry projectiles back into Kevin's window** for massive point bursts.
-- **The Day-1 Hook (Why they return tomorrow)**:
-  - **"One More Run" High-Score Chase**: Quick 90-second run cycles with high skill ceilings (combos, trick chains, parry streaks) paired with daily challenge modifiers (e.g., *"Heavy Bowling Ball Physics"*, *"Triple Flowerpot Volley Day"*).
-  - **D1 Unlocks**: Hitting target destruction scores unlocks alternative backyard biomes and cosmetic ball trails.
-
----
-
-### 3. Progression and Metagame
-- **Prototype State**:
-  - Pure arcade high-score chase where mastery comes from timing, angle prediction, and clearing all breakable backyard targets in a single run.
-- **Production Roadmap (Retention System)**:
-  - **Daily Objectives and Cred Points**: Daily challenges (e.g., *"Shatter 3 gnomes in one combo"*, *"Parry 5 flowerpots without taking damage"*) award Cred Points to unlock authentic vintage street jerseys, custom balls, and character skins.
-  - **Weekly Mystery Icon Hunt**: A 7-day reveal system where daily trivia and visual clues tease a legendary football icon, culminating in an unlockable playable character.
-  - **Playable Iconic Moments**: Mini-scenarios where players recreate famous career highlights inside the backyard engine using signature player animations.
-
----
-
-### 4. Monetization Strategy
-An accessible, low-friction micro-economy designed around fan nostalgia rather than pay-to-win barriers:
-
-| Feature | Model | Price | Content Included |
-| :--- | :--- | :--- | :--- |
-| **Core Game** | Free-to-Play | **$0.00** | Full sandbox juggling, breakable backyard targets, high-score tracking, base customization. |
-| **Icon Micro-Pass** | Weekly Campaign | **$0.99** | Unlocks 3 playable episodic historical chapters for the weekly featured Icon, their signature jersey, and unique visual flair. |
-
-*At just 99 cents per Icon pack, the pass acts as an impulse digital collectible card that rewards football trivia without aggressive monetization tactics.*
-
----
-
-### 5. AI Integration
-- **Prototype Implementation**:
-  - **Kevin's Dynamic Behavioral State Machine**: Uses real-time situational tracking (`src/ai.js`, `src/npc.js`) to analyze player juggle angle, distance, combo level, and accuracy across 6 dynamic behavioral states (`PEEKING_INSIDE` -> `LEANING_OUT_RAGE` -> `SHAKING_FIST` -> `THROWING_PROJECTILE` -> `HEADSHOT_STUNNED` -> `REPAIRING_WINDOW`).
-  - **Emotion-Gated Voice Synthesis**: Generates reactive, escalating voice lines with phonetic normalization for the disgruntled neighbor as property damage mounts.
-- **Production Vision**:
-  - **Icon Voiceovers**: Generating stylized commentary, post-shot banter, and authentic persona voice lines for featured football legends.
-  - **Procedural Cinematics**: Generating comic-panel narrative vignettes to illustrate the backstory of each Icon's 3-chapter campaign.
-  - **Dynamic Match Scenarios**: Utilizing LLM logic pipelines to translate historical match data (distance, defensive setup, weather) into custom backyard target configurations.
-
----
-
-### 6. Shipping and KPI Soft-Launch Strategy
-- **What to Test First**:
-  - Core kick and parry timing window feel (ensuring the input window feels responsive on both mouse and touch).
-  - Score pacing and combo drop-off curve.
-- **Metrics to Watch at Soft Launch**:
-  - **Day 1 Retention**: Target >= 45%.
-  - **Day 7 Retention**: Target >= 18%.
-  - **Session Length**: Target 5.5 - 7.0 minutes across 4+ sessions per day.
-  - **Parry Engagement Rate**: % of players who execute at least one successful projectile parry in Run 1 (validates combat clarity).
-- **Kill / Pivot Signals**:
-  - If D1 Retention falls below 28% and median session length is < 2.5 minutes, simplify the juggling controls to a single-tap flick mechanic and increase destructible density.
-
----
-
-### 7. Reference Games
-- **Angry Birds / Crush the Castle**: Borrowed the visceral joy of structural physics collapse; replaced stationary slingshots with active player-driven soccer juggling.
-- **Tony Hawk / OlliOlli**: Borrowed the exponential combo multiplier and risk-reward trick chain mechanics; applied it to an airborne football.
-- **Neighbors from Hell / Untitled Goose Game**: Borrowed the comedy of provoking an eccentric neighbor with escalating antics; transformed it into real-time arcade combat with interactive projectile parrying.
-
----
-
-## Local Development and Testing
+Requires Node.js 20 or newer and npm.
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/jadhavamey2004-netizen/backyard-havoc.git
-cd backyard-havoc
-
-# 2. Install dependencies
-npm install
-
-# 3. Start local development server
+npm ci
 npm run dev
-
-# 4. Run automated test suite
-npm test
-
-# 5. Build optimized production bundle
-npm run build
 ```
 
----
+Run the unit/integration suite, production build, and full Playwright matrix with:
+
+```bash
+npm test
+npm run build
+npm run test:e2e
+```
+
+The Playwright matrix includes the full desktop Chromium suite, Chromium touch coverage, and a focused release smoke in Chromium, Firefox, and WebKit. The cross-browser smoke does not claim WebKit multi-touch coverage. Browser binaries can be installed with `npx playwright install chromium firefox webkit`.
+
+Earlier design notes and prototype plans are historical records, not a specification of current runtime behavior. The current truth documents are `.ai/GAMEPLAY_TRUTH.md`, `.ai/FEATURE_TRUTH.md`, `.ai/PHASE10_PROGRESSION_META.md`, and `.ai/PHASE11_MOBILE_ACCESSIBILITY.md`.
 
 ## License
-MIT License.
+
+The repository is distributed under the MIT License; see [LICENSE](LICENSE). Third-party component and font notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
