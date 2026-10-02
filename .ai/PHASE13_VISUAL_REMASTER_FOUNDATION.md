@@ -6,6 +6,10 @@ Phase 13 is a new post-release Visual Remaster track. The original Phase 1–12 
 
 No main-branch changes, production deployment, gameplay retuning, or Phase 14 implementation are part of this work.
 
+### Prepared toolchain history versus Phase 13 implementation
+
+The commits already present on the branch through the starting head `87aaf06929348acff538291f094ad756d49bf8ba` were prepared handoff material, not implementation from this turn: `b87899e` (free bootstrap script), `039c5c2` (agent guardrails), `207d9db` and `36f9819` (npm bootstrap/package setup), `d3639ac`, `3ca87cf`, and `adf23a7` (stable PixiJS pin), `14937d0` (approved toolchain packages), `05cb197` (remove one-shot bootstrap workflow), and `87aaf06` (remaster roadmap). The new implementation begins with `d158419` (`Add Phase 13 renderer feasibility foundation`); later Phase 13 evidence/snapshot commits are implementation follow-up. This distinction matters because a baseline-to-branch diff also includes the prepared research, roadmap, package lock, and tool bootstrap.
+
 ## Baseline and toolchain
 
 Before Phase 13 changes, the recorded baseline was 319/319 Vitest tests across 35 files, a 44-module production build, and 54/58 local E2E scenarios; the four incomplete baseline scenarios were Firefox/WebKit launch failures while those Playwright browser binaries were unavailable. After `npm ci`, the Phase 13 local run passes 324/324 Vitest tests across 36 files, the production build, and 63/63 Chromium E2E projects. Playwright 1.63 requires Firefox build 1543 and WebKit build 2359; the workstation cache contained only Firefox 1490 and WebKit 2203. Both official Firefox download mirrors timed out, so the six Firefox/WebKit scenarios were not runnable locally. The GitHub workflow installs the exact current Playwright browsers on Ubuntu and remains the required authority for those results.
