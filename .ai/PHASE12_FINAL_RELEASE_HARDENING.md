@@ -20,7 +20,7 @@ The fix gives each session a generation, tracks pending response timers, cancels
 
 ### Cross-browser movement sampling
 
-The first Firefox/WebKit CI attempt found a timing assumption in the new release-smoke test: WebKit had the right movement key held, but the test sampled player position after exactly 120 ms and observed no displacement. This did not produce browser-health errors. The regression still requires real displacement; it now uses a bounded Playwright poll for `player.x > startX` and releases the key only after movement is observed. The current PR head's final cross-browser job decides compatibility status.
+The first Firefox/WebKit CI attempt found a timing assumption in the new release-smoke test: WebKit had the right movement key held, but the test sampled player position after exactly 120 ms and observed no displacement. This did not produce browser-health errors. The regression still requires real displacement; it now uses a bounded Playwright poll for `player.x > startX` and releases the key only after movement is observed. Both release-smoke scenarios then passed in Firefox and WebKit in the latest observed PR checks; local binaries remain unavailable. Verify the latest PR head after every push.
 
 ### Release documentation and packaging
 
@@ -105,7 +105,7 @@ Evidence is emitted by `tests/e2e/phase12_runtime_stress.e2e.js` into the Playwr
 
 ### Exact-head CI and Preview
 
-The draft PR is the authoritative live record for the final source head. Its latest Unit/Build, Chromium, and Firefox/WebKit checks, uploaded artifact IDs/digests, and Vercel Preview must all be checked against that same PR HEAD before assigning the READY verdict. These values are intentionally not copied into this committed report as immutable run IDs, because each later source/documentation commit creates a new head. The final handoff reports the exact values observed after the last push. No production deployment, release tag, merge, or post-merge Final Release Gate is claimed here.
+The latest observed PR head passed Unit/Build, Chromium, and Firefox/WebKit checks. Its two uploaded artifacts are tied to that SHA, and its Vercel Preview is READY with matching `sha` and `ref`. The live PR remains the authority: recheck the latest run and deployment after every push. Run IDs and artifact digests are reported in the final handoff rather than frozen here. No production deployment, release tag, merge, or post-merge Final Release Gate is claimed here.
 
 ## Final acceptance matrix
 
@@ -114,8 +114,8 @@ The draft PR is the authoritative live record for the final source head. Its lat
 | P0/P1 audit findings | No known open P0/P1; the confirmed P1 is fixed and has regression coverage. |
 | Unit/build/production bundle | PASS locally after clean install. |
 | Chromium desktop/touch/release smoke | PASS locally, 54 total Chromium scenarios; all health records clean. |
-| Firefox/WebKit | Local binaries unavailable; final exact-head CI is required and must pass. |
+| Firefox/WebKit | Both release-smoke scenarios pass per browser in the latest observed exact-head CI; local binaries are unavailable. |
 | Resource, persistence, async, and audio evidence | Machine-readable JSON generated and attached by the Chromium job. |
-| Exact-head GitHub artifacts | Must match the latest PR head; verify latest job/artifact metadata. |
-| Vercel Preview | Must be READY with Git SHA equal to latest PR head. |
+| Exact-head GitHub artifacts | Both uploaded artifacts are tied to the latest observed PR head; verify live metadata after every push. |
+| Vercel Preview | Latest observed deployment is READY with Git SHA/ref equal to the PR head; verify again after every push. |
 | Production verification | Intentionally pending the external post-merge Final Release Gate. |

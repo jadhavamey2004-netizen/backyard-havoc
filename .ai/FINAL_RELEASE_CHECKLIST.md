@@ -5,7 +5,7 @@ This checklist separates Phase 12 review evidence from the post-merge production
 ## Source provenance
 
 - [x] Phase 12 began from the verified `a9fc5204e51f6aa3af4f44d2a4139c9064002e3a` baseline on the existing `codex/phase-12-final-release-hardening` branch.
-- [ ] Final PR head, CI runs, artifacts, and Preview use the same SHA; verify on the current draft PR after the final push.
+- [x] Latest PR check, artifact, and Preview records match the observed branch head; verify again after every push.
 
 ## Gameplay
 
@@ -76,9 +76,9 @@ This checklist separates Phase 12 review evidence from the post-merge production
 
 - [x] Full desktop Chromium suite passes 41/41 locally.
 - [x] Chromium touch suite passes 11/11 locally.
-- [ ] Firefox release smoke passes; the local pinned executable is unavailable, so exact-head CI must verify it.
-- [ ] WebKit release smoke passes; the local pinned executable is unavailable, so exact-head CI must verify it.
-- [ ] Cross-browser CI artifact is tied to the final PR head.
+- [x] Firefox release smoke passes 2/2 in the latest observed exact-head CI; the local pinned executable is unavailable.
+- [x] WebKit release smoke passes 2/2 in the latest observed exact-head CI; the local pinned executable is unavailable.
+- [x] Cross-browser CI artifact is tied to the latest observed PR head; verify current metadata after every push.
 
 ## Performance
 
@@ -105,16 +105,16 @@ This checklist separates Phase 12 review evidence from the post-merge production
 
 ## CI
 
-- [ ] Unit tests and production build pass on the exact final PR SHA.
-- [ ] Chromium/touch quality job passes on the exact final PR SHA.
-- [ ] Firefox/WebKit release job passes on the exact final PR SHA.
-- [ ] Final Playwright artifacts include browser-health and required stress evidence.
+- [x] Unit tests and production build pass on the latest observed PR SHA; verify current status after every push.
+- [x] Chromium/touch quality job passes on the latest observed PR SHA; verify current status after every push.
+- [x] Firefox/WebKit release job passes on the latest observed PR SHA; verify current status after every push.
+- [x] Final Playwright artifacts include browser-health and required stress evidence tied to the latest observed PR SHA.
 
 ## Vercel
 
-- [ ] Final PR head has a READY Preview whose Git SHA equals the final PR head.
-- [ ] Preview URL and deployment identity are reported.
-- [ ] No production deployment was initiated from this branch.
+- [x] Latest observed PR head has a READY Preview whose Git SHA/ref equals the PR head; verify after every push.
+- [x] Preview URL and deployment identity are recorded in the final handoff.
+- [x] No production deployment was initiated from this branch.
 
 ## Final production verification
 

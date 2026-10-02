@@ -49,6 +49,7 @@
 - **Current phase:** Phase 12 — final release QA / hardening.
 - **Official Phase 12 baseline:** `a9fc5204e51f6aa3af4f44d2a4139c9064002e3a` on `main` and the existing Phase 12 branch.
 - **Phase 11 status:** Complete, merged into `main`, and release-verified at the official Phase 12 baseline.
+- **Phase 12 status:** Release-hardening implementation and local QA are complete on this branch; draft PR #15 is open for external review. Verify the latest PR checks, artifacts, and Preview against the branch head after each push. No merge, production deployment, release tag, or Final Release Gate has been performed.
 
 ## Phase 7 implementation
 
