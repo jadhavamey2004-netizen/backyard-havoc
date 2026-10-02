@@ -22,6 +22,18 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: '**/phase11_touch.e2e.js',
+    },
+    {
+      name: 'chromium-touch',
+      testMatch: '**/phase11_touch.e2e.js',
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+        deviceScaleFactor: 2,
+      },
     },
   ],
   webServer: {

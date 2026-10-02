@@ -1,15 +1,22 @@
 # Project State
 
+## Phase 11 — Mobile input and accessibility hardening
+
+- **Branch:** `codex/phase-11-mobile-accessibility-hardening`.
+- **Baseline:** Phase 10 merged/release-verified `main` at `cc3d879df856af6915d470c4f804d790648b73c5`.
+- **Status:** Local verification PASS — `npm test` 312/312 across 34 files; `npm run build` PASS (44 modules); `npm run test:e2e` PASS (50/50: 38 desktop contexts and 12 touch contexts, including one touch-emulated affiliate scenario). All 50 browser-health records have zero page errors, console errors, console warnings, failed requests, and same-origin failures. Draft PR #14 is open for external review; final-head Quality Gate and Vercel Preview evidence are recorded on the PR. Do not merge or begin Phase 12.
+- `.ai/PHASE11_MOBILE_ACCESSIBILITY_AUDIT.md` captures the source audit and accessibility review matrix. `.ai/PHASE11_MOBILE_ACCESSIBILITY.md` documents the input model, touch behavior, responsive strategy, accessibility evidence, verification matrix, and limitations.
+
 ## Phase 10 — Local progression, Garage, and Challenges
 
 - **Baseline:** `4c05d173915888438bc1cf611d83b54f01abfad5`, the merged/release-verified Phase 9 baseline.
 - **Branch:** `codex/phase-10-progression-meta`.
-- **Status:** Implementation and local verification PASS; exact-head GitHub Quality Gate, Vercel Preview, and external review status are tracked by the Phase 10 draft PR. Phase 10 is not merged or production-deployed.
+- **Status:** `MERGED + RELEASE VERIFIED` on `main` at `cc3d879df856af6915d470c4f804d790648b73c5`.
 - `.ai/PHASE10_META_AUDIT.md` is the pre-implementation source/event/storage/VFX audit. `.ai/PHASE10_PROGRESSION_META.md` documents the implemented local profile, nine event-backed challenges, direct cosmetic rewards, presentation hooks, UI, recovery behavior, and verification matrix.
 - `src/meta/` owns version-1 profile validation/storage, static challenge and cosmetic catalogs, canonical-evidence tracking, and progression coordination. `src/main.js` observes existing gameplay events and run results; `GameEngine` remains gameplay authority.
 - Garage and Challenges are exclusive, title-only Phase 9 UI screens. Results present compact challenge/unlock feedback. The VideoGen referral URL and click contract remain unchanged.
 - Cosmetics affect Canvas ball palettes, the existing bounded ball-trail path, and canonical impact palette colors only. No Matter body, gameplay rule, score, combo, Kevin, Havoc, destruction, camera, or audio behavior is changed. No dependencies or package-lock files changed.
-- **Phase 10 local verification:** After the external-review lifecycle correction, `npm test` PASS — 312/312 across 34 files; `npm run build` PASS — 44 modules; `npm run test:e2e` PASS — 31/31 Chromium. The original 29-scenario Phase 10 suite passed four full local runs during implementation; the expanded 31-scenario suite passed once for this correction. Every browser-health counter was zero in all 31 scenarios in the latest full run. The Playwright report includes responsive Garage/Challenges screenshots at the five required viewports and the equipped-cosmetic state.
+- **Phase 10 final local verification:** `npm test` PASS — 312/312 across 34 files; `npm run build` PASS — 44 modules; `npm run test:e2e` PASS — 31/31 Chromium. Every browser-health counter was zero in all 31 scenarios in the final Phase 10 run. The Playwright report includes responsive Garage/Challenges screenshots at the five required viewports and the equipped-cosmetic state.
 
 ## Phase 9 — UI/UX overhaul
 
@@ -23,7 +30,7 @@
 - Active HUD retains score, health, combo, Havoc, and Kevin state. Results retain the five existing run statistics, Share Score, and the unchanged results-only VideoGen referral. Settings expose only existing global mute and reduced motion.
 - **Phase 9 tests:** `npm test` passed 293/293 across 33 files; `npm run build` passed; `npm run test:e2e` passed 26/26. The Phase 9 Chromium suite captures 27 screenshots over the five required viewports plus keyboard and reduced-motion evidence. All browser-health counters were zero in all 26 scenario records.
 - No dependencies or lockfile changes. The 16:9 Canvas and mobile gameplay controls remain unchanged; independent audio channel sliders and automated axe/screen-reader scanning are deferred. See the UI overhaul document for further limits and Phase 10+ deferrals.
-- **Release:** Phase 9 is merged and release-verified. Phase 10 remains isolated on its own draft branch and is not merged or production-deployed as part of this work.
+- **Release:** Phase 9 is merged and release-verified. Phase 10 is also merged and release-verified at `cc3d879df856af6915d470c4f804d790648b73c5`; Phase 11 is isolated on its own branch.
 
 ## Phase 8 — Reactive audio and VideoGen referral migration
 
@@ -38,8 +45,8 @@
 
 - **Project:** Backyard Havoc (Vite, JavaScript ES modules, Canvas 2D, Matter.js)
 - **Phase 8 merged baseline:** `1e050247b0d135a6d2ed61c6848599258b78bd12` on `main`.
-- **Current working branch:** `codex/phase-10-progression-meta`.
-- **Current phase:** Phase 10 — local progression, Garage, and Challenges.
+- **Current working branch:** `codex/phase-11-mobile-accessibility-hardening`.
+- **Current phase:** Phase 11 — mobile input and accessibility hardening.
 - **Phase 8 status:** Complete, merged into `main`, and release-verified at the Phase 9 baseline SHA.
 
 ## Phase 7 implementation
@@ -94,4 +101,4 @@ The Phase 1C contact and timing rules, Phase 2 gameplay feel, Phase 3 character 
 
 ## Deferred
 
-At the Phase 8 handoff, Phase 9 UI and later-phase work were deferred. Phase 9 is now being reviewed on its own draft PR. Production release waits for external review and a human merge to `main`; no Phase 9 work promotes Vercel Preview or changes production.
+Phases 9 and 10 are merged and release-verified. Phase 11 is active on `codex/phase-11-mobile-accessibility-hardening`; its release is held for the requested draft-PR review and human merge. No Phase 11 production deployment or Phase 12 work is included here.

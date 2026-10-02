@@ -53,6 +53,17 @@ export function monitorBrowserHealth(page) {
   return health;
 }
 
+export async function attachJsonEvidence(testInfo, name, value) {
+  const body = JSON.stringify(value, null, 2);
+  const evidencePath = testInfo.outputPath(name);
+  await mkdir(dirname(evidencePath), { recursive: true });
+  await writeFile(evidencePath, `${body}\n`);
+  await testInfo.attach(name, {
+    path: evidencePath,
+    contentType: 'application/json',
+  });
+}
+
 export async function attachBrowserHealth(testInfo, health) {
   const body = JSON.stringify(health, null, 2);
   const evidencePath = testInfo.outputPath('browser-health.json');

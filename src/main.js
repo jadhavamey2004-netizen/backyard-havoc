@@ -42,6 +42,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.documentElement.classList.toggle('reduced-motion', value);
   };
   let ui = null;
+  let releaseAllGameInput = () => {};
   applyReducedMotion(getReducedMotion());
   reducedMotionPreference?.addEventListener?.('change', event => {
     if (reducedMotionOverride === null) {
@@ -57,9 +58,13 @@ window.addEventListener('DOMContentLoaded', async () => {
       metaProgression.beginRun();
       return true;
     },
-    onPause: () => engine.setPaused(true),
+    onPause: () => {
+      releaseAllGameInput();
+      return engine.setPaused(true);
+    },
     onResume: () => engine.setPaused(false),
     onRestart: () => {
+      releaseAllGameInput();
       metaProgression.abandonRun();
       engine.resetEnvironment();
       engine.startIntroCutscene();
@@ -69,6 +74,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       return true;
     },
     onMainMenu: () => {
+      releaseAllGameInput();
       metaProgression.abandonRun();
       engine.resetEnvironment();
       return true;
@@ -113,6 +119,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   const affiliatePlacement = document.getElementById('affiliate-placement');
   engine.onGameOverCallback = stats => {
+    releaseAllGameInput();
     const progressionSummary = metaProgression.completeRun(stats);
     mountAffiliateLink(affiliatePlacement);
     ui.showResults(stats, progressionSummary);
@@ -127,13 +134,87 @@ window.addEventListener('DOMContentLoaded', async () => {
     window.__BACKYARD_TEST_META__ = metaProgression;
   }
 
+  const heldSources = {
+    left: new Set(),
+    right: new Set(),
+    sprint: new Set()
+  };
+  const movementPointers = new Map();
+  let canvasActionPointerId = null;
+  const movementKeyByAction = { left: 'ArrowLeft', right: 'ArrowRight', sprint: 'ShiftLeft' };
+  const actionForKey = code => {
+    if (code === 'KeyA' || code === 'ArrowLeft') return 'left';
+    if (code === 'KeyD' || code === 'ArrowRight') return 'right';
+    if (code === 'ShiftLeft' || code === 'ShiftRight') return 'sprint';
+    return null;
+  };
+  const syncMovementButtonState = action => {
+    const button = document.getElementById(action === 'left' ? 'mobile-move-left' : 'mobile-move-right');
+    button?.setAttribute('aria-pressed', String(heldSources[action].size > 0));
+  };
+  const addHeldSource = (action, source) => {
+    const sources = heldSources[action];
+    if (sources.has(source)) return;
+    const wasHeld = sources.size > 0;
+    sources.add(source);
+    if (!wasHeld) engine.handleKeyDown(movementKeyByAction[action]);
+    if (action !== 'sprint') syncMovementButtonState(action);
+  };
+  const removeHeldSource = (action, source) => {
+    const sources = heldSources[action];
+    if (!sources.delete(source)) return;
+    if (sources.size === 0) engine.handleKeyUp(movementKeyByAction[action]);
+    if (action !== 'sprint') syncMovementButtonState(action);
+  };
+  const releaseCanvasAction = () => {
+    const pointerId = canvasActionPointerId;
+    canvasActionPointerId = null;
+    if (engine.isPointerDown) engine.handlePointerCancel();
+    if (pointerId !== null && canvas.hasPointerCapture?.(pointerId)) {
+      try { canvas.releasePointerCapture(pointerId); } catch (_) {}
+    }
+  };
+  const releaseMovementPointer = pointerId => {
+    const entry = movementPointers.get(pointerId);
+    if (!entry) return;
+    movementPointers.delete(pointerId);
+    removeHeldSource(entry.action, `pointer:${pointerId}`);
+    if (entry.element.hasPointerCapture?.(pointerId)) {
+      try { entry.element.releasePointerCapture(pointerId); } catch (_) {}
+    }
+  };
+  let nextKeyboardActivationId = 0;
+  releaseAllGameInput = () => {
+    const actionPointerId = canvasActionPointerId;
+    const movementPointerEntries = [...movementPointers.entries()];
+    canvasActionPointerId = null;
+    engine.handlePointerCancel();
+    if (actionPointerId !== null && canvas.hasPointerCapture?.(actionPointerId)) {
+      try { canvas.releasePointerCapture(actionPointerId); } catch (_) {}
+    }
+    for (const [action, sources] of Object.entries(heldSources)) {
+      if (sources.size > 0) {
+        sources.clear();
+        engine.handleKeyUp(movementKeyByAction[action]);
+      }
+      if (action !== 'sprint') syncMovementButtonState(action);
+    }
+    movementPointers.clear();
+    for (const [pointerId, entry] of movementPointerEntries) {
+      if (entry.element.hasPointerCapture?.(pointerId)) {
+        try { entry.element.releasePointerCapture(pointerId); } catch (_) {}
+      }
+    }
+  };
+
+  const heldKeyCodes = new Set(['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight']);
   window.addEventListener('keydown', event => {
     if (ui.handleKeyDown(event)) return;
 
     const nativeSpaceActivation = event.code === 'Space' && event.target?.closest('button, summary');
     if (nativeSpaceActivation) return;
 
-    const gameplayKeys = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+    const gameplayKeys = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD', 'ShiftLeft', 'ShiftRight'];
     if (ui.getState().screen === 'PLAYING' && gameplayKeys.includes(event.code)) event.preventDefault();
 
     if (event.code === 'KeyM' && !event.repeat) {
@@ -141,10 +222,19 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (event.repeat || ui.getState().screen !== 'PLAYING') return;
-    engine.handleKeyDown(event.code);
+    const action = actionForKey(event.code);
+    if (action) addHeldSource(action, `keyboard:${event.code}`);
+    else engine.handleKeyDown(event.code);
   });
 
-  window.addEventListener('keyup', event => engine.handleKeyUp(event.code));
+  window.addEventListener('keyup', event => {
+    if (heldKeyCodes.has(event.code)) {
+      const action = actionForKey(event.code);
+      if (action) removeHeldSource(action, `keyboard:${event.code}`);
+      return;
+    }
+    engine.handleKeyUp(event.code);
+  });
 
   const setupHighDPICanvas = () => {
     const dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
@@ -161,51 +251,83 @@ window.addEventListener('DOMContentLoaded', async () => {
     return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
   };
 
-  canvas.addEventListener('mousemove', event => {
+  const coarsePointerQuery = window.matchMedia?.('(pointer: coarse)');
+  const anyCoarsePointerQuery = window.matchMedia?.('(any-pointer: coarse)');
+  const isTouchCapable = () => Boolean(
+    coarsePointerQuery?.matches || anyCoarsePointerQuery?.matches || navigator.maxTouchPoints > 0
+  );
+  const mobileControls = document.getElementById('mobile-game-controls');
+  const updateTouchCapability = () => document.documentElement.classList.toggle('touch-capable', isTouchCapable());
+  updateTouchCapability();
+  for (const query of [coarsePointerQuery, anyCoarsePointerQuery]) {
+    query?.addEventListener?.('change', updateTouchCapability);
+  }
+  const syncMobileControls = () => {
+    const shouldShow = isTouchCapable() && ui.getState().screen === 'PLAYING' && engine.gameState === 'PLAYING' &&
+      !engine.isPaused && !engine.isGameOver && engine.pageVisible;
+    const isHidden = !shouldShow;
+    if (mobileControls.hidden !== isHidden) mobileControls.hidden = isHidden;
+    const ariaHidden = String(isHidden);
+    if (mobileControls.getAttribute('aria-hidden') !== ariaHidden) mobileControls.setAttribute('aria-hidden', ariaHidden);
+  };
+
+  canvas.addEventListener('pointermove', event => {
+    if (event.pointerType !== 'mouse' && event.pointerType !== 'pen' && event.pointerId !== canvasActionPointerId) return;
+    if (canvasActionPointerId !== null && event.pointerId !== canvasActionPointerId) return;
     const coords = getCanvasCoords(event.clientX, event.clientY);
     engine.handlePointerMove(coords.x, coords.y);
   });
-  canvas.addEventListener('mousedown', event => {
-    if (event.button !== 0) return;
+  canvas.addEventListener('pointerdown', event => {
+    if ((event.pointerType === 'mouse' || event.pointerType === 'pen') && event.button !== 0) return;
+    if (canvasActionPointerId !== null) return;
     const coords = getCanvasCoords(event.clientX, event.clientY);
     engine.handlePointerDown(coords.x, coords.y);
+    if (!engine.isPointerDown) return;
+    canvasActionPointerId = event.pointerId;
+    try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
   });
-  window.addEventListener('mouseup', event => {
+  canvas.addEventListener('pointerup', event => {
+    if (event.pointerId !== canvasActionPointerId) return;
+    canvasActionPointerId = null;
     const coords = getCanvasCoords(event.clientX, event.clientY);
     engine.handlePointerUp(coords.x, coords.y);
   });
-  window.addEventListener('pointercancel', () => engine.handlePointerCancel());
-  window.addEventListener('blur', () => engine.handlePointerCancel());
+  const cancelCanvasPointer = event => {
+    if (event.pointerId !== canvasActionPointerId) return;
+    releaseCanvasAction();
+  };
+  canvas.addEventListener('pointercancel', cancelCanvasPointer);
+  canvas.addEventListener('lostpointercapture', cancelCanvasPointer);
 
-  canvas.addEventListener('touchstart', event => {
-    event.preventDefault();
-    if (!event.touches.length) return;
-    const touch = event.touches[0];
-    const coords = getCanvasCoords(touch.clientX, touch.clientY);
-    engine.handlePointerDown(coords.x, coords.y);
-  }, { passive: false });
-  canvas.addEventListener('touchmove', event => {
-    event.preventDefault();
-    if (!event.touches.length) return;
-    const touch = event.touches[0];
-    const coords = getCanvasCoords(touch.clientX, touch.clientY);
-    engine.handlePointerMove(coords.x, coords.y);
-  }, { passive: false });
-  window.addEventListener('touchend', event => {
-    if (event.changedTouches?.length) {
-      const touch = event.changedTouches[0];
-      const coords = getCanvasCoords(touch.clientX, touch.clientY);
-      engine.handlePointerUp(coords.x, coords.y);
-    } else {
-      engine.handlePointerUp(engine.mouseScreenPos.x, engine.mouseScreenPos.y);
-    }
-  });
-  window.addEventListener('touchcancel', () => engine.handlePointerCancel());
+  for (const [id, action] of [['mobile-move-left', 'left'], ['mobile-move-right', 'right']]) {
+    const button = document.getElementById(id);
+    button.addEventListener('pointerdown', event => {
+      if ((event.pointerType === 'mouse' || event.pointerType === 'pen') && event.button !== 0) return;
+      event.preventDefault();
+      if (movementPointers.has(event.pointerId)) return;
+      movementPointers.set(event.pointerId, { action, element: button });
+      addHeldSource(action, `pointer:${event.pointerId}`);
+      try { button.setPointerCapture(event.pointerId); } catch (_) {}
+    });
+    button.addEventListener('pointerup', event => releaseMovementPointer(event.pointerId));
+    button.addEventListener('pointercancel', event => releaseMovementPointer(event.pointerId));
+    button.addEventListener('lostpointercapture', event => releaseMovementPointer(event.pointerId));
+    button.addEventListener('click', event => {
+      if (event.detail !== 0) return;
+      const source = `activation:${++nextKeyboardActivationId}`;
+      addHeldSource(action, source);
+      window.setTimeout(() => removeHeldSource(action, source), 180);
+    });
+  }
+
+  window.addEventListener('blur', releaseAllGameInput);
 
   let lastTime = performance.now();
   engine.setPageVisibility(!document.hidden);
   document.addEventListener('visibilitychange', () => {
+    if (document.hidden) releaseAllGameInput();
     engine.setPageVisibility(!document.hidden);
+    syncMobileControls();
     lastTime = performance.now();
   });
 
@@ -214,6 +336,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     lastTime = currentTime;
     engine.update(dt);
     engine.render(currentTime);
+    syncMobileControls();
     ui.updateHud({
       score: engine.score,
       combo: engine.combo,

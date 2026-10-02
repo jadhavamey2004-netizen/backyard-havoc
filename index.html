@@ -25,7 +25,7 @@
 
       <main id="game-stage" class="game-stage">
         <div class="canvas-container">
-          <canvas id="game-canvas" width="960" height="540" tabindex="-1" role="img" aria-label="Backyard Havoc game playfield. Move with A and D, aim with the pointer, and click to kick or defend."></canvas>
+          <canvas id="game-canvas" width="960" height="540" tabindex="-1" role="img" aria-label="Backyard Havoc game playfield. Move with A and D or the touch movement buttons. Point and click or tap to aim and act; hold to charge, and drag while held to adjust aim."></canvas>
 
           <section id="game-hud" class="game-hud hidden" aria-label="Run status" hidden>
             <div class="hud-topline">
@@ -50,6 +50,11 @@
             </div>
           </section>
         </div>
+
+        <div id="mobile-game-controls" class="mobile-game-controls" aria-label="Touch movement controls" hidden>
+          <button id="mobile-move-left" class="mobile-move-button" type="button" aria-label="Move left" aria-pressed="false"><span aria-hidden="true">◀</span><span>LEFT</span></button>
+          <button id="mobile-move-right" class="mobile-move-button" type="button" aria-label="Move right" aria-pressed="false"><span aria-hidden="true">▶</span><span>RIGHT</span></button>
+        </div>
       </main>
 
       <div id="screen-overlay" class="screen-overlay" role="dialog" aria-modal="true" aria-labelledby="title-heading">
@@ -70,6 +75,12 @@
               <div class="control-row"><kbd>MOUSE</kbd><span>Aim</span></div>
               <div class="control-row"><kbd>CLICK</kbd><span>Defend or kick/header on contact</span></div>
               <div class="control-row"><kbd>HOLD 0.41s</kbd><span>Charge a power shot; contact required</span></div>
+              <div class="touch-instructions" aria-label="Touch controls">
+                <strong>TOUCH</strong>
+                <span>◀ / ▶ — MOVE</span>
+                <span>TAP PLAYFIELD — AIM / ACTION</span>
+                <span>HOLD — CHARGE · DRAG WHILE HELD — ADJUST AIM</span>
+              </div>
             </div>
           </details>
           <button id="btn-title-settings" class="text-button" type="button">SETTINGS</button>
