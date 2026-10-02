@@ -1674,7 +1674,7 @@ export class GameEngine {
 
     // "SPACE / CLICK TO SKIP" Prompt during Intro Cutscene
     if (this.gameState === 'INTRO_CUTSCENE') {
-      const pulseAlpha = Math.sin(Date.now() * 0.006) * 0.25 + 0.75;
+      const pulseAlpha = this.isReducedMotion ? 1 : Math.sin(Date.now() * 0.006) * 0.25 + 0.75;
       ctx.save();
       ctx.fillStyle = `rgba(255, 255, 255, ${pulseAlpha})`;
       ctx.font = 'bold 12px Outfit, sans-serif';
@@ -1718,7 +1718,7 @@ export class GameEngine {
 
     // Defeat Banner during Ending Cutscene
     if (this.gameState === 'ENDING_CUTSCENE') {
-      const pulse = Math.sin(Date.now() * 0.008) * 0.05 + 1.0;
+      const pulse = this.isReducedMotion ? 1 : Math.sin(Date.now() * 0.008) * 0.05 + 1.0;
       ctx.save();
       ctx.translate(this.width / 2, 36);
       ctx.scale(pulse, pulse);
@@ -1820,7 +1820,7 @@ export class GameEngine {
 
       // Pulsing drawn indicator (Red Danger when incoming, Gold Spark when parried)
       ctx.save();
-      const pulse = 0.6 + Math.sin(Date.now() * 0.012) * 0.4;
+      const pulse = this.isReducedMotion ? 0.82 : 0.6 + Math.sin(Date.now() * 0.012) * 0.4;
       ctx.globalAlpha = pulse;
       if (proj.isParried) {
         ctx.fillStyle = '#facc15';
@@ -2000,7 +2000,7 @@ export class GameEngine {
     }
 
     if (this.ballIdleTime > 2.0 && !this.isGameOver) {
-      const pulse = Math.sin(Date.now() * 0.006) * 4;
+      const pulse = this.isReducedMotion ? 0 : Math.sin(Date.now() * 0.006) * 4;
       ctx.save();
       ctx.fillStyle = '#facc15';
       ctx.font = '900 13px Outfit, sans-serif';
