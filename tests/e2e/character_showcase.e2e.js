@@ -72,7 +72,8 @@ test('normal gameplay has readable characters and preserves a baseline compariso
   await page.keyboard.press('Space');
   const titleScreen = page.locator('#title-screen');
   await expect(titleScreen).toHaveClass(/\bhidden\b/);
-  await expect(titleScreen).toHaveCSS('opacity', '0');
+  await expect(titleScreen).toBeHidden();
+  await expect(page.locator('#screen-overlay')).toBeHidden();
   await page.waitForTimeout(250);
   const canvas = page.locator('#game-canvas');
   await expect(canvas).toBeVisible();
