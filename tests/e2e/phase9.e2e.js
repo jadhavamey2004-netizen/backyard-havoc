@@ -59,6 +59,18 @@ async function expectInsideViewport(page, selector, viewport) {
   expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height + 1);
 }
 
+async function expectGameplayFocusAndInput(page) {
+  await expect(page.locator('#screen-overlay')).toBeHidden();
+  await expect(page.locator('#game-canvas')).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('PLAYING');
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.isPaused)).toBe(false);
+
+  await page.keyboard.down('ArrowRight');
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.player.keys.right)).toBe(true);
+  await page.keyboard.up('ArrowRight');
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.player.keys.right)).toBe(false);
+}
+
 test('Phase 9 screen flow stays readable across five required viewports', async ({ page }, testInfo) => {
   let popupOpened = false;
   page.on('popup', () => { popupOpened = true; });
@@ -177,15 +189,13 @@ test('Phase 9 restart paths stay canonical and repeatable', async ({ page }) => 
   await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.getAudioDiagnostics().audio.chargeVoiceActive)).toBe(false);
   await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.isPointerDown)).toBe(false);
   await page.locator('#btn-restart-paused').click();
-  await expect(page.locator('#screen-overlay')).toBeHidden();
+  await expectGameplayFocusAndInput(page);
   expect(await page.evaluate(() => window.__countAudioContexts?.() ?? 0)).toBe(1);
 
   for (let cycle = 0; cycle < 2; cycle += 1) {
     await page.locator('#btn-pause-game').click();
     await page.locator('#btn-restart-paused').click();
-    await expect(page.locator('#screen-overlay')).toBeHidden();
-    await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('PLAYING');
-    await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.isPaused)).toBe(false);
+    await expectGameplayFocusAndInput(page);
     expect(await page.evaluate(() => window.__countAudioContexts?.() ?? 0)).toBe(1);
   }
 
@@ -204,13 +214,12 @@ test('Phase 9 restart paths stay canonical and repeatable', async ({ page }) => 
   // The primary results action is focused, so native Enter activation restarts immediately.
   await page.locator('#btn-restart-run').focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('#screen-overlay')).toBeHidden();
-  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('PLAYING');
+  await expectGameplayFocusAndInput(page);
   await expect(page.locator('#gameover-modal')).toBeHidden();
   await page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.triggerGameOver());
   await expect(page.locator('#gameover-modal')).toBeVisible();
   await page.locator('#btn-restart-run').click();
-  await expect(page.locator('#screen-overlay')).toBeHidden();
+  await expectGameplayFocusAndInput(page);
   await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.getAudioDiagnostics().audio.chargeVoiceActive)).toBe(false);
 });
 
@@ -233,22 +242,55 @@ test('Phase 9 title settings, Escape transitions and focus stay accessible', asy
   await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.cutsceneTimer)).toBe(introTimer);
   await page.locator('#btn-resume').click();
   await expect(page.locator('#screen-overlay')).toBeHidden();
-  const canvasBounds = await page.locator('#game-canvas').boundingBox();
-  await page.mouse.click(canvasBounds.x + canvasBounds.width / 2, canvasBounds.y + canvasBounds.height / 2);
-  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('PLAYING');
+  await expect(page.locator('#game-canvas')).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('INTRO_CUTSCENE');
   await page.keyboard.press('Escape');
   await expect(page.locator('#pause-screen')).toBeVisible();
   await expect(page.locator('#btn-resume')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator('#screen-overlay')).toBeHidden();
+  await expect(page.locator('#game-canvas')).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
   await expect(page.locator('#btn-pause-game')).toBeFocused();
   await page.keyboard.press('Space');
   await expect(page.locator('#pause-screen')).toBeVisible();
   await expect(page.locator('#btn-resume')).toBeFocused();
   await page.keyboard.press('Space');
   await expect(page.locator('#screen-overlay')).toBeHidden();
-  await expect(page.locator('#btn-pause-game')).toBeFocused();
+  await expect(page.locator('#game-canvas')).toBeFocused();
   await attachScreenshot(testInfo, page, '1280x720', 'keyboard-focus-resumed');
+});
+
+test('Phase 9 intro resume keeps Canvas focus so Space skips instead of reopening Pause', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#btn-start-game').click();
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('INTRO_CUTSCENE');
+  await expect(page.locator('#game-canvas')).toBeFocused();
+
+  await page.locator('#btn-pause-game').click();
+  await expect(page.locator('#pause-screen')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.isPaused)).toBe(true);
+  const cutsceneTimer = await page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.cutsceneTimer);
+  await page.waitForTimeout(120);
+  expect(await page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.cutsceneTimer)).toBe(cutsceneTimer);
+  await page.locator('#btn-resume').click();
+
+  await expect(page.locator('#screen-overlay')).toBeHidden();
+  await expect(page.locator('#game-canvas')).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('INTRO_CUTSCENE');
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.isPaused)).toBe(false);
+
+  await page.keyboard.press('Space');
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('PLAYING');
+  await expect(page.locator('#screen-overlay')).toBeHidden();
+  await expect(page.locator('#pause-screen')).toBeHidden();
+  await expect(page.locator('#game-canvas')).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.isPaused)).toBe(false);
+
+  await page.keyboard.down('ArrowRight');
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.player.keys.right)).toBe(true);
+  await page.keyboard.up('ArrowRight');
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.player.keys.right)).toBe(false);
 });
 
 test('Phase 9 follows the operating system reduced-motion preference', async ({ page }, testInfo) => {

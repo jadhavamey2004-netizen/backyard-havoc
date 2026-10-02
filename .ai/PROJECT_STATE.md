@@ -2,14 +2,15 @@
 
 ## Phase 9 — UI/UX overhaul
 
-- **Status:** Local implementation and verification PASS; final local runs were 293/293 Vitest, production build PASS (39 modules), and 25/25 Chromium E2E. All 25 browser-health records had zero page errors, console errors/warnings, failed requests, and same-origin failures. GitHub Quality Gate and Vercel Preview are verified on the draft PR's current head; the PR records exact run, artifact, and deployment provenance for external review.
+- **Status:** Local implementation and verification PASS; final local runs were 293/293 Vitest, production build PASS (39 modules), and 26/26 Chromium E2E. All 26 browser-health records had zero page errors, console errors/warnings, failed requests, and same-origin failures. GitHub Quality Gate and Vercel Preview are verified on the draft PR's current head; the PR records exact run, artifact, and deployment provenance for external review.
 - **Baseline:** `1e050247b0d135a6d2ed61c6848599258b78bd12`, the merged/release-verified Phase 8 production baseline.
 - **Branch:** `codex/phase-9-ui-ux-overhaul`.
 - **Implementation:** `.ai/UI_UX_OVERHAUL.md` records the screen model, presentation ownership, title, compact HUD, pause, settings, results, responsive strategy, accessibility, verification, evidence, and limitations. `.ai/PHASE9_UI_AUDIT.md` records the evidence-based pre-implementation audit.
 - `src/ui/` provides the presentation reducer, pure view-model formatters, and one DOM/focus/overlay controller. `src/main.js` delegates screen and HUD presentation to it.
 - `GameEngine.setPaused()` adds user pause separately from run lifecycle and page visibility; it freezes simulation, cancels held input/transient audio, and resumes through the existing sound API. There are no score, physics, collision, AI, character, destruction, VFX-trigger, or audio-ownership changes.
+- Resuming and restarting into gameplay restore focus to the Canvas; the Pause button remains keyboard reachable. Browser regression coverage proves Space skips the intro after Resume rather than activating Pause.
 - Active HUD retains score, health, combo, Havoc, and Kevin state. Results retain the five existing run statistics, Share Score, and the unchanged results-only VideoGen referral. Settings expose only existing global mute and reduced motion.
-- **Phase 9 tests:** `npm test` passed 293/293 across 33 files; `npm run build` passed; `npm run test:e2e` passed 25/25. The Phase 9 Chromium suite captures 27 screenshots over the five required viewports plus keyboard and reduced-motion evidence. All browser-health counters were zero in all 25 scenario records.
+- **Phase 9 tests:** `npm test` passed 293/293 across 33 files; `npm run build` passed; `npm run test:e2e` passed 26/26. The Phase 9 Chromium suite captures 27 screenshots over the five required viewports plus keyboard and reduced-motion evidence. All browser-health counters were zero in all 26 scenario records.
 - No dependencies or lockfile changes. The 16:9 Canvas and mobile gameplay controls remain unchanged; independent audio channel sliders and automated axe/screen-reader scanning are deferred. See the UI overhaul document for further limits and Phase 10+ deferrals.
 - **Release:** Draft PR only; no merge and no production deployment. The draft PR carries the current exact-head GitHub Quality Gate, Playwright artifact, and Vercel Preview provenance for external review.
 

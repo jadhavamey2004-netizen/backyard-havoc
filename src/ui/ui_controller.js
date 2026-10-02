@@ -113,12 +113,12 @@ export class UiController {
 
   resume() {
     if (this.state.screen !== 'PAUSED' || this.onResume() === false) return false;
-    return this.dispatch({ type: 'RESUME' });
+    return this.dispatch({ type: 'RESUME' }, { focus: false });
   }
 
   restart() {
     if (!['PAUSED', 'RESULTS'].includes(this.state.screen) || this.onRestart() === false) return false;
-    return this.dispatch({ type: 'RESTART', focus: false });
+    return this.dispatch({ type: 'RESTART' }, { focus: false });
   }
 
   mainMenu() {

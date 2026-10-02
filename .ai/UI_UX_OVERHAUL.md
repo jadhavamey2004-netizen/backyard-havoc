@@ -52,7 +52,7 @@ Automated visual/layout coverage uses the required five viewports:
 
 ## Accessibility and reduced motion
 
-The page no longer disables zoom. Actions use semantic buttons; controls have visible `:focus-visible` rings, keyboard and touch-sized targets, and concise accessible names. The active overlay is a named modal dialog, receives focus, traps Tab within its visible controls, makes the page behind it inert, and returns focus to the prior control or gameplay pause button. Escape works for pause/settings; Enter/Space activate native buttons. Health and Kevin have text labels, and Havoc retains progressbar semantics. Both the OS reduced-motion preference and the explicit setting reduce camera/particle feedback and CSS transitions.
+The page no longer disables zoom. Actions use semantic buttons; controls have visible `:focus-visible` rings, keyboard and touch-sized targets, and concise accessible names. The active overlay is a named modal dialog, receives focus, traps Tab within its visible controls, and makes the page behind it inert. Closing Settings restores focus to its opener; Resume and Restart return focus to the Canvas so gameplay keys reach the engine. The Pause button remains reachable through normal keyboard navigation. Escape works for pause/settings; Enter/Space activate native buttons. Health and Kevin have text labels, and Havoc retains progressbar semantics. Both the OS reduced-motion preference and the explicit setting reduce camera/particle feedback and CSS transitions.
 
 ## DOM, event, and reset ownership
 
@@ -64,8 +64,8 @@ Local verification on the final implementation:
 
 - `npm test`: 33 files, 293/293 passed.
 - `npm run build`: passed, 39 modules transformed.
-- `npm run test:e2e`: 25/25 Chromium scenarios passed.
-- Browser health across 25 scenario records: zero page errors, console errors, console warnings, failed requests, and same-origin failures.
+- `npm run test:e2e`: 26/26 Chromium scenarios passed.
+- Browser health across 26 scenario records: zero page errors, console errors, console warnings, failed requests, and same-origin failures.
 - Phase 9 Playwright attaches 27 screenshots: title/gameplay/pause/settings/results for each of the five required viewport sizes, plus keyboard-focus-resume and reduced-motion settings evidence. The existing quality workflow archives `playwright-report/` and `test-results/`.
 - The restart scenario verifies an active charge voice is released by pause, repeated restarts do not create additional AudioContexts, keyboard Play Again works, and the UI returns to one visible screen.
 - Existing Phase 8 audio/referral coverage still passes, including reset/visibility and user-activated referral navigation.
