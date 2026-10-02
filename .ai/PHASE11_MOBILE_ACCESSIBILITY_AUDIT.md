@@ -64,7 +64,7 @@ Final local test totals, exact contrast ratios, mobile frame/resource snapshot, 
 
 - `npm test`: PASS, 312/312 across 34 files.
 - `npm run build`: PASS, 44 modules transformed.
-- `npm run test:e2e`: PASS, 50/50 scenarios — 39 desktop Chromium and 11 touch Chromium.
+- `npm run test:e2e`: PASS, 50/50 scenarios — 38 desktop contexts and 12 touch contexts, including one touch-emulated affiliate scenario plus 11 dedicated touch-project scenarios.
 - All 50 browser-health records are clean: pageErrors 0, consoleErrors 0, consoleWarnings 0, failedRequests 0, sameOriginFailures 0.
 - The accessibility/browser matrix includes 390×844, 412×915, 844×390, 915×412, 768×1024, 1024×768, 1280×720, and 1366×768; the HTML reflow check also uses 320px with a 200% root-text-size simulation.
 

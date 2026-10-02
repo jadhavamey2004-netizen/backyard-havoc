@@ -4,7 +4,7 @@
 
 - **Branch:** `codex/phase-11-mobile-accessibility-hardening`.
 - **Baseline:** Phase 10 merged/release-verified `main` at `cc3d879df856af6915d470c4f804d790648b73c5`.
-- **Status:** Local verification PASS — `npm test` 312/312 across 34 files; `npm run build` PASS (44 modules); `npm run test:e2e` PASS (50/50: 39 desktop Chromium, 11 touch Chromium). All 50 browser-health records have zero page errors, console errors, console warnings, failed requests, and same-origin failures. Draft PR, exact-head GitHub Quality Gate, and Vercel Preview verification are pending. Do not begin Phase 12.
+- **Status:** Local verification PASS — `npm test` 312/312 across 34 files; `npm run build` PASS (44 modules); `npm run test:e2e` PASS (50/50: 38 desktop contexts and 12 touch contexts, including one touch-emulated affiliate scenario). All 50 browser-health records have zero page errors, console errors, console warnings, failed requests, and same-origin failures. Draft PR #14 is open for external review; final-head Quality Gate and Vercel Preview evidence are recorded on the PR. Do not merge or begin Phase 12.
 - `.ai/PHASE11_MOBILE_ACCESSIBILITY_AUDIT.md` captures the source audit and accessibility review matrix. `.ai/PHASE11_MOBILE_ACCESSIBILITY.md` documents the input model, touch behavior, responsive strategy, accessibility evidence, verification matrix, and limitations.
 
 ## Phase 10 — Local progression, Garage, and Challenges
