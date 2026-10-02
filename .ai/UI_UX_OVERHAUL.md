@@ -82,4 +82,4 @@ Local verification on the final implementation:
 
 ## Release status
 
-Phase 9 changes presentation and adds the safe user pause API only. No gameplay balance, collision, score, AI, animation, destruction, VFX trigger, or audio ownership behavior was changed. GitHub Quality Gate and Vercel Preview must be verified against the final draft-PR HEAD before this phase is handed to external review. No merge or production deployment is part of this work.
+Phase 9 changes presentation and adds the safe user pause API only. No gameplay balance, collision, score, AI, animation, destruction, VFX trigger, or audio ownership behavior was changed. GitHub Quality Gate and Vercel Preview are verified on the draft PR's current head; the PR records exact run, artifact, and deployment provenance for external review. No merge or production deployment is part of this work.
