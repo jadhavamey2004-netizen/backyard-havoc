@@ -16,6 +16,8 @@ Why:
 
 Rule: first build a renderer spike. Do not migrate gameplay logic until visual parity, input parity and performance are proved.
 
+Stability pin for the first renderer spike: `pixi.js@8.20.1`. A newer 8.22.0 build appeared only hours before this setup; the remaster starts from the more-soaked 8.20.1 line and can upgrade only after renderer parity/regression evidence.
+
 ### PixiJS official AI skills
 Repository: https://github.com/pixijs/pixijs-skills
 Role: agent guidance for PixiJS v8 application setup, assets, spritesheets, filters, accessibility and performance.
