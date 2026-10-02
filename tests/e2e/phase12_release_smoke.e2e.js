@@ -37,10 +37,10 @@ test('release smoke boots menus, starts an intro, accepts keyboard and pointer i
   const startX = await page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.player.x);
   await page.keyboard.down('ArrowRight');
   await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.player.keys.right)).toBe(true);
-  await page.waitForTimeout(120);
+  await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.player.x))
+    .toBeGreaterThan(startX);
   await page.keyboard.up('ArrowRight');
   await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.player.keys.right)).toBe(false);
-  expect(await page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.player.x)).toBeGreaterThan(startX);
 
   const canvas = page.locator('#game-canvas');
   const bounds = await canvas.boundingBox();

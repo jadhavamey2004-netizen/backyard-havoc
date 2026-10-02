@@ -18,6 +18,10 @@ The audit reproduced two independent session leaks in `src/ai.js`: delayed cosme
 
 The fix gives each session a generation, tracks pending response timers, cancels and invalidates them on reset, clears session counters/warning flags/recent destruction/rage/rate-limit time, and preserves registered telemetry/dialogue listeners. Fake-timer regressions cover old callbacks, a working fresh session, rate-limit reset, and all session counters. This does not affect gameplay state.
 
+### Cross-browser movement sampling
+
+The first Firefox/WebKit CI attempt found a timing assumption in the new release-smoke test: WebKit had the right movement key held, but the test sampled player position after exactly 120 ms and observed no displacement. This did not produce browser-health errors. The regression still requires real displacement; it now uses a bounded Playwright poll for `player.x > startX` and releases the key only after movement is observed. The current PR head's final cross-browser job decides compatibility status.
+
 ### Release documentation and packaging
 
 The stale Phase 11 current status in `.ai/PROJECT_STATE.md` is corrected to `MERGED + RELEASE VERIFIED` at the Phase 12 baseline; the current phase and branch are Phase 12. The README now documents current keyboard/touch controls, progression, Garage/Challenges, presentation-only cosmetics, audio, input cancellation, current architecture, testing, and runtime network boundaries. Archived prototype concepts are no longer presented as current features.
@@ -38,7 +42,7 @@ The repository MIT license file now exists. Its copyright attribution uses the r
 - **Persistence:** `tests/e2e/phase12_release_smoke.e2e.js` records a machine-readable run/reload/corruption recovery sample for all five application storage keys. Existing tests cover unavailable storage and throwing writes.
 - **Async lifecycle:** the browser test dispatches a nearby environmental event, resets before its delayed response, proves zero stale deliveries, then proves a fresh response and fresh rate-limit state. It attaches `phase12-async-lifecycle.json`.
 
-Exact final counts, resource samples, and browser-health totals will be filled from final local commands and exact-head CI; they are not inferred from partial runs.
+Final local counts and resource samples are recorded below. Exact-head workflow/artifact IDs and the Preview identity are checked through the associated draft PR and final handoff.
 
 ## Browser compatibility and build hygiene
 
