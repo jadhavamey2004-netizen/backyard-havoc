@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { attachBrowserHealth, attachScreenshot, monitorBrowserHealth } from './browser-health.js';
+import { attachBrowserHealth, attachJsonEvidence, attachScreenshot, monitorBrowserHealth } from './browser-health.js';
 
 const VIEWPORTS = [
   { name: '320x800-text-reflow', width: 320, height: 800 },
@@ -136,10 +136,7 @@ test.describe('Phase 11 responsive UI and accessibility', () => {
       if (viewport.name === '1366x768-desktop') await attachScreenshot(testInfo, page, 'phase11-responsive-results-desktop.png');
     }
 
-    await testInfo.attach('phase11-responsive-geometry.json', {
-      body: Buffer.from(JSON.stringify(evidence, null, 2)),
-      contentType: 'application/json',
-    });
+    await attachJsonEvidence(testInfo, 'phase11-responsive-geometry.json', evidence);
 
     const contrast = await page.evaluate(() => {
       const parseColor = value => {
@@ -226,9 +223,6 @@ test.describe('Phase 11 responsive UI and accessibility', () => {
       }
     }
     console.info(`[phase11-contrast] ${JSON.stringify(contrast)}`);
-    await testInfo.attach('phase11-contrast-measurements.json', {
-      body: Buffer.from(JSON.stringify(contrast, null, 2)),
-      contentType: 'application/json',
-    });
+    await attachJsonEvidence(testInfo, 'phase11-contrast-measurements.json', contrast);
   });
 });

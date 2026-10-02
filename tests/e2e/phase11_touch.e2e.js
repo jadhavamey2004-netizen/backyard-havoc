@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { attachBrowserHealth, attachScreenshot, monitorBrowserHealth } from './browser-health.js';
+import { attachBrowserHealth, attachJsonEvidence, attachScreenshot, monitorBrowserHealth } from './browser-health.js';
 
 const MOBILE_VIEWPORTS = [
   { name: '390x844-portrait', width: 390, height: 844 },
@@ -142,10 +142,7 @@ test.describe('Phase 11 touch gameplay', () => {
     expect(snapshot.mobileControlDomNodes).toBe(3);
     expect(snapshot.gameplayPointerKeyAndLifecycleListeners).toBe(17);
     console.info(`[phase11-mobile-runtime] ${JSON.stringify(snapshot)}`);
-    await testInfo.attach('phase11-mobile-runtime.json', {
-      body: Buffer.from(JSON.stringify(snapshot, null, 2)),
-      contentType: 'application/json',
-    });
+    await attachJsonEvidence(testInfo, 'phase11-mobile-runtime.json', snapshot);
   });
 
   test('touch aim uses 960x540 logical coordinates after resize at DPR 2', async ({ page, context }) => {

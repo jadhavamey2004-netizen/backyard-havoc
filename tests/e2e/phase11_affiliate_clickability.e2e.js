@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { attachBrowserHealth, attachScreenshot, monitorBrowserHealth } from './browser-health.js';
+import { attachBrowserHealth, attachJsonEvidence, attachScreenshot, monitorBrowserHealth } from './browser-health.js';
 
 const VIDEO_GEN_URL = 'https://videogen.io/ai-video-generator?fp_ref=amey-ff39df';
 const viewports = [
@@ -128,10 +128,7 @@ test('Phase 11 affiliate hit target stays reachable and activates from real mous
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await affiliate.scrollIntoViewIfNeeded();
     const diagnostics = await hitTestDiagnostics(page);
-    await testInfo.attach(`affiliate-${viewport.name}-hit-test.json`, {
-      body: Buffer.from(JSON.stringify(diagnostics, null, 2)),
-      contentType: 'application/json',
-    });
+    await attachJsonEvidence(testInfo, `affiliate-${viewport.name}-hit-test.json`, diagnostics);
     await attachScreenshot(testInfo, page, `affiliate-${viewport.name}.png`);
 
     measuredHeights.push({ viewport: viewport.name, height: diagnostics.box.height });
@@ -207,10 +204,7 @@ test.describe('Phase 11 coarse-pointer affiliate activation', () => {
     await affiliate.scrollIntoViewIfNeeded();
 
     const diagnostics = await hitTestDiagnostics(page);
-    await testInfo.attach('affiliate-touch-hit-test.json', {
-      body: Buffer.from(JSON.stringify(diagnostics, null, 2)),
-      contentType: 'application/json',
-    });
+    await attachJsonEvidence(testInfo, 'affiliate-touch-hit-test.json', diagnostics);
     await attachScreenshot(testInfo, page, 'affiliate-touch-results.png');
     expect(diagnostics.centerHitsAffiliate).toBe(true);
     expect(diagnostics.pointerCoarse).toBe(true);
