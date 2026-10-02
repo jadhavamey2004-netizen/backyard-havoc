@@ -108,6 +108,99 @@ describe('Game Flow & Integration Lifecycle', () => {
     start.mockRestore();
   });
 
+  it('pauses gameplay simulation and resumes without changing the run state', () => {
+    const startMusic = vi.spyOn(sounds, 'startGenerativeMusic').mockImplementation(() => {});
+    const resetAudio = vi.spyOn(sounds, 'resetTransientAudio').mockImplementation(() => {});
+    game.player.keys.left = true;
+    game.player.vx = -320;
+    game.isPointerDown = true;
+    game.player.powerCharging = true;
+    game.player.powerCharge = 0.7;
+    game.accumulator = 0.04;
+    const survival = game.survivalSeconds;
+    const x = game.player.x;
+
+    expect(game.setPaused(true)).toBe(true);
+    expect(game.gameState).toBe('PLAYING');
+    expect(game.isPaused).toBe(true);
+    expect(game.player.keys).toEqual({ left: false, right: false, sprint: false, charge: false });
+    expect(game.player.vx).toBe(0);
+    expect(game.isPointerDown).toBe(false);
+    expect(game.player.powerCharging).toBe(false);
+    expect(game.player.powerCharge).toBe(0);
+    expect(game.accumulator).toBe(0);
+    expect(resetAudio).toHaveBeenCalledOnce();
+
+    game.handleKeyDown('KeyD');
+    game.update(0.5);
+    expect(game.survivalSeconds).toBe(survival);
+    expect(game.player.x).toBe(x);
+
+    expect(game.setPaused(false)).toBe(true);
+    expect(game.isPaused).toBe(false);
+    expect(game.gameState).toBe('PLAYING');
+    expect(startMusic).toHaveBeenCalledOnce();
+    game.update(1 / 60);
+    expect(game.survivalSeconds).toBeCloseTo(survival + 1 / 60);
+
+    startMusic.mockRestore();
+    resetAudio.mockRestore();
+  });
+
+  it('pauses the intro cutscene without changing its lifecycle state or clock', () => {
+    game.gameState = 'INTRO_CUTSCENE';
+    game.cutsceneTimer = 2;
+
+    expect(game.setPaused(true)).toBe(true);
+    expect(game.gameState).toBe('INTRO_CUTSCENE');
+    expect(game.isPaused).toBe(true);
+    game.update(0.5);
+    expect(game.cutsceneTimer).toBe(2);
+
+    expect(game.setPaused(false)).toBe(true);
+    game.update(1 / 60);
+    expect(game.cutsceneTimer).toBeCloseTo(2 - 1 / 60, 5);
+  });
+
+  it('keeps a user-paused run paused across page visibility changes', () => {
+    const startMusic = vi.spyOn(sounds, 'startGenerativeMusic').mockImplementation(() => {});
+    game.setPaused(true);
+    game.setPageVisibility(false);
+    game.setPageVisibility(true);
+
+    expect(game.isPaused).toBe(true);
+    expect(game.gameState).toBe('PLAYING');
+    expect(startMusic).not.toHaveBeenCalled();
+    const survival = game.survivalSeconds;
+    game.update(1 / 60);
+    expect(game.survivalSeconds).toBe(survival);
+
+    game.setPaused(false);
+    expect(game.isPaused).toBe(false);
+    startMusic.mockRestore();
+  });
+
+  it('accepts fresh pointer input after pause cancels an in-progress charge', () => {
+    const initAudio = vi.spyOn(sounds, 'init').mockImplementation(() => {});
+    const startMusic = vi.spyOn(sounds, 'startGenerativeMusic').mockImplementation(() => {});
+    game.isPointerDown = true;
+    game.pointerDownTime = performance.now() - 1200;
+    game.player.powerCharging = true;
+    game.player.powerCharge = 1;
+
+    expect(game.setPaused(true)).toBe(true);
+    expect(game.isPointerDown).toBe(false);
+    expect(game.pointerDownTime).toBe(0);
+    expect(game.ignoreNextPointerUp).toBe(false);
+    game.setPaused(false);
+    game.handlePointerDown(500, 180);
+
+    expect(game.isPointerDown).toBe(true);
+    expect(game.ignoreNextPointerUp).toBe(false);
+    initAudio.mockRestore();
+    startMusic.mockRestore();
+  });
+
   it('cancels held charge, movement momentum, and camera impact feedback when hidden', () => {
     game.isPointerDown = true;
     game.pointerDownTime = performance.now() - 5000;

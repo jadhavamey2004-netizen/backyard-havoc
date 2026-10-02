@@ -103,6 +103,7 @@ export class GameEngine {
 
     // Cinematic Cutscenes & Game State
     this.gameState = 'IDLE'; // 'IDLE', 'INTRO_CUTSCENE', 'PLAYING', 'ENDING_CUTSCENE', 'GAME_OVER'
+    this.isPaused = false;
     this.cutsceneTimer = 0;
     this.cutsceneDuration = 3.6;
     this.letterboxProgress = 0.0; // 0.0 to 1.0
@@ -811,6 +812,7 @@ export class GameEngine {
   }
 
   handleKeyDown(code) {
+    if (this.isPaused) return;
     if (this.gameState === 'INTRO_CUTSCENE') {
       if (code === 'Space') this.skipOrEndIntroCutscene();
       return;
@@ -822,7 +824,7 @@ export class GameEngine {
   }
 
   handleKeyUp(code) {
-    if (this.gameState === 'PLAYING') this.player.handleKeyUp(code);
+    if (!this.isPaused && this.gameState === 'PLAYING') this.player.handleKeyUp(code);
   }
 
   setReducedMotion(isReduced) {
@@ -843,6 +845,7 @@ export class GameEngine {
   }
 
   startIntroCutscene() {
+    this.isPaused = false;
     sounds.resetTransientAudio();
     this.resetTransientFeelState();
     this.kevinDirector.reset();
@@ -887,6 +890,7 @@ export class GameEngine {
   }
 
   startEndingCutscene() {
+    this.isPaused = false;
     sounds.resetTransientAudio();
     this.resetTransientFeelState();
     this.gameState = 'ENDING_CUTSCENE';
@@ -918,7 +922,7 @@ export class GameEngine {
   }
 
   handlePointerDown(screenX, screenY) {
-    if (!this.pageVisible) return;
+    if (!this.pageVisible || this.isPaused) return;
     this.ignoreNextPointerUp = false;
     if (this.gameState === 'INTRO_CUTSCENE') {
       this.skipOrEndIntroCutscene();
@@ -953,7 +957,7 @@ export class GameEngine {
       this.player.keys.sprint = false;
       this.player.keys.charge = false;
       this.player.vx = 0;
-    } else if (this.gameState === 'PLAYING' && !this.isGameOver) {
+    } else if (this.gameState === 'PLAYING' && !this.isGameOver && !this.isPaused) {
       sounds.setPageVisible(true);
       sounds.updateReactiveMusic(this.getAudioPresentationSnapshot());
       sounds.startGenerativeMusic();
@@ -962,8 +966,41 @@ export class GameEngine {
     }
   }
 
+  setPaused(isPaused) {
+    const shouldPause = Boolean(isPaused);
+    if (shouldPause === this.isPaused) return false;
+
+    if (shouldPause) {
+      if (!['PLAYING', 'INTRO_CUTSCENE', 'ENDING_CUTSCENE'].includes(this.gameState) || this.isGameOver || !this.pageVisible) return false;
+      this.isPaused = true;
+      this.accumulator = 0;
+      this.resetTransientFeelState();
+      this.isPointerDown = false;
+      this.pointerDownTime = 0;
+      this.pendingPrimaryAction = null;
+      this.player.powerCharging = false;
+      this.player.powerCharge = 0;
+      this.player.keys.left = false;
+      this.player.keys.right = false;
+      this.player.keys.sprint = false;
+      this.player.keys.charge = false;
+      this.player.vx = 0;
+      sounds.resetTransientAudio();
+      return true;
+    }
+
+    this.isPaused = false;
+    this.accumulator = 0;
+    if (this.pageVisible && this.gameState === 'PLAYING' && !this.isGameOver) {
+      sounds.setPageVisible(true);
+      sounds.updateReactiveMusic(this.getAudioPresentationSnapshot());
+      sounds.startGenerativeMusic();
+    }
+    return true;
+  }
+
   handlePointerUp(screenX, screenY) {
-    if (this.isGameOver || this.gameState !== 'PLAYING' || !this.pageVisible) return;
+    if (this.isPaused || this.isGameOver || this.gameState !== 'PLAYING' || !this.pageVisible) return;
     if (this.ignoreNextPointerUp) {
       this.ignoreNextPointerUp = false;
       return;
@@ -1093,7 +1130,7 @@ export class GameEngine {
   }
 
   update(frameDt = FIXED_STEP_SECONDS) {
-    if (this.pageVisible === false || this.isGameOver || !['PLAYING', 'INTRO_CUTSCENE', 'ENDING_CUTSCENE'].includes(this.gameState)) return;
+    if (this.pageVisible === false || this.isPaused || this.isGameOver || !['PLAYING', 'INTRO_CUTSCENE', 'ENDING_CUTSCENE'].includes(this.gameState)) return;
     // Keep variable-step gameplay clocks within the same per-frame time budget as capped physics.
     let dt = Math.min(Math.max(frameDt, 0), MAX_SIMULATION_DT);
     dt = this.particles.consumeHitStop(dt);
@@ -1424,6 +1461,7 @@ export class GameEngine {
 
   triggerGameOver() {
     if (this.gameState === 'GAME_OVER') return;
+    this.isPaused = false;
     this.isGameOver = true;
     this.gameState = 'GAME_OVER';
     this.resetTransientFeelState();
@@ -1458,6 +1496,7 @@ export class GameEngine {
     sounds.resetTransientAudio();
     this.camera.x = 0;
     this.isGameOver = false;
+    this.isPaused = false;
     this.gameState = 'IDLE';
     this.survivalSeconds = 0;
     this.setCombo(1, 'RUN_RESET', { silent: true });

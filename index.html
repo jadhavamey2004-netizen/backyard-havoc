@@ -1,181 +1,117 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Backyard Havoc - High-Octane 2D Physics Arcade</title>
-    <!-- Google Fonts: Bebas Neue, Outfit & Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#153e2d" />
+    <title>Backyard Havoc — Backyard Arcade Mayhem</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
     <div id="app">
-      <!-- High-Aesthetic Glassmorphic Navigation Bar -->
-      <header class="game-header">
-        <div class="header-left">
-          <div class="logo-container">
-            <span class="logo-icon">⚽</span>
-            <div class="logo-text-group">
-              <h1 class="logo-title">BACKYARD HAVOC</h1>
-            </div>
-          </div>
+      <header id="game-header" class="game-header">
+        <div class="brand-lockup" aria-label="Backyard Havoc">
+          <span class="brand-ball" aria-hidden="true">⚽</span>
+          <span class="brand-wordmark">BACKYARD <b>HAVOC</b></span>
         </div>
-
-        <div class="header-center">
-          <div class="stats-pill">
-            <div class="stat-item">
-              <span class="stat-label">HEALTH</span>
-              <span id="player-health-display" class="stat-value" style="letter-spacing: 2px;">❤️❤️❤️</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-              <span class="stat-label">SCORE</span>
-              <span id="score-display" class="stat-value score-number">0</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-              <span class="stat-label">PEAK COMBO</span>
-              <span id="peak-combo-display" class="stat-value highlight-cyan">1x</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-              <span class="stat-label">HIGH SCORE</span>
-              <span id="high-score-display" class="stat-value highlight-gold">0</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-              <span class="stat-label">YARDS</span>
-              <span id="yards-display" class="stat-value highlight-cyan">0</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="header-right">
-          <button id="btn-reset-yard" class="action-btn secondary-btn" title="Reset All Backyard Props">
-            <span class="btn-icon">🔄</span> Reset
-          </button>
-        </div>
+        <div class="header-tagline" aria-hidden="true">THE NEIGHBORHOOD IS YOURS</div>
+        <button id="btn-pause-game" class="icon-button pause-button" type="button" aria-label="Pause game" title="Pause game" hidden>
+          <span aria-hidden="true">Ⅱ</span><span class="button-word">PAUSE</span>
+        </button>
       </header>
 
-      <!-- Main Game Canvas Container -->
-      <main class="game-viewport-wrapper">
+      <main id="game-stage" class="game-stage">
         <div class="canvas-container">
-          <canvas id="game-canvas" width="960" height="540"></canvas>
+          <canvas id="game-canvas" width="960" height="540" tabindex="-1" role="img" aria-label="Backyard Havoc game playfield. Move with A and D, aim with the pointer, and click to kick or defend."></canvas>
 
-          <!-- Title Screen Overlay -->
-          <div id="title-screen" class="title-screen-overlay">
-            <div class="title-box">
-              <div class="title-badge">STREET FOOTBALL × DESTRUCTION</div>
-              <h1 class="title-logo">BACKYARD HAVOC</h1>
-              <p class="title-sub">Survive Kevin • Land clean ball contacts • Defend at the right moment!</p>
-              
-              <div class="title-controls-card">
-                <div class="control-row"><span class="key-pill">A / D</span> or arrows <span>Move footballer</span></div>
-                <div class="control-row"><span class="key-pill">SHIFT</span> <span>Optional sprint</span></div>
-                <div class="control-row"><span class="key-pill">MOUSE</span> <span>Aim</span></div>
-                <div class="control-row"><span class="key-pill">CLICK</span> <span>Defend or kick/header on contact</span></div>
-                <div class="control-row"><span class="key-pill">HOLD 0.41s</span> <span>Charge a power shot; contact required</span></div>
+          <section id="game-hud" class="game-hud hidden" aria-label="Run status" hidden>
+            <div class="hud-topline">
+              <div class="hud-stat score-stat"><span class="hud-label">SCORE</span><strong id="score-display" class="hud-number">0</strong></div>
+              <div class="hud-stat health-stat"><span class="hud-label">HEALTH</span><strong id="player-health-display" class="health-value" aria-label="Health: 3 of 3">3/3</strong></div>
+              <div id="havoc-card" class="havoc-card">
+                <div class="havoc-heading"><span class="hud-label">HAVOC</span><strong id="havoc-value-display">0%</strong></div>
+                <div class="havoc-bar-bg" role="progressbar" aria-label="Havoc meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                  <div id="havoc-bar-fill" class="havoc-bar-fill"></div>
+                </div>
+                <span id="havoc-mode-display" class="havoc-mode-display" hidden>HAVOC MODE</span>
               </div>
+              <div id="kevin-card" class="kevin-card"><span class="hud-label">NEIGHBOR WATCH</span><strong id="kevin-state-display" data-state="calm">KEVIN: CALM</strong></div>
+            </div>
 
-              <button id="btn-start-game" class="start-btn pulse-glow">
-                ⚽ TAP OR CLICK TO PLAY
-              </button>
-            </div>
-          </div>
-
-          <!-- Floating In-Game Dynamic HUD -->
-          <div class="floating-hud">
-            <!-- Left: Combo Multiplier Flame Gauge -->
-            <div class="hud-card combo-card">
-              <div class="combo-title">JUGGLE COMBO</div>
-              <div id="combo-display" class="combo-number">1x</div>
-              <div class="combo-bar-bg">
-                <div id="combo-bar-fill" class="combo-bar-fill"></div>
+            <div class="hud-bottomline">
+              <div class="combo-card" aria-label="Juggle combo">
+                <span class="hud-label">COMBO</span><strong id="combo-display" class="combo-number">1x</strong>
+                <span class="combo-bar-bg" aria-hidden="true"><span id="combo-bar-fill" class="combo-bar-fill"></span></span>
               </div>
+              <p class="controls-hint"><kbd>A</kbd>/<kbd>D</kbd> MOVE <span aria-hidden="true">·</span> CLICK ACTION <span aria-hidden="true">·</span> HOLD TO CHARGE</p>
             </div>
-            <div id="havoc-card" class="hud-card phase5-card">
-              <div id="kevin-state-display" class="kevin-state-display">KEVIN: CALM</div>
-              <div class="havoc-title-row">
-                <span class="havoc-title">HAVOC</span>
-                <span id="havoc-value-display" class="havoc-value">0%</span>
-              </div>
-              <div class="havoc-bar-bg" role="progressbar" aria-label="Havoc meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                <div id="havoc-bar-fill" class="havoc-bar-fill"></div>
-              </div>
-              <div id="havoc-mode-display" class="havoc-mode-display" hidden>HAVOC MODE</div>
-            </div>
-          </div>
-
-          <!-- Bottom Control Tips Bar -->
-          <div class="bottom-hud-bar">
-            <div class="controls-hint">
-              <span class="key-pill">A</span>/<span class="key-pill">D</span> Move
-              <span class="hint-divider">|</span>
-              <span class="key-pill">SHIFT</span> Optional sprint
-              <span class="hint-divider">|</span>
-              <span class="key-pill">AIM</span> Mouse Angle
-              <span class="hint-divider">|</span>
-              <span class="key-pill">CLICK</span> Defend / Kick / Header
-              <span class="hint-divider">|</span>
-              <span class="key-pill">HOLD CLICK</span> Charge / Contact to fire
-            </div>
-          </div>
+          </section>
         </div>
       </main>
 
-      <!-- SURVIVAL GAME OVER MODAL -->
-      <div id="gameover-modal" class="modal-backdrop hidden">
-        <div class="modal-content glass-panel gameover-modal-box" style="max-width: 460px; text-align: center;">
-          <div class="modal-header" style="justify-content: center;">
-            <div class="modal-title-group">
-              <span class="modal-badge" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border-color: #ef4444;">KNOCKED OUT BY KEVIN</span>
-              <h2 class="modal-heading" style="color: #ef4444; font-size: 26px;">RUN OVER!</h2>
+      <div id="screen-overlay" class="screen-overlay" role="dialog" aria-modal="true" aria-labelledby="title-heading">
+        <section id="title-screen" class="screen-panel title-panel" aria-labelledby="title-heading">
+          <div class="title-stamp">A BACKYARD ARCADE RIOT</div>
+          <h1 id="title-heading" class="title-logo">BACKYARD<br /><span>HAVOC</span></h1>
+          <p class="title-fantasy">Kick the ball. Wreck the yard. Don't let Kevin win.</p>
+          <button id="btn-start-game" class="primary-button start-button" type="button"><span aria-hidden="true">⚽</span> PLAY</button>
+          <details class="title-controls-card">
+            <summary>HOW TO PLAY <span aria-hidden="true">＋</span></summary>
+            <div class="controls-list">
+              <div class="control-row"><kbd>A / D</kbd><span>Move footballer</span></div>
+              <div class="control-row"><kbd>SHIFT</kbd><span>Optional sprint</span></div>
+              <div class="control-row"><kbd>MOUSE</kbd><span>Aim</span></div>
+              <div class="control-row"><kbd>CLICK</kbd><span>Defend or kick/header on contact</span></div>
+              <div class="control-row"><kbd>HOLD 0.41s</kbd><span>Charge a power shot; contact required</span></div>
             </div>
+          </details>
+          <button id="btn-title-settings" class="text-button" type="button">SETTINGS</button>
+        </section>
+
+        <section id="pause-screen" class="screen-panel menu-panel" aria-labelledby="pause-heading" hidden>
+          <div class="title-stamp">TAKE A BREATHER</div>
+          <h2 id="pause-heading" class="panel-heading">PAUSED</h2>
+          <p class="panel-copy">Kevin can wait. Your run is frozen.</p>
+          <div class="menu-actions">
+            <button id="btn-resume" class="primary-button" type="button">RESUME</button>
+            <button id="btn-restart-paused" class="secondary-button" type="button">RESTART RUN</button>
+            <button id="btn-pause-settings" class="secondary-button" type="button">SETTINGS</button>
+            <button id="btn-main-menu" class="text-button" type="button">BACK TO MAIN MENU</button>
           </div>
+        </section>
 
-          <div style="padding: 20px 0;">
-            <p style="color: #94a3b8; margin-bottom: 20px; font-size: 14px;">Neighbor Kevin's projectile knocked you out cold!</p>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
-              <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-                <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">FINAL SCORE</div>
-                <div id="go-score" style="font-size: 22px; font-weight: 900; color: #38bdf8;">0</div>
-              </div>
-              <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-                <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">HIGH SCORE</div>
-                <div id="go-high-score" style="font-size: 22px; font-weight: 900; color: #facc15;">0</div>
-              </div>
-              <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-                <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">RUN TIME</div>
-                <div id="go-time" style="font-size: 22px; font-weight: 900; color: #38bdf8;">0s</div>
-              </div>
-              <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-                <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">PEAK COMBO</div>
-                <div id="go-combo" style="font-size: 22px; font-weight: 900; color: #4ade80;">1x</div>
-              </div>
-              <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-                <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">DISTANCE</div>
-                <div id="go-yards" style="font-size: 22px; font-weight: 900; color: #a78bfa;">0m</div>
-              </div>
-            </div>
-
-            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-              <button id="btn-share-score" class="action-btn blue-btn" style="flex: 1; padding: 12px; font-size: 14px; font-weight: 800;">
-                📢 SHARE SCORE
-              </button>
-              <button id="btn-restart-run" class="action-btn gold-btn" style="flex: 2; padding: 12px; font-size: 15px; font-weight: 900;">
-                ⚽ PLAY AGAIN
-              </button>
-            </div>
-
-            <section id="affiliate-placement" class="affiliate-secondary" hidden aria-label="Optional creator link"></section>
+        <section id="settings-screen" class="screen-panel menu-panel" aria-labelledby="settings-heading" hidden>
+          <div class="title-stamp">MAKE IT YOURS</div>
+          <h2 id="settings-heading" class="panel-heading">SETTINGS</h2>
+          <p class="panel-copy">Simple switches. No effect on your run.</p>
+          <div class="settings-list">
+            <label class="setting-row" for="setting-muted"><span><strong>GAME AUDIO</strong><small>Music, effects and Kevin's voice</small></span><input id="setting-muted" type="checkbox" /><span class="switch-visual" aria-hidden="true"></span></label>
+            <label class="setting-row" for="setting-reduced-motion"><span><strong>REDUCED MOTION</strong><small>Calmer camera and particle feedback</small></span><input id="setting-reduced-motion" type="checkbox" /><span class="switch-visual" aria-hidden="true"></span></label>
           </div>
-        </div>
+          <button id="btn-settings-back" class="secondary-button back-button" type="button">BACK</button>
+        </section>
+
+        <section id="gameover-modal" class="screen-panel results-panel hidden" aria-labelledby="results-heading" hidden>
+          <div class="title-stamp results-stamp">KEVIN GOT YOU THIS TIME</div>
+          <h2 id="results-heading" class="panel-heading">RUN OVER!</h2>
+          <p class="panel-copy">The yard remembers what you broke.</p>
+          <div class="results-score"><span>FINAL SCORE</span><strong id="go-score">0</strong></div>
+          <dl class="results-grid">
+            <div><dt>HIGH SCORE</dt><dd id="go-high-score">0</dd></div>
+            <div><dt>RUN TIME</dt><dd id="go-time">0s</dd></div>
+            <div><dt>PEAK COMBO</dt><dd id="go-combo">1x</dd></div>
+            <div><dt>DISTANCE</dt><dd id="go-yards">0m</dd></div>
+          </dl>
+          <div class="results-actions">
+            <button id="btn-restart-run" class="primary-button" type="button">⚽ PLAY AGAIN</button>
+            <button id="btn-share-score" class="secondary-button" type="button">SHARE SCORE</button>
+          </div>
+          <section id="affiliate-placement" class="affiliate-secondary" hidden aria-label="Optional creator link"></section>
+        </section>
       </div>
-
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

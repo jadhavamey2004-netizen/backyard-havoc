@@ -4,7 +4,8 @@ import { attachBrowserHealth, attachScreenshot, monitorBrowserHealth } from './b
 async function expectTitleOverlayDismissed(page) {
   const title = page.locator('#title-screen');
   await expect(title).toHaveClass(/\bhidden\b/);
-  await expect(title).toHaveCSS('pointer-events', 'none');
+  await expect(title).toBeHidden();
+  await expect(page.locator('#screen-overlay')).toBeHidden();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -22,8 +23,7 @@ test('page boot renders the title screen and canvas', async ({ page }, testInfo)
   await expect(page.locator('#title-screen')).toBeVisible();
   await expect(page.locator('#btn-start-game')).toBeVisible();
   await expect(page.locator('#game-canvas')).toBeVisible();
-  await expect(page.locator('#player-health-display')).toBeVisible();
-  await expect(page.locator('#score-display')).toBeVisible();
+  await expect(page.locator('#game-hud')).toBeHidden();
   await expect(page.locator('#go-time')).toHaveText('0s');
 
   const dimensions = await page.locator('#game-canvas').evaluate((canvas) => ({
@@ -38,6 +38,11 @@ test('page boot renders the title screen and canvas', async ({ page }, testInfo)
   expect(dimensions.displayHeight).toBeGreaterThan(0);
 
   await attachScreenshot(testInfo, page, 'title-screen.png');
+  await page.locator('#btn-start-game').click();
+  await page.keyboard.press('Space');
+  await expect(page.locator('#game-hud')).toBeVisible();
+  await expect(page.locator('#player-health-display')).toBeVisible();
+  await expect(page.locator('#score-display')).toBeVisible();
 });
 
 test('title screen shows authoritative gameplay controls', async ({ page }) => {

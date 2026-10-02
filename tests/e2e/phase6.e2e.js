@@ -15,7 +15,8 @@ async function startGameplay(page) {
   await page.keyboard.press('Space');
   const titleScreen = page.locator('#title-screen');
   await expect(titleScreen).toHaveClass(/\bhidden\b/);
-  await expect(titleScreen).toHaveCSS('opacity', '0');
+  await expect(titleScreen).toBeHidden();
+  await expect(page.locator('#screen-overlay')).toBeHidden();
   await page.waitForFunction(() => Boolean(window.__BACKYARD_TEST_ENGINE__));
 }
 

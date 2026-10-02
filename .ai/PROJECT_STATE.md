@@ -1,5 +1,19 @@
 # Project State
 
+## Phase 9 — UI/UX overhaul
+
+- **Status:** Local implementation and verification PASS; final local runs were 293/293 Vitest, production build PASS (39 modules), and 26/26 Chromium E2E. All 26 browser-health records had zero page errors, console errors/warnings, failed requests, and same-origin failures. GitHub Quality Gate and Vercel Preview are verified on the draft PR's current head; the PR records exact run, artifact, and deployment provenance for external review.
+- **Baseline:** `1e050247b0d135a6d2ed61c6848599258b78bd12`, the merged/release-verified Phase 8 production baseline.
+- **Branch:** `codex/phase-9-ui-ux-overhaul`.
+- **Implementation:** `.ai/UI_UX_OVERHAUL.md` records the screen model, presentation ownership, title, compact HUD, pause, settings, results, responsive strategy, accessibility, verification, evidence, and limitations. `.ai/PHASE9_UI_AUDIT.md` records the evidence-based pre-implementation audit.
+- `src/ui/` provides the presentation reducer, pure view-model formatters, and one DOM/focus/overlay controller. `src/main.js` delegates screen and HUD presentation to it.
+- `GameEngine.setPaused()` adds user pause separately from run lifecycle and page visibility; it freezes simulation, cancels held input/transient audio, and resumes through the existing sound API. There are no score, physics, collision, AI, character, destruction, VFX-trigger, or audio-ownership changes.
+- Resuming and restarting into gameplay restore focus to the Canvas; the Pause button remains keyboard reachable. Browser regression coverage proves Space skips the intro after Resume rather than activating Pause.
+- Active HUD retains score, health, combo, Havoc, and Kevin state. Results retain the five existing run statistics, Share Score, and the unchanged results-only VideoGen referral. Settings expose only existing global mute and reduced motion.
+- **Phase 9 tests:** `npm test` passed 293/293 across 33 files; `npm run build` passed; `npm run test:e2e` passed 26/26. The Phase 9 Chromium suite captures 27 screenshots over the five required viewports plus keyboard and reduced-motion evidence. All browser-health counters were zero in all 26 scenario records.
+- No dependencies or lockfile changes. The 16:9 Canvas and mobile gameplay controls remain unchanged; independent audio channel sliders and automated axe/screen-reader scanning are deferred. See the UI overhaul document for further limits and Phase 10+ deferrals.
+- **Release:** Draft PR only; no merge and no production deployment. The draft PR carries the current exact-head GitHub Quality Gate, Playwright artifact, and Vercel Preview provenance for external review.
+
 ## Phase 8 — Reactive audio and VideoGen referral migration
 
 - **Baseline:** `f7cd90fd5b44e57fe0341633c3d662499314a560` on `main`; implementation branch: `codex/phase-8-reactive-audio`.
@@ -12,10 +26,10 @@
 - The Playwright suite attaches `phase8-audio-diagnostics.json` from runtime snapshots, plus browser-health and gameplay evidence; final-head CI, Preview, and artifact provenance are reported in the draft PR.
 
 - **Project:** Backyard Havoc (Vite, JavaScript ES modules, Canvas 2D, Matter.js)
-- **Merged baseline:** Phase 7 `main`, `f7cd90fd5b44e57fe0341633c3d662499314a560`
-- **Working branch:** `codex/phase-8-reactive-audio`
-- **Current phase:** Phase 8 — Sound, Music, Voice & Reactive Audio
-- **Phase 7 status:** Complete, merged into `main`, and release-verified at the Phase 8 baseline SHA.
+- **Phase 8 merged baseline:** `1e050247b0d135a6d2ed61c6848599258b78bd12` on `main`.
+- **Current working branch:** `codex/phase-9-ui-ux-overhaul`.
+- **Current phase:** Phase 9 — UI/UX overhaul.
+- **Phase 8 status:** Complete, merged into `main`, and release-verified at the Phase 9 baseline SHA.
 
 ## Phase 7 implementation
 
@@ -69,4 +83,4 @@ The Phase 1C contact and timing rules, Phase 2 gameplay feel, Phase 3 character 
 
 ## Deferred
 
-Phase 9 UI and all later-phase work remain untouched. Production release waits for external review and a human merge to `main`; Phase 8 does not promote Vercel Preview or change production.
+At the Phase 8 handoff, Phase 9 UI and later-phase work were deferred. Phase 9 is now being reviewed on its own draft PR. Production release waits for external review and a human merge to `main`; no Phase 9 work promotes Vercel Preview or changes production.
