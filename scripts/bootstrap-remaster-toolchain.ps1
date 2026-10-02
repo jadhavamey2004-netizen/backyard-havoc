@@ -54,7 +54,7 @@ try {
 
   if (-not $SkipProjectPackages) {
     # Runtime: rendering spike + perceptually accurate irregular physics bodies.
-    npm install --save-exact pixi.js@8.22.0 poly-decomp@0.3.0
+    npm install --save-exact pixi.js@8.20.1 poly-decomp@0.3.0
 
     # Development-only asset/tuning pipeline.
     npm install --save-dev --save-exact @assetpack/core@1.7.0 svgo@4.1.0 lil-gui@0.21.0
