@@ -9,6 +9,9 @@ dist-pixi-spike/
 dist-e2e/
 playwright-report/
 test-results/
+.atlas/
+.serena/
+.memory/index.json
 .tempmediaStorage/
 *.log
 .DS_Store
