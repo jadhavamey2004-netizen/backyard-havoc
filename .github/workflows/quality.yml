@@ -33,7 +33,50 @@ jobs:
         run: npm run build
 
   browser-smoke:
-    name: Chromium browser smoke tests
+    name: Chromium desktop, touch, and normal release smoke tests
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium and system dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Run Chromium desktop, touch, and normal release smoke tests
+        run: npm run test:e2e -- --project=chromium --project=chromium-touch --project=chromium-release
+
+      - name: Assert production bundle hygiene
+        run: node scripts/assert-production-build.mjs
+
+      - name: Record representative prop collision comparison
+        run: npm run compare:remaster-collision
+
+      - name: Upload normal Chromium reports and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: chromium-release-evidence
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 7
+
+  pixi-browser-smoke:
+    name: Chromium Pixi touch, renderer, and visual evidence
     needs: quality
     runs-on: ubuntu-latest
     steps:
@@ -58,20 +101,14 @@ jobs:
       - name: Build isolated Pixi spike for bundle-cost evidence
         run: npm run build:pixi-spike
 
-      - name: Run Chromium desktop, touch, normal release, and Pixi release smoke tests
-        run: npm run test:e2e -- --project=chromium --project=chromium-touch --project=chromium-pixi-touch --project=chromium-release --project=chromium-pixi-release
+      - name: Run isolated Pixi touch and release projects
+        run: npm run test:e2e -- --project=chromium-pixi-touch --project=chromium-pixi-release
 
-      - name: Assert production bundle hygiene
-        run: node scripts/assert-production-build.mjs
-
-      - name: Record representative prop collision comparison
-        run: npm run compare:remaster-collision
-
-      - name: Upload browser reports and failure evidence
+      - name: Upload Pixi browser reports and failure evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-evidence
+          name: phase13-pixi-evidence
           path: |
             playwright-report/
             test-results/
