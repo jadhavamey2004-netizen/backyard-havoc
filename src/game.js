@@ -136,6 +136,8 @@ export class GameEngine {
     this.cutsceneDuration = 3.6;
     this.letterboxProgress = 0.0; // 0.0 to 1.0
     this.kickoffBannerTimer = 0;
+    this.kickoffBannerDuration = 1.5;
+    this.runCount = 0;
 
     // Callbacks
     this.onGameOverCallback = null;
@@ -884,6 +886,8 @@ export class GameEngine {
   }
 
   startIntroCutscene() {
+    this.runCount += 1;
+    this.kickoffBannerDuration = this.runCount === 1 ? 1.5 : 0.55;
     this.isPaused = false;
     sounds.resetTransientAudio();
     this.resetTransientFeelState();
@@ -922,7 +926,7 @@ export class GameEngine {
       this.cutsceneTimer = 0;
       this.player.x = this.startX;
       this.player.state = 'IDLE';
-      this.kickoffBannerTimer = 1.5;
+      this.kickoffBannerTimer = this.kickoffBannerDuration;
       sounds.playWhistle();
       if (this.pageVisible) sounds.startGenerativeMusic();
     }
@@ -1625,6 +1629,7 @@ export class GameEngine {
     ctx.translate(this.width * 0.5, this.height * 0.5);
     ctx.scale(shake.zoom, shake.zoom);
     ctx.translate(-this.width * 0.5, -this.height * 0.5);
+    // Canvas pass 1: far atmosphere and skyline.
     this.mapRenderer.drawSkyAndSun(ctx, camX);
 
     ctx.save();
@@ -1636,9 +1641,10 @@ export class GameEngine {
     const startChunk = playerChunk - 1;
     const endChunk = playerChunk + 1;
 
+    // Canvas passes 2-4: architecture, fence/midground and ground layers.
     this.mapRenderer.drawWorldLayers(ctx, camX, startChunk, endChunk);
 
-    // Draw 2nd-Story Window Kevin NPC
+    // Canvas pass 6: Kevin and the world actors/props, followed by projectile and fragment action.
     this.npc.draw(ctx);
 
     const activeProps = this.proceduralWorld.getAllActiveProps();
@@ -1648,6 +1654,7 @@ export class GameEngine {
     // Draw Thrown Flying Projectiles
     this.drawThrownProjectiles(ctx);
 
+    // Canvas pass 7: world-space impact feedback, then player and ball foreground silhouettes.
     this.drawEnvironmentShards(ctx);
     this.particles.draw(ctx);
     this.player.draw(ctx, this.combo);
@@ -1659,12 +1666,13 @@ export class GameEngine {
     ctx.restore();
     ctx.restore();
 
+    // Canvas pass 8: screen-space camera and VFX feedback.
     this.camera.drawChromaticEdges(ctx, this.width, this.height);
     // Screen-space Vignette effects
     this.particles.drawScreenVignettes(ctx, this.width, this.height);
     this.vfxDirector.drawHavocEdge(ctx, this.width, this.height, this.havocSystem.active);
 
-    // Screen-space Cinematic Cutscene Letterbox Bars & Titles
+    // Canvas pass 9: cinematic overlays; semantic HUD and menus stay in the DOM above this surface.
     this.drawCutsceneOverlays(ctx);
   }
 
@@ -1705,28 +1713,30 @@ export class GameEngine {
 
     // Dynamic Kickoff Banner: "READY... GO!"
     if (this.kickoffBannerTimer > 0) {
-      const p = this.kickoffBannerTimer / 1.5;
+      const compactKickoff = this.runCount > 1;
+      const p = this.kickoffBannerTimer / this.kickoffBannerDuration;
       const scale = Math.sin((1.0 - p) * Math.PI * 0.5);
-      const alpha = Math.min(1.0, this.kickoffBannerTimer * 2);
+      const alpha = Math.min(1.0, this.kickoffBannerTimer * (compactKickoff ? 3 : 2));
 
       ctx.save();
       ctx.translate(this.width / 2, this.height / 2 - 40);
       ctx.scale(Math.max(0.3, scale), Math.max(0.3, scale));
       ctx.globalAlpha = alpha;
 
-      ctx.font = '900 46px Outfit, sans-serif';
+      ctx.font = `900 ${compactKickoff ? 32 : 46}px Outfit, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
       // Drop shadow
       ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillText(p > 0.55 ? 'READY...' : '⚡ GO! KICK!', 3, 3);
+      const kickoffText = compactKickoff ? '⚡ GO! KICK!' : p > 0.55 ? 'READY...' : '⚡ GO! KICK!';
+      ctx.fillText(kickoffText, 3, 3);
 
-      ctx.fillStyle = p > 0.55 ? '#38bdf8' : '#facc15';
+      ctx.fillStyle = !compactKickoff && p > 0.55 ? '#38bdf8' : '#facc15';
       ctx.strokeStyle = '#020617';
-      ctx.lineWidth = 6;
-      ctx.strokeText(p > 0.55 ? 'READY...' : '⚡ GO! KICK!', 0, 0);
-      ctx.fillText(p > 0.55 ? 'READY...' : '⚡ GO! KICK!', 0, 0);
+      ctx.lineWidth = compactKickoff ? 4 : 6;
+      ctx.strokeText(kickoffText, 0, 0);
+      ctx.fillText(kickoffText, 0, 0);
       ctx.restore();
     }
 

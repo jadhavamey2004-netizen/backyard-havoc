@@ -1,12 +1,13 @@
 # Current Phase Capsule
 
-Updated for the one-time context preflight on 2026-10-03. Read this capsule with the exact active phase prompt. It summarizes durable decisions; it is not source code or an implementation specification.
+Updated for Phase 14 implementation on 2026-10-03. Read this capsule with the exact active phase prompt. It summarizes durable decisions; it is not source code or an implementation specification.
 
 ## Current state
 
-- Phase 13 is complete and merged. Its release-verified production SHA at the start of this tooling preflight is `404fef0b1dbb1a68fd6031e7a149a1d850932957`.
-- Current work is the context-efficiency preflight on `codex/context-efficiency-preflight`.
-- Phase 14 has not started. After this tooling PR is externally approved and merged, the Phase 14 parent MUST be refreshed from the resulting `main` SHA; do not assume `404fef0b1dbb1a68fd6031e7a149a1d850932957` remains the Phase 14 parent after `main` advances.
+- Phase 13 is complete and merged. Phase 14 is in progress on `codex/phase-14-rendering-theater-hud`.
+- Phase 14 base SHA: `c9a4e779499c6d5bddd595f8da274a91dd41276c`.
+- Final reviewed branch head: use the exact head shown by the Phase 14 draft PR and its final Quality Gate evidence.
+- Next-phase parent: pending merge; refresh `main` after merge. Do not predict or copy a parent SHA.
 - Renderer decision: **C — KEEP CANVAS2D** for production. PixiJS is limited to development/E2E and the isolated `phase13-pixi-spike` feasibility build.
 
 ## Authority and boundaries
@@ -25,6 +26,9 @@ Updated for the one-time context preflight on 2026-10-03. Read this capsule with
 - Before an implementation phase, refresh `main`, confirm the exact required base SHA and a clean tree, create only the requested branch, follow its scope, run its stated checks, and preserve inherited tests. Record cross-phase fixes explicitly.
 - Complete local verification, push, verify exact-head GitHub checks and artifacts (plus Preview SHA when required), create a draft PR, and stop for external review. Do not merge unless directly instructed.
 
-## Stop condition for this capsule
+## Phase 14 scope and stop condition
 
-This preflight ends with its documentation/tooling-only draft PR and an external-review handoff. Do not implement Phase 14 from this task.
+- Phase 14 improves theater sizing, HUD safe areas, cinematic HUD ownership, repeat-run kickoff clarity and stable visual evidence.
+- Canvas2D remains the production renderer; Pixi remains isolated to Phase 13 feasibility/E2E work.
+- Preserve the 960 × 540 logical world, pointer mapping, touch controls, reduced motion, DOM accessibility and existing gameplay rules.
+- Stop at Phase 14’s exact-head CI/Preview external-review handoff. Do not merge and do not begin Phase 15.

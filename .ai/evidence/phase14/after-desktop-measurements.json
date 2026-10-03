@@ -1,0 +1,2664 @@
+[
+  {
+    "name": "desktop-1280x720",
+    "viewport": {
+      "width": 1280,
+      "height": 720,
+      "dpr": 1,
+      "scrollWidth": 1280,
+      "scrollHeight": 720
+    },
+    "container": {
+      "x": 87.109375,
+      "y": 92.015625,
+      "width": 1105.765625,
+      "height": 621.984375,
+      "right": 1192.875,
+      "bottom": 714
+    },
+    "canvas": {
+      "x": 87.109375,
+      "y": 92.015625,
+      "width": 1105.765625,
+      "height": 621.984375,
+      "right": 1192.875,
+      "bottom": 714
+    },
+    "canvasCss": {
+      "width": "1105.77px",
+      "height": "621.984px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.7778028989876153,
+    "unused": {
+      "left": 87.109375,
+      "right": 87.125,
+      "top": 92.015625,
+      "bottom": 6
+    },
+    "worldTargets": {
+      "kevin": {
+        "x": 790,
+        "y": 110
+      },
+      "kevinWindow": {
+        "x": 744,
+        "y": 80,
+        "width": 92,
+        "height": 60
+      },
+      "projectile": {
+        "x": 470,
+        "y": 40,
+        "type": "Clay Pot"
+      },
+      "upperTarget": null,
+      "player": {
+        "x": 340,
+        "y": 485
+      },
+      "ball": {
+        "x": 371.49392019304764,
+        "y": 352.5815301033131
+      },
+      "cameraX": 0
+    },
+    "header": {
+      "x": 12,
+      "y": 6.390625,
+      "width": 1256,
+      "height": 48,
+      "right": 1268,
+      "bottom": 54.390625
+    },
+    "hud": {
+      "x": 12,
+      "y": 54.390625,
+      "width": 1256,
+      "height": 38,
+      "right": 1268,
+      "bottom": 92.390625
+    },
+    "hudHidden": false,
+    "hudAriaHidden": "false",
+    "hudTopline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudBottomline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudSurfaces": [
+      {
+        "selector": "#game-header",
+        "bounds": {
+          "x": 12,
+          "y": 6.390625,
+          "width": 1256,
+          "height": 48,
+          "right": 1268,
+          "bottom": 54.390625
+        }
+      },
+      {
+        "selector": "#game-hud",
+        "bounds": {
+          "x": 12,
+          "y": 54.390625,
+          "width": 1256,
+          "height": 38,
+          "right": 1268,
+          "bottom": 92.390625
+        }
+      },
+      {
+        "selector": ".score-stat",
+        "bounds": {
+          "x": 19.671875,
+          "y": 64.1875,
+          "width": 49.953125,
+          "height": 18.40625,
+          "right": 69.625,
+          "bottom": 82.59375
+        }
+      },
+      {
+        "selector": ".health-stat",
+        "bounds": {
+          "x": 82.421875,
+          "y": 64.59375,
+          "width": 73.78125,
+          "height": 17.59375,
+          "right": 156.203125,
+          "bottom": 82.1875
+        }
+      },
+      {
+        "selector": "#havoc-card",
+        "bounds": {
+          "x": 169,
+          "y": 61.953125,
+          "width": 170,
+          "height": 22.875,
+          "right": 339,
+          "bottom": 84.828125
+        }
+      },
+      {
+        "selector": "#kevin-card",
+        "bounds": {
+          "x": 351.796875,
+          "y": 64.921875,
+          "width": 584.734375,
+          "height": 16.9375,
+          "right": 936.53125,
+          "bottom": 81.859375
+        }
+      },
+      {
+        "selector": ".combo-card",
+        "bounds": {
+          "x": 949.328125,
+          "y": 63.390625,
+          "width": 59.90625,
+          "height": 20,
+          "right": 1009.234375,
+          "bottom": 83.390625
+        }
+      },
+      {
+        "selector": ".controls-hint",
+        "bounds": {
+          "x": 1022.03125,
+          "y": 66.203125,
+          "width": 238.296875,
+          "height": 14.375,
+          "right": 1260.328125,
+          "bottom": 80.578125
+        }
+      }
+    ],
+    "critical": [
+      {
+        "name": "kevin-and-window",
+        "x": 944.077734375,
+        "y": 184.16145833333331,
+        "width": 105.96920572916666,
+        "height": 69.109375
+      },
+      {
+        "name": "kevin-head",
+        "x": 933.711181640625,
+        "y": 158.82135416666665,
+        "width": 126.70231119791667,
+        "height": 73.71666666666667
+      },
+      {
+        "name": "representative-projectile",
+        "x": 612.7523424316406,
+        "y": 121.96302083333333,
+        "width": 31.442906282552087,
+        "height": 32.251041666666666
+      },
+      {
+        "name": "player-ball-action",
+        "x": 425.75009765625,
+        "y": 477.39429886639425,
+        "width": 109.99363994371402,
+        "height": 182.4700240502724
+      },
+      {
+        "name": "important-upper-target",
+        "x": 944.077734375,
+        "y": 184.16145833333331,
+        "width": 105.96920572916666,
+        "height": 69.109375
+      }
+    ],
+    "overlaps": [],
+    "pause": {
+      "x": 1177.421875,
+      "y": 6.390625,
+      "width": 90.578125,
+      "height": 48,
+      "right": 1268,
+      "bottom": 54.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "uiState": "PLAYING"
+  },
+  {
+    "name": "desktop-1366x768",
+    "viewport": {
+      "width": 1366,
+      "height": 768,
+      "dpr": 1,
+      "scrollWidth": 1366,
+      "scrollHeight": 768
+    },
+    "container": {
+      "x": 87.4375,
+      "y": 92.015625,
+      "width": 1191.109375,
+      "height": 669.984375,
+      "right": 1278.546875,
+      "bottom": 762
+    },
+    "canvas": {
+      "x": 87.4375,
+      "y": 92.015625,
+      "width": 1191.109375,
+      "height": 669.984375,
+      "right": 1278.546875,
+      "bottom": 762
+    },
+    "canvasCss": {
+      "width": "1191.11px",
+      "height": "669.984px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.777816646843443,
+    "unused": {
+      "left": 87.4375,
+      "right": 87.453125,
+      "top": 92.015625,
+      "bottom": 6
+    },
+    "worldTargets": {
+      "kevin": {
+        "x": 790,
+        "y": 110
+      },
+      "kevinWindow": {
+        "x": 744,
+        "y": 80,
+        "width": 92,
+        "height": 60
+      },
+      "projectile": {
+        "x": 470,
+        "y": 40,
+        "type": "Clay Pot"
+      },
+      "upperTarget": null,
+      "player": {
+        "x": 340,
+        "y": 485
+      },
+      "ball": {
+        "x": 371.49392019304764,
+        "y": 352.5815301033131
+      },
+      "cameraX": 0
+    },
+    "header": {
+      "x": 12,
+      "y": 6.390625,
+      "width": 1342,
+      "height": 48,
+      "right": 1354,
+      "bottom": 54.390625
+    },
+    "hud": {
+      "x": 12,
+      "y": 54.390625,
+      "width": 1342,
+      "height": 38,
+      "right": 1354,
+      "bottom": 92.390625
+    },
+    "hudHidden": false,
+    "hudAriaHidden": "false",
+    "hudTopline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudBottomline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudSurfaces": [
+      {
+        "selector": "#game-header",
+        "bounds": {
+          "x": 12,
+          "y": 6.390625,
+          "width": 1342,
+          "height": 48,
+          "right": 1354,
+          "bottom": 54.390625
+        }
+      },
+      {
+        "selector": "#game-hud",
+        "bounds": {
+          "x": 12,
+          "y": 54.390625,
+          "width": 1342,
+          "height": 38,
+          "right": 1354,
+          "bottom": 92.390625
+        }
+      },
+      {
+        "selector": ".score-stat",
+        "bounds": {
+          "x": 20.1875,
+          "y": 64.1875,
+          "width": 49.953125,
+          "height": 18.40625,
+          "right": 70.140625,
+          "bottom": 82.59375
+        }
+      },
+      {
+        "selector": ".health-stat",
+        "bounds": {
+          "x": 83.796875,
+          "y": 64.59375,
+          "width": 73.78125,
+          "height": 17.59375,
+          "right": 157.578125,
+          "bottom": 82.1875
+        }
+      },
+      {
+        "selector": "#havoc-card",
+        "bounds": {
+          "x": 171.234375,
+          "y": 61.953125,
+          "width": 170,
+          "height": 22.875,
+          "right": 341.234375,
+          "bottom": 84.828125
+        }
+      },
+      {
+        "selector": "#kevin-card",
+        "bounds": {
+          "x": 354.890625,
+          "y": 64.921875,
+          "width": 665.40625,
+          "height": 16.9375,
+          "right": 1020.296875,
+          "bottom": 81.859375
+        }
+      },
+      {
+        "selector": ".combo-card",
+        "bounds": {
+          "x": 1033.953125,
+          "y": 63.390625,
+          "width": 59.90625,
+          "height": 20,
+          "right": 1093.859375,
+          "bottom": 83.390625
+        }
+      },
+      {
+        "selector": ".controls-hint",
+        "bounds": {
+          "x": 1107.515625,
+          "y": 66.203125,
+          "width": 238.296875,
+          "height": 14.375,
+          "right": 1345.8125,
+          "bottom": 80.578125
+        }
+      }
+    ],
+    "critical": [
+      {
+        "name": "kevin-and-window",
+        "x": 1010.547265625,
+        "y": 191.27256944444446,
+        "width": 114.14798177083334,
+        "height": 74.44270833333333
+      },
+      {
+        "name": "kevin-head",
+        "x": 999.380615234375,
+        "y": 163.97690972222222,
+        "width": 136.48128255208334,
+        "height": 79.40555555555555
+      },
+      {
+        "name": "representative-projectile",
+        "x": 653.6499524902343,
+        "y": 124.27413194444443,
+        "width": 33.86969137369792,
+        "height": 34.73993055555555
+      },
+      {
+        "name": "player-ball-action",
+        "x": 452.21474609375,
+        "y": 507.1348793200221,
+        "width": 118.48302458066756,
+        "height": 196.55166581886678
+      },
+      {
+        "name": "important-upper-target",
+        "x": 1010.547265625,
+        "y": 191.27256944444446,
+        "width": 114.14798177083334,
+        "height": 74.44270833333333
+      }
+    ],
+    "overlaps": [],
+    "pause": {
+      "x": 1263.421875,
+      "y": 6.390625,
+      "width": 90.578125,
+      "height": 48,
+      "right": 1354,
+      "bottom": 54.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "uiState": "PLAYING"
+  },
+  {
+    "name": "desktop-1440x900",
+    "viewport": {
+      "width": 1440,
+      "height": 900,
+      "dpr": 1,
+      "scrollWidth": 1440,
+      "scrollHeight": 900
+    },
+    "container": {
+      "x": 12,
+      "y": 94.75,
+      "width": 1416,
+      "height": 796.5,
+      "right": 1428,
+      "bottom": 891.25
+    },
+    "canvas": {
+      "x": 12,
+      "y": 94.75,
+      "width": 1416,
+      "height": 796.5,
+      "right": 1428,
+      "bottom": 891.25
+    },
+    "canvasCss": {
+      "width": "1416px",
+      "height": "796.5px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.7777777777777777,
+    "unused": {
+      "left": 12,
+      "right": 12,
+      "top": 94.75,
+      "bottom": 8.75
+    },
+    "worldTargets": {
+      "kevin": {
+        "x": 790,
+        "y": 110
+      },
+      "kevinWindow": {
+        "x": 744,
+        "y": 80,
+        "width": 92,
+        "height": 60
+      },
+      "projectile": {
+        "x": 470,
+        "y": 40,
+        "type": "Clay Pot"
+      },
+      "upperTarget": null,
+      "player": {
+        "x": 340,
+        "y": 485
+      },
+      "ball": {
+        "x": 371.49392019304764,
+        "y": 352.5815301033131
+      },
+      "cameraX": 0
+    },
+    "header": {
+      "x": 12,
+      "y": 6.390625,
+      "width": 1416,
+      "height": 48,
+      "right": 1428,
+      "bottom": 54.390625
+    },
+    "hud": {
+      "x": 12,
+      "y": 54.390625,
+      "width": 1416,
+      "height": 38,
+      "right": 1428,
+      "bottom": 92.390625
+    },
+    "hudHidden": false,
+    "hudAriaHidden": "false",
+    "hudTopline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudBottomline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudSurfaces": [
+      {
+        "selector": "#game-header",
+        "bounds": {
+          "x": 12,
+          "y": 6.390625,
+          "width": 1416,
+          "height": 48,
+          "right": 1428,
+          "bottom": 54.390625
+        }
+      },
+      {
+        "selector": "#game-hud",
+        "bounds": {
+          "x": 12,
+          "y": 54.390625,
+          "width": 1416,
+          "height": 38,
+          "right": 1428,
+          "bottom": 92.390625
+        }
+      },
+      {
+        "selector": ".score-stat",
+        "bounds": {
+          "x": 20.625,
+          "y": 64.1875,
+          "width": 49.953125,
+          "height": 18.40625,
+          "right": 70.578125,
+          "bottom": 82.59375
+        }
+      },
+      {
+        "selector": ".health-stat",
+        "bounds": {
+          "x": 84.96875,
+          "y": 64.59375,
+          "width": 73.78125,
+          "height": 17.59375,
+          "right": 158.75,
+          "bottom": 82.1875
+        }
+      },
+      {
+        "selector": "#havoc-card",
+        "bounds": {
+          "x": 173.140625,
+          "y": 61.953125,
+          "width": 170,
+          "height": 22.875,
+          "right": 343.140625,
+          "bottom": 84.828125
+        }
+      },
+      {
+        "selector": "#kevin-card",
+        "bounds": {
+          "x": 357.53125,
+          "y": 64.921875,
+          "width": 734.859375,
+          "height": 16.9375,
+          "right": 1092.390625,
+          "bottom": 81.859375
+        }
+      },
+      {
+        "selector": ".combo-card",
+        "bounds": {
+          "x": 1106.78125,
+          "y": 63.390625,
+          "width": 59.90625,
+          "height": 20,
+          "right": 1166.6875,
+          "bottom": 83.390625
+        }
+      },
+      {
+        "selector": ".controls-hint",
+        "bounds": {
+          "x": 1181.078125,
+          "y": 66.203125,
+          "width": 238.296875,
+          "height": 14.375,
+          "right": 1419.375,
+          "bottom": 80.578125
+        }
+      }
+    ],
+    "critical": [
+      {
+        "name": "kevin-and-window",
+        "x": 1109.4,
+        "y": 212.75,
+        "width": 135.7,
+        "height": 88.5
+      },
+      {
+        "name": "kevin-head",
+        "x": 1096.125,
+        "y": 180.3,
+        "width": 162.25,
+        "height": 94.4
+      },
+      {
+        "name": "representative-projectile",
+        "x": 685.117725,
+        "y": 133.1,
+        "width": 40.26455,
+        "height": 41.3
+      },
+      {
+        "name": "player-ball-action",
+        "x": 445.65,
+        "y": 588.2577569023869,
+        "width": 140.85353228474526,
+        "height": 233.66724309761315
+      },
+      {
+        "name": "important-upper-target",
+        "x": 1109.4,
+        "y": 212.75,
+        "width": 135.7,
+        "height": 88.5
+      }
+    ],
+    "overlaps": [],
+    "pause": {
+      "x": 1337.421875,
+      "y": 6.390625,
+      "width": 90.578125,
+      "height": 48,
+      "right": 1428,
+      "bottom": 54.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "uiState": "PLAYING"
+  },
+  {
+    "name": "desktop-1920x1080",
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1,
+      "scrollWidth": 1920,
+      "scrollHeight": 1080
+    },
+    "container": {
+      "x": 87.109375,
+      "y": 92.015625,
+      "width": 1745.765625,
+      "height": 981.984375,
+      "right": 1832.875,
+      "bottom": 1074
+    },
+    "canvas": {
+      "x": 87.109375,
+      "y": 92.015625,
+      "width": 1745.765625,
+      "height": 981.984375,
+      "right": 1832.875,
+      "bottom": 1074
+    },
+    "canvasCss": {
+      "width": "1745.77px",
+      "height": "981.984px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.77779368943625,
+    "unused": {
+      "left": 87.109375,
+      "right": 87.125,
+      "top": 92.015625,
+      "bottom": 6
+    },
+    "worldTargets": {
+      "kevin": {
+        "x": 790,
+        "y": 110
+      },
+      "kevinWindow": {
+        "x": 744,
+        "y": 80,
+        "width": 92,
+        "height": 60
+      },
+      "projectile": {
+        "x": 470,
+        "y": 40,
+        "type": "Clay Pot"
+      },
+      "upperTarget": null,
+      "player": {
+        "x": 340,
+        "y": 485
+      },
+      "ball": {
+        "x": 371.49392019304764,
+        "y": 352.5815301033131
+      },
+      "cameraX": 0
+    },
+    "header": {
+      "x": 12,
+      "y": 6.390625,
+      "width": 1896,
+      "height": 48,
+      "right": 1908,
+      "bottom": 54.390625
+    },
+    "hud": {
+      "x": 12,
+      "y": 54.390625,
+      "width": 1896,
+      "height": 38,
+      "right": 1908,
+      "bottom": 92.390625
+    },
+    "hudHidden": false,
+    "hudAriaHidden": "false",
+    "hudTopline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudBottomline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudSurfaces": [
+      {
+        "selector": "#game-header",
+        "bounds": {
+          "x": 12,
+          "y": 6.390625,
+          "width": 1896,
+          "height": 48,
+          "right": 1908,
+          "bottom": 54.390625
+        }
+      },
+      {
+        "selector": "#game-hud",
+        "bounds": {
+          "x": 12,
+          "y": 54.390625,
+          "width": 1896,
+          "height": 38,
+          "right": 1908,
+          "bottom": 92.390625
+        }
+      },
+      {
+        "selector": ".score-stat",
+        "bounds": {
+          "x": 23.1875,
+          "y": 64.1875,
+          "width": 49.953125,
+          "height": 18.40625,
+          "right": 73.140625,
+          "bottom": 82.59375
+        }
+      },
+      {
+        "selector": ".health-stat",
+        "bounds": {
+          "x": 89.140625,
+          "y": 64.59375,
+          "width": 73.78125,
+          "height": 17.59375,
+          "right": 162.921875,
+          "bottom": 82.1875
+        }
+      },
+      {
+        "selector": "#havoc-card",
+        "bounds": {
+          "x": 178.921875,
+          "y": 61.953125,
+          "width": 170,
+          "height": 22.875,
+          "right": 348.921875,
+          "bottom": 84.828125
+        }
+      },
+      {
+        "selector": "#kevin-card",
+        "bounds": {
+          "x": 364.921875,
+          "y": 64.921875,
+          "width": 1201.6875,
+          "height": 16.9375,
+          "right": 1566.609375,
+          "bottom": 81.859375
+        }
+      },
+      {
+        "selector": ".combo-card",
+        "bounds": {
+          "x": 1582.609375,
+          "y": 63.390625,
+          "width": 59.90625,
+          "height": 20,
+          "right": 1642.515625,
+          "bottom": 83.390625
+        }
+      },
+      {
+        "selector": ".controls-hint",
+        "bounds": {
+          "x": 1658.515625,
+          "y": 66.203125,
+          "width": 238.296875,
+          "height": 14.375,
+          "right": 1896.8125,
+          "bottom": 80.578125
+        }
+      }
+    ],
+    "critical": [
+      {
+        "name": "kevin-and-window",
+        "x": 1440.077734375,
+        "y": 237.49479166666666,
+        "width": 167.3025390625,
+        "height": 109.109375
+      },
+      {
+        "name": "kevin-head",
+        "x": 1423.711181640625,
+        "y": 197.48802083333334,
+        "width": 200.03564453125,
+        "height": 116.38333333333334
+      },
+      {
+        "name": "representative-projectile",
+        "x": 916.9863424316407,
+        "y": 139.29635416666667,
+        "width": 49.64157294921875,
+        "height": 50.91770833333333
+      },
+      {
+        "name": "player-ball-action",
+        "x": 621.75009765625,
+        "y": 700.4486522686029,
+        "width": 173.65625340574576,
+        "height": 288.0823373147303
+      },
+      {
+        "name": "important-upper-target",
+        "x": 1440.077734375,
+        "y": 237.49479166666666,
+        "width": 167.3025390625,
+        "height": 109.109375
+      }
+    ],
+    "overlaps": [],
+    "pause": {
+      "x": 1817.421875,
+      "y": 6.390625,
+      "width": 90.578125,
+      "height": 48,
+      "right": 1908,
+      "bottom": 54.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "uiState": "PLAYING"
+  },
+  {
+    "name": "desktop-2560x1440",
+    "viewport": {
+      "width": 2560,
+      "height": 1440,
+      "dpr": 1,
+      "scrollWidth": 2560,
+      "scrollHeight": 1440
+    },
+    "container": {
+      "x": 87.109375,
+      "y": 92.015625,
+      "width": 2385.765625,
+      "height": 1341.984375,
+      "right": 2472.875,
+      "bottom": 1434
+    },
+    "canvas": {
+      "x": 87.109375,
+      "y": 92.015625,
+      "width": 2385.765625,
+      "height": 1341.984375,
+      "right": 2472.875,
+      "bottom": 1434
+    },
+    "canvasCss": {
+      "width": "2385.77px",
+      "height": "1341.98px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.777789420983385,
+    "unused": {
+      "left": 87.109375,
+      "right": 87.125,
+      "top": 92.015625,
+      "bottom": 6
+    },
+    "worldTargets": {
+      "kevin": {
+        "x": 790,
+        "y": 110
+      },
+      "kevinWindow": {
+        "x": 744,
+        "y": 80,
+        "width": 92,
+        "height": 60
+      },
+      "projectile": {
+        "x": 470,
+        "y": 40,
+        "type": "Clay Pot"
+      },
+      "upperTarget": null,
+      "player": {
+        "x": 340,
+        "y": 485
+      },
+      "ball": {
+        "x": 371.49392019304764,
+        "y": 352.5815301033131
+      },
+      "cameraX": 0
+    },
+    "header": {
+      "x": 12,
+      "y": 6.390625,
+      "width": 2536,
+      "height": 48,
+      "right": 2548,
+      "bottom": 54.390625
+    },
+    "hud": {
+      "x": 12,
+      "y": 54.390625,
+      "width": 2536,
+      "height": 38,
+      "right": 2548,
+      "bottom": 92.390625
+    },
+    "hudHidden": false,
+    "hudAriaHidden": "false",
+    "hudTopline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudBottomline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudSurfaces": [
+      {
+        "selector": "#game-header",
+        "bounds": {
+          "x": 12,
+          "y": 6.390625,
+          "width": 2536,
+          "height": 48,
+          "right": 2548,
+          "bottom": 54.390625
+        }
+      },
+      {
+        "selector": "#game-hud",
+        "bounds": {
+          "x": 12,
+          "y": 54.390625,
+          "width": 2536,
+          "height": 38,
+          "right": 2548,
+          "bottom": 92.390625
+        }
+      },
+      {
+        "selector": ".score-stat",
+        "bounds": {
+          "x": 23.1875,
+          "y": 64.1875,
+          "width": 49.953125,
+          "height": 18.40625,
+          "right": 73.140625,
+          "bottom": 82.59375
+        }
+      },
+      {
+        "selector": ".health-stat",
+        "bounds": {
+          "x": 89.140625,
+          "y": 64.59375,
+          "width": 73.78125,
+          "height": 17.59375,
+          "right": 162.921875,
+          "bottom": 82.1875
+        }
+      },
+      {
+        "selector": "#havoc-card",
+        "bounds": {
+          "x": 178.921875,
+          "y": 61.953125,
+          "width": 170,
+          "height": 22.875,
+          "right": 348.921875,
+          "bottom": 84.828125
+        }
+      },
+      {
+        "selector": "#kevin-card",
+        "bounds": {
+          "x": 364.921875,
+          "y": 64.921875,
+          "width": 1841.6875,
+          "height": 16.9375,
+          "right": 2206.609375,
+          "bottom": 81.859375
+        }
+      },
+      {
+        "selector": ".combo-card",
+        "bounds": {
+          "x": 2222.609375,
+          "y": 63.390625,
+          "width": 59.90625,
+          "height": 20,
+          "right": 2282.515625,
+          "bottom": 83.390625
+        }
+      },
+      {
+        "selector": ".controls-hint",
+        "bounds": {
+          "x": 2298.515625,
+          "y": 66.203125,
+          "width": 238.296875,
+          "height": 14.375,
+          "right": 2536.8125,
+          "bottom": 80.578125
+        }
+      }
+    ],
+    "critical": [
+      {
+        "name": "kevin-and-window",
+        "x": 1936.077734375,
+        "y": 290.828125,
+        "width": 228.63587239583333,
+        "height": 149.109375
+      },
+      {
+        "name": "kevin-head",
+        "x": 1913.711181640625,
+        "y": 236.1546875,
+        "width": 273.3689778645833,
+        "height": 159.05
+      },
+      {
+        "name": "representative-projectile",
+        "x": 1221.2203424316406,
+        "y": 156.6296875,
+        "width": 67.84023961588542,
+        "height": 69.584375
+      },
+      {
+        "name": "player-ball-action",
+        "x": 817.75009765625,
+        "y": 923.5030056708117,
+        "width": 237.31886686777753,
+        "height": 393.69465057918825
+      },
+      {
+        "name": "important-upper-target",
+        "x": 1936.077734375,
+        "y": 290.828125,
+        "width": 228.63587239583333,
+        "height": 149.109375
+      }
+    ],
+    "overlaps": [],
+    "pause": {
+      "x": 2457.421875,
+      "y": 6.390625,
+      "width": 90.578125,
+      "height": 48,
+      "right": 2548,
+      "bottom": 54.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "uiState": "PLAYING"
+  },
+  {
+    "name": "mobile-390x844",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1,
+      "scrollWidth": 390,
+      "scrollHeight": 844
+    },
+    "container": {
+      "x": 12,
+      "y": 374.796875,
+      "width": 366,
+      "height": 205.875,
+      "right": 378,
+      "bottom": 580.671875
+    },
+    "canvas": {
+      "x": 12,
+      "y": 374.796875,
+      "width": 366,
+      "height": 205.875,
+      "right": 378,
+      "bottom": 580.671875
+    },
+    "canvasCss": {
+      "width": "366px",
+      "height": "205.875px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.7777777777777777,
+    "unused": {
+      "left": 12,
+      "right": 12,
+      "top": 374.796875,
+      "bottom": 263.328125
+    },
+    "worldTargets": {
+      "kevin": {
+        "x": 790,
+        "y": 110
+      },
+      "kevinWindow": {
+        "x": 744,
+        "y": 80,
+        "width": 92,
+        "height": 60
+      },
+      "projectile": {
+        "x": 470,
+        "y": 40,
+        "type": "Clay Pot"
+      },
+      "upperTarget": null,
+      "player": {
+        "x": 340,
+        "y": 485
+      },
+      "ball": {
+        "x": 371.49392019304764,
+        "y": 352.5815301033131
+      },
+      "cameraX": 0
+    },
+    "header": {
+      "x": 20.796875,
+      "y": 6.390625,
+      "width": 366,
+      "height": 48,
+      "right": 386.796875,
+      "bottom": 54.390625
+    },
+    "hud": {
+      "x": 12,
+      "y": 54.390625,
+      "width": 366,
+      "height": 63.484375,
+      "right": 378,
+      "bottom": 117.875
+    },
+    "hudHidden": false,
+    "hudAriaHidden": "false",
+    "hudTopline": {
+      "x": 15.1875,
+      "y": 56.9375,
+      "width": 359.625,
+      "height": 34,
+      "right": 374.8125,
+      "bottom": 90.9375
+    },
+    "hudBottomline": {
+      "x": 15.1875,
+      "y": 93.328125,
+      "width": 359.625,
+      "height": 22,
+      "right": 374.8125,
+      "bottom": 115.328125
+    },
+    "hudSurfaces": [
+      {
+        "selector": "#game-header",
+        "bounds": {
+          "x": 20.796875,
+          "y": 6.390625,
+          "width": 366,
+          "height": 48,
+          "right": 386.796875,
+          "bottom": 54.390625
+        }
+      },
+      {
+        "selector": "#game-hud",
+        "bounds": {
+          "x": 12,
+          "y": 54.390625,
+          "width": 366,
+          "height": 63.484375,
+          "right": 378,
+          "bottom": 117.875
+        }
+      },
+      {
+        "selector": ".score-stat",
+        "bounds": {
+          "x": 15.1875,
+          "y": 56.9375,
+          "width": 87.515625,
+          "height": 34,
+          "right": 102.703125,
+          "bottom": 90.9375
+        }
+      },
+      {
+        "selector": ".health-stat",
+        "bounds": {
+          "x": 105.890625,
+          "y": 56.9375,
+          "width": 87.515625,
+          "height": 34,
+          "right": 193.40625,
+          "bottom": 90.9375
+        }
+      },
+      {
+        "selector": "#havoc-card",
+        "bounds": {
+          "x": 196.59375,
+          "y": 56.9375,
+          "width": 87.515625,
+          "height": 34,
+          "right": 284.109375,
+          "bottom": 90.9375
+        }
+      },
+      {
+        "selector": "#kevin-card",
+        "bounds": {
+          "x": 287.296875,
+          "y": 56.9375,
+          "width": 87.515625,
+          "height": 34,
+          "right": 374.8125,
+          "bottom": 90.9375
+        }
+      },
+      {
+        "selector": ".combo-card",
+        "bounds": {
+          "x": 15.1875,
+          "y": 94.71875,
+          "width": 70,
+          "height": 19.203125,
+          "right": 85.1875,
+          "bottom": 113.921875
+        }
+      }
+    ],
+    "critical": [
+      {
+        "name": "kevin-and-window",
+        "x": 295.65,
+        "y": 405.296875,
+        "width": 35.075,
+        "height": 22.875
+      },
+      {
+        "name": "kevin-head",
+        "x": 292.21875,
+        "y": 396.909375,
+        "width": 41.9375,
+        "height": 24.4
+      },
+      {
+        "name": "representative-projectile",
+        "x": 185.98381874999998,
+        "y": 384.709375,
+        "width": 10.407362500000001,
+        "height": 10.675
+      },
+      {
+        "name": "player-ball-action",
+        "x": 124.0875,
+        "y": 502.3560833518881,
+        "width": 36.40705707359941,
+        "height": 60.39704164811187
+      },
+      {
+        "name": "important-upper-target",
+        "x": 295.65,
+        "y": 405.296875,
+        "width": 35.075,
+        "height": 22.875
+      }
+    ],
+    "overlaps": [],
+    "pause": {
+      "x": 309.53125,
+      "y": 6.390625,
+      "width": 77.265625,
+      "height": 48,
+      "right": 386.796875,
+      "bottom": 54.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "uiState": "PLAYING"
+  },
+  {
+    "name": "mobile-412x915",
+    "viewport": {
+      "width": 412,
+      "height": 915,
+      "dpr": 1,
+      "scrollWidth": 412,
+      "scrollHeight": 915
+    },
+    "container": {
+      "x": 12,
+      "y": 404.109375,
+      "width": 388,
+      "height": 218.25,
+      "right": 400,
+      "bottom": 622.359375
+    },
+    "canvas": {
+      "x": 12,
+      "y": 404.109375,
+      "width": 388,
+      "height": 218.25,
+      "right": 400,
+      "bottom": 622.359375
+    },
+    "canvasCss": {
+      "width": "388px",
+      "height": "218.25px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.7777777777777777,
+    "unused": {
+      "left": 12,
+      "right": 12,
+      "top": 404.109375,
+      "bottom": 292.640625
+    },
+    "worldTargets": {
+      "kevin": {
+        "x": 790,
+        "y": 110
+      },
+      "kevinWindow": {
+        "x": 744,
+        "y": 80,
+        "width": 92,
+        "height": 60
+      },
+      "projectile": {
+        "x": 470,
+        "y": 40,
+        "type": "Clay Pot"
+      },
+      "upperTarget": null,
+      "player": {
+        "x": 340,
+        "y": 485
+      },
+      "ball": {
+        "x": 371.49392019304764,
+        "y": 352.5815301033131
+      },
+      "cameraX": 0
+    },
+    "header": {
+      "x": 20.796875,
+      "y": 6.390625,
+      "width": 388,
+      "height": 48,
+      "right": 408.796875,
+      "bottom": 54.390625
+    },
+    "hud": {
+      "x": 12,
+      "y": 54.390625,
+      "width": 388,
+      "height": 63.484375,
+      "right": 400,
+      "bottom": 117.875
+    },
+    "hudHidden": false,
+    "hudAriaHidden": "false",
+    "hudTopline": {
+      "x": 15.1875,
+      "y": 56.9375,
+      "width": 381.625,
+      "height": 34,
+      "right": 396.8125,
+      "bottom": 90.9375
+    },
+    "hudBottomline": {
+      "x": 15.1875,
+      "y": 93.328125,
+      "width": 381.625,
+      "height": 22,
+      "right": 396.8125,
+      "bottom": 115.328125
+    },
+    "hudSurfaces": [
+      {
+        "selector": "#game-header",
+        "bounds": {
+          "x": 20.796875,
+          "y": 6.390625,
+          "width": 388,
+          "height": 48,
+          "right": 408.796875,
+          "bottom": 54.390625
+        }
+      },
+      {
+        "selector": "#game-hud",
+        "bounds": {
+          "x": 12,
+          "y": 54.390625,
+          "width": 388,
+          "height": 63.484375,
+          "right": 400,
+          "bottom": 117.875
+        }
+      },
+      {
+        "selector": ".score-stat",
+        "bounds": {
+          "x": 15.1875,
+          "y": 56.9375,
+          "width": 93.015625,
+          "height": 34,
+          "right": 108.203125,
+          "bottom": 90.9375
+        }
+      },
+      {
+        "selector": ".health-stat",
+        "bounds": {
+          "x": 111.390625,
+          "y": 56.9375,
+          "width": 93.015625,
+          "height": 34,
+          "right": 204.40625,
+          "bottom": 90.9375
+        }
+      },
+      {
+        "selector": "#havoc-card",
+        "bounds": {
+          "x": 207.59375,
+          "y": 56.9375,
+          "width": 93.015625,
+          "height": 34,
+          "right": 300.609375,
+          "bottom": 90.9375
+        }
+      },
+      {
+        "selector": "#kevin-card",
+        "bounds": {
+          "x": 303.796875,
+          "y": 56.9375,
+          "width": 93.015625,
+          "height": 34,
+          "right": 396.8125,
+          "bottom": 90.9375
+        }
+      },
+      {
+        "selector": ".combo-card",
+        "bounds": {
+          "x": 15.1875,
+          "y": 94.71875,
+          "width": 70,
+          "height": 19.203125,
+          "right": 85.1875,
+          "bottom": 113.921875
+        }
+      }
+    ],
+    "critical": [
+      {
+        "name": "kevin-and-window",
+        "x": 312.7,
+        "y": 436.4427083333333,
+        "width": 37.18333333333333,
+        "height": 24.25
+      },
+      {
+        "name": "kevin-head",
+        "x": 309.0625,
+        "y": 427.55104166666666,
+        "width": 44.458333333333336,
+        "height": 25.866666666666667
+      },
+      {
+        "name": "representative-projectile",
+        "x": 196.44186249999998,
+        "y": 414.6177083333333,
+        "width": 11.032941666666666,
+        "height": 11.316666666666666
+      },
+      {
+        "name": "player-ball-action",
+        "x": 130.825,
+        "y": 539.3360767500891,
+        "width": 38.59545941135676,
+        "height": 64.02746491657761
+      },
+      {
+        "name": "important-upper-target",
+        "x": 312.7,
+        "y": 436.4427083333333,
+        "width": 37.18333333333333,
+        "height": 24.25
+      }
+    ],
+    "overlaps": [],
+    "pause": {
+      "x": 331.53125,
+      "y": 6.390625,
+      "width": 77.265625,
+      "height": 48,
+      "right": 408.796875,
+      "bottom": 54.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "uiState": "PLAYING"
+  },
+  {
+    "name": "mobile-landscape-844x390",
+    "viewport": {
+      "width": 844,
+      "height": 390,
+      "dpr": 1,
+      "scrollWidth": 844,
+      "scrollHeight": 390
+    },
+    "container": {
+      "x": 160.671875,
+      "y": 89,
+      "width": 522.65625,
+      "height": 293.984375,
+      "right": 683.328125,
+      "bottom": 382.984375
+    },
+    "canvas": {
+      "x": 160.671875,
+      "y": 89,
+      "width": 522.65625,
+      "height": 293.984375,
+      "right": 683.328125,
+      "bottom": 382.984375
+    },
+    "canvasCss": {
+      "width": "522.656px",
+      "height": "293.984px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.7778368323146425,
+    "unused": {
+      "left": 160.671875,
+      "right": 160.671875,
+      "top": 89,
+      "bottom": 7.015625
+    },
+    "worldTargets": {
+      "kevin": {
+        "x": 790,
+        "y": 110
+      },
+      "kevinWindow": {
+        "x": 744,
+        "y": 80,
+        "width": 92,
+        "height": 60
+      },
+      "projectile": {
+        "x": 470,
+        "y": 40,
+        "type": "Clay Pot"
+      },
+      "upperTarget": null,
+      "player": {
+        "x": 340,
+        "y": 485
+      },
+      "ball": {
+        "x": 371.49392019304764,
+        "y": 352.5815301033131
+      },
+      "cameraX": 0
+    },
+    "header": {
+      "x": 12,
+      "y": 8.78125,
+      "width": 820,
+      "height": 48,
+      "right": 832,
+      "bottom": 56.78125
+    },
+    "hud": {
+      "x": 12,
+      "y": 51.1875,
+      "width": 820,
+      "height": 34,
+      "right": 832,
+      "bottom": 85.1875
+    },
+    "hudHidden": false,
+    "hudAriaHidden": "false",
+    "hudTopline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudBottomline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudSurfaces": [
+      {
+        "selector": "#game-header",
+        "bounds": {
+          "x": 12,
+          "y": 8.78125,
+          "width": 820,
+          "height": 48,
+          "right": 832,
+          "bottom": 56.78125
+        }
+      },
+      {
+        "selector": "#game-hud",
+        "bounds": {
+          "x": 12,
+          "y": 51.1875,
+          "width": 820,
+          "height": 34,
+          "right": 832,
+          "bottom": 85.1875
+        }
+      },
+      {
+        "selector": ".score-stat",
+        "bounds": {
+          "x": 17.0625,
+          "y": 58.984375,
+          "width": 49.953125,
+          "height": 18.40625,
+          "right": 67.015625,
+          "bottom": 77.390625
+        }
+      },
+      {
+        "selector": ".health-stat",
+        "bounds": {
+          "x": 72.609375,
+          "y": 59.390625,
+          "width": 73.78125,
+          "height": 17.59375,
+          "right": 146.390625,
+          "bottom": 76.984375
+        }
+      },
+      {
+        "selector": "#havoc-card",
+        "bounds": {
+          "x": 151.984375,
+          "y": 56.75,
+          "width": 150,
+          "height": 22.875,
+          "right": 301.984375,
+          "bottom": 79.625
+        }
+      },
+      {
+        "selector": "#kevin-card",
+        "bounds": {
+          "x": 307.578125,
+          "y": 59.71875,
+          "width": 453.859375,
+          "height": 16.9375,
+          "right": 761.4375,
+          "bottom": 76.65625
+        }
+      },
+      {
+        "selector": ".combo-card",
+        "bounds": {
+          "x": 767.03125,
+          "y": 58.1875,
+          "width": 59.90625,
+          "height": 20,
+          "right": 826.9375,
+          "bottom": 78.1875
+        }
+      }
+    ],
+    "critical": [
+      {
+        "name": "kevin-and-window",
+        "x": 565.73046875,
+        "y": 132.55324074074073,
+        "width": 50.087890625,
+        "height": 32.66493055555556
+      },
+      {
+        "name": "kevin-head",
+        "x": 560.83056640625,
+        "y": 120.57609953703704,
+        "width": 59.8876953125,
+        "height": 34.842592592592595
+      },
+      {
+        "name": "representative-projectile",
+        "x": 409.12468994140625,
+        "y": 103.15480324074073,
+        "width": 14.861948242187502,
+        "height": 15.24363425925926
+      },
+      {
+        "name": "player-ball-action",
+        "x": 320.7353515625,
+        "y": 271.1513740999374,
+        "width": 51.990098151976625,
+        "height": 86.24547196487742
+      },
+      {
+        "name": "important-upper-target",
+        "x": 565.73046875,
+        "y": 132.55324074074073,
+        "width": 50.087890625,
+        "height": 32.66493055555556
+      }
+    ],
+    "overlaps": [],
+    "pause": {
+      "x": 741.421875,
+      "y": 8.78125,
+      "width": 90.578125,
+      "height": 48,
+      "right": 832,
+      "bottom": 56.78125
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "uiState": "PLAYING"
+  },
+  {
+    "name": "mobile-landscape-915x412",
+    "viewport": {
+      "width": 915,
+      "height": 412,
+      "dpr": 1,
+      "scrollWidth": 915,
+      "scrollHeight": 412
+    },
+    "container": {
+      "x": 176.609375,
+      "y": 89,
+      "width": 561.765625,
+      "height": 315.984375,
+      "right": 738.375,
+      "bottom": 404.984375
+    },
+    "canvas": {
+      "x": 176.609375,
+      "y": 89,
+      "width": 561.765625,
+      "height": 315.984375,
+      "right": 738.375,
+      "bottom": 404.984375
+    },
+    "canvasCss": {
+      "width": "561.766px",
+      "height": "315.984px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.7778272264253572,
+    "unused": {
+      "left": 176.609375,
+      "right": 176.625,
+      "top": 89,
+      "bottom": 7.015625
+    },
+    "worldTargets": {
+      "kevin": {
+        "x": 790,
+        "y": 110
+      },
+      "kevinWindow": {
+        "x": 744,
+        "y": 80,
+        "width": 92,
+        "height": 60
+      },
+      "projectile": {
+        "x": 470,
+        "y": 40,
+        "type": "Clay Pot"
+      },
+      "upperTarget": null,
+      "player": {
+        "x": 340,
+        "y": 485
+      },
+      "ball": {
+        "x": 371.49392019304764,
+        "y": 352.5815301033131
+      },
+      "cameraX": 0
+    },
+    "header": {
+      "x": 12,
+      "y": 8.78125,
+      "width": 891,
+      "height": 48,
+      "right": 903,
+      "bottom": 56.78125
+    },
+    "hud": {
+      "x": 12,
+      "y": 51.1875,
+      "width": 891,
+      "height": 34,
+      "right": 903,
+      "bottom": 85.1875
+    },
+    "hudHidden": false,
+    "hudAriaHidden": "false",
+    "hudTopline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudBottomline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudSurfaces": [
+      {
+        "selector": "#game-header",
+        "bounds": {
+          "x": 12,
+          "y": 8.78125,
+          "width": 891,
+          "height": 48,
+          "right": 903,
+          "bottom": 56.78125
+        }
+      },
+      {
+        "selector": "#game-hud",
+        "bounds": {
+          "x": 12,
+          "y": 51.1875,
+          "width": 891,
+          "height": 34,
+          "right": 903,
+          "bottom": 85.1875
+        }
+      },
+      {
+        "selector": ".score-stat",
+        "bounds": {
+          "x": 17.484375,
+          "y": 58.984375,
+          "width": 49.953125,
+          "height": 18.40625,
+          "right": 67.4375,
+          "bottom": 77.390625
+        }
+      },
+      {
+        "selector": ".health-stat",
+        "bounds": {
+          "x": 73.03125,
+          "y": 59.390625,
+          "width": 73.78125,
+          "height": 17.59375,
+          "right": 146.8125,
+          "bottom": 76.984375
+        }
+      },
+      {
+        "selector": "#havoc-card",
+        "bounds": {
+          "x": 152.40625,
+          "y": 56.75,
+          "width": 150,
+          "height": 22.875,
+          "right": 302.40625,
+          "bottom": 79.625
+        }
+      },
+      {
+        "selector": "#kevin-card",
+        "bounds": {
+          "x": 308,
+          "y": 59.71875,
+          "width": 524.015625,
+          "height": 16.9375,
+          "right": 832.015625,
+          "bottom": 76.65625
+        }
+      },
+      {
+        "selector": ".combo-card",
+        "bounds": {
+          "x": 837.609375,
+          "y": 58.1875,
+          "width": 59.90625,
+          "height": 20,
+          "right": 897.515625,
+          "bottom": 78.1875
+        }
+      }
+    ],
+    "critical": [
+      {
+        "name": "kevin-and-window",
+        "x": 611.977734375,
+        "y": 135.8125,
+        "width": 53.835872395833334,
+        "height": 35.109375
+      },
+      {
+        "name": "kevin-head",
+        "x": 606.711181640625,
+        "y": 122.9390625,
+        "width": 64.36897786458333,
+        "height": 37.45
+      },
+      {
+        "name": "representative-projectile",
+        "x": 443.65344243164066,
+        "y": 104.2140625,
+        "width": 15.974039615885419,
+        "height": 16.384375
+      },
+      {
+        "name": "player-ball-action",
+        "x": 348.65009765625,
+        "y": 284.7824734745168,
+        "width": 55.88041850098701,
+        "height": 92.69955777548317
+      },
+      {
+        "name": "important-upper-target",
+        "x": 611.977734375,
+        "y": 135.8125,
+        "width": 53.835872395833334,
+        "height": 35.109375
+      }
+    ],
+    "overlaps": [],
+    "pause": {
+      "x": 812.421875,
+      "y": 8.78125,
+      "width": 90.578125,
+      "height": 48,
+      "right": 903,
+      "bottom": 56.78125
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "uiState": "PLAYING"
+  },
+  {
+    "name": "tablet-768x1024",
+    "viewport": {
+      "width": 768,
+      "height": 1024,
+      "dpr": 1,
+      "scrollWidth": 768,
+      "scrollHeight": 1024
+    },
+    "container": {
+      "x": 12,
+      "y": 345.75,
+      "width": 744,
+      "height": 418.5,
+      "right": 756,
+      "bottom": 764.25
+    },
+    "canvas": {
+      "x": 12,
+      "y": 345.75,
+      "width": 744,
+      "height": 418.5,
+      "right": 756,
+      "bottom": 764.25
+    },
+    "canvasCss": {
+      "width": "744px",
+      "height": "418.5px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.7777777777777777,
+    "unused": {
+      "left": 12,
+      "right": 12,
+      "top": 345.75,
+      "bottom": 259.75
+    },
+    "worldTargets": {
+      "kevin": {
+        "x": 790,
+        "y": 110
+      },
+      "kevinWindow": {
+        "x": 744,
+        "y": 80,
+        "width": 92,
+        "height": 60
+      },
+      "projectile": {
+        "x": 470,
+        "y": 40,
+        "type": "Clay Pot"
+      },
+      "upperTarget": null,
+      "player": {
+        "x": 340,
+        "y": 485
+      },
+      "ball": {
+        "x": 371.49392019304764,
+        "y": 352.5815301033131
+      },
+      "cameraX": 0
+    },
+    "header": {
+      "x": 12,
+      "y": 6.390625,
+      "width": 744,
+      "height": 48,
+      "right": 756,
+      "bottom": 54.390625
+    },
+    "hud": {
+      "x": 12,
+      "y": 54.390625,
+      "width": 744,
+      "height": 38,
+      "right": 756,
+      "bottom": 92.390625
+    },
+    "hudHidden": false,
+    "hudAriaHidden": "false",
+    "hudTopline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudBottomline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudSurfaces": [
+      {
+        "selector": "#game-header",
+        "bounds": {
+          "x": 12,
+          "y": 6.390625,
+          "width": 744,
+          "height": 48,
+          "right": 756,
+          "bottom": 54.390625
+        }
+      },
+      {
+        "selector": "#game-hud",
+        "bounds": {
+          "x": 12,
+          "y": 54.390625,
+          "width": 744,
+          "height": 38,
+          "right": 756,
+          "bottom": 92.390625
+        }
+      },
+      {
+        "selector": ".score-stat",
+        "bounds": {
+          "x": 16.59375,
+          "y": 64.1875,
+          "width": 49.953125,
+          "height": 18.40625,
+          "right": 66.546875,
+          "bottom": 82.59375
+        }
+      },
+      {
+        "selector": ".health-stat",
+        "bounds": {
+          "x": 74.21875,
+          "y": 64.59375,
+          "width": 73.78125,
+          "height": 17.59375,
+          "right": 148,
+          "bottom": 82.1875
+        }
+      },
+      {
+        "selector": "#havoc-card",
+        "bounds": {
+          "x": 155.671875,
+          "y": 61.953125,
+          "width": 150,
+          "height": 22.875,
+          "right": 305.671875,
+          "bottom": 84.828125
+        }
+      },
+      {
+        "selector": "#kevin-card",
+        "bounds": {
+          "x": 313.34375,
+          "y": 64.921875,
+          "width": 370.484375,
+          "height": 16.9375,
+          "right": 683.828125,
+          "bottom": 81.859375
+        }
+      },
+      {
+        "selector": ".combo-card",
+        "bounds": {
+          "x": 691.5,
+          "y": 63.390625,
+          "width": 59.90625,
+          "height": 20,
+          "right": 751.40625,
+          "bottom": 83.390625
+        }
+      }
+    ],
+    "critical": [
+      {
+        "name": "kevin-and-window",
+        "x": 588.6,
+        "y": 407.75,
+        "width": 71.3,
+        "height": 46.5
+      },
+      {
+        "name": "kevin-head",
+        "x": 581.625,
+        "y": 390.7,
+        "width": 85.25,
+        "height": 49.6
+      },
+      {
+        "name": "representative-projectile",
+        "x": 365.67202499999996,
+        "y": 365.9,
+        "width": 21.15595,
+        "height": 21.7
+      },
+      {
+        "name": "player-ball-action",
+        "x": 239.85,
+        "y": 605.0506858300677,
+        "width": 74.00778814961193,
+        "height": 122.77431416993234
+      },
+      {
+        "name": "important-upper-target",
+        "x": 588.6,
+        "y": 407.75,
+        "width": 71.3,
+        "height": 46.5
+      }
+    ],
+    "overlaps": [],
+    "pause": {
+      "x": 665.421875,
+      "y": 6.390625,
+      "width": 90.578125,
+      "height": 48,
+      "right": 756,
+      "bottom": 54.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "uiState": "PLAYING"
+  },
+  {
+    "name": "tablet-1024x768",
+    "viewport": {
+      "width": 1024,
+      "height": 768,
+      "dpr": 1,
+      "scrollWidth": 1024,
+      "scrollHeight": 768
+    },
+    "container": {
+      "x": 12,
+      "y": 145.75,
+      "width": 1000,
+      "height": 562.5,
+      "right": 1012,
+      "bottom": 708.25
+    },
+    "canvas": {
+      "x": 12,
+      "y": 145.75,
+      "width": 1000,
+      "height": 562.5,
+      "right": 1012,
+      "bottom": 708.25
+    },
+    "canvasCss": {
+      "width": "1000px",
+      "height": "562.5px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.7777777777777777,
+    "unused": {
+      "left": 12,
+      "right": 12,
+      "top": 145.75,
+      "bottom": 59.75
+    },
+    "worldTargets": {
+      "kevin": {
+        "x": 790,
+        "y": 110
+      },
+      "kevinWindow": {
+        "x": 744,
+        "y": 80,
+        "width": 92,
+        "height": 60
+      },
+      "projectile": {
+        "x": 470,
+        "y": 40,
+        "type": "Clay Pot"
+      },
+      "upperTarget": null,
+      "player": {
+        "x": 340,
+        "y": 485
+      },
+      "ball": {
+        "x": 371.49392019304764,
+        "y": 352.5815301033131
+      },
+      "cameraX": 0
+    },
+    "header": {
+      "x": 12,
+      "y": 6.390625,
+      "width": 1000,
+      "height": 48,
+      "right": 1012,
+      "bottom": 54.390625
+    },
+    "hud": {
+      "x": 12,
+      "y": 54.390625,
+      "width": 1000,
+      "height": 38,
+      "right": 1012,
+      "bottom": 92.390625
+    },
+    "hudHidden": false,
+    "hudAriaHidden": "false",
+    "hudTopline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudBottomline": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "hudSurfaces": [
+      {
+        "selector": "#game-header",
+        "bounds": {
+          "x": 12,
+          "y": 6.390625,
+          "width": 1000,
+          "height": 48,
+          "right": 1012,
+          "bottom": 54.390625
+        }
+      },
+      {
+        "selector": "#game-hud",
+        "bounds": {
+          "x": 12,
+          "y": 54.390625,
+          "width": 1000,
+          "height": 38,
+          "right": 1012,
+          "bottom": 92.390625
+        }
+      },
+      {
+        "selector": ".score-stat",
+        "bounds": {
+          "x": 18.140625,
+          "y": 64.1875,
+          "width": 49.953125,
+          "height": 18.40625,
+          "right": 68.09375,
+          "bottom": 82.59375
+        }
+      },
+      {
+        "selector": ".health-stat",
+        "bounds": {
+          "x": 78.328125,
+          "y": 64.59375,
+          "width": 73.78125,
+          "height": 17.59375,
+          "right": 152.109375,
+          "bottom": 82.1875
+        }
+      },
+      {
+        "selector": "#havoc-card",
+        "bounds": {
+          "x": 162.34375,
+          "y": 61.953125,
+          "width": 150,
+          "height": 22.875,
+          "right": 312.34375,
+          "bottom": 84.828125
+        }
+      },
+      {
+        "selector": "#kevin-card",
+        "bounds": {
+          "x": 322.578125,
+          "y": 64.921875,
+          "width": 613.140625,
+          "height": 16.9375,
+          "right": 935.71875,
+          "bottom": 81.859375
+        }
+      },
+      {
+        "selector": ".combo-card",
+        "bounds": {
+          "x": 945.953125,
+          "y": 63.390625,
+          "width": 59.90625,
+          "height": 20,
+          "right": 1005.859375,
+          "bottom": 83.390625
+        }
+      }
+    ],
+    "critical": [
+      {
+        "name": "kevin-and-window",
+        "x": 787,
+        "y": 229.08333333333331,
+        "width": 95.83333333333333,
+        "height": 62.5
+      },
+      {
+        "name": "kevin-head",
+        "x": 777.625,
+        "y": 206.16666666666666,
+        "width": 114.58333333333333,
+        "height": 66.66666666666667
+      },
+      {
+        "name": "representative-projectile",
+        "x": 487.365625,
+        "y": 172.83333333333334,
+        "width": 28.435416666666665,
+        "height": 29.166666666666668
+      },
+      {
+        "name": "player-ball-action",
+        "x": 318.25,
+        "y": 494.27242719095113,
+        "width": 99.47283353442462,
+        "height": 165.0192394757155
+      },
+      {
+        "name": "important-upper-target",
+        "x": 787,
+        "y": 229.08333333333331,
+        "width": 95.83333333333333,
+        "height": 62.5
+      }
+    ],
+    "overlaps": [],
+    "pause": {
+      "x": 921.421875,
+      "y": 6.390625,
+      "width": 90.578125,
+      "height": 48,
+      "right": 1012,
+      "bottom": 54.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "uiState": "PLAYING"
+  }
+]

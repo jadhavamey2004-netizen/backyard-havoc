@@ -1,0 +1,1539 @@
+[
+  {
+    "name": "desktop-1280x720",
+    "input": {
+      "name": "desktop-1280x720",
+      "width": 1280,
+      "height": 720,
+      "dpr": 1,
+      "touch": false
+    },
+    "viewport": {
+      "width": 1280,
+      "height": 720,
+      "dpr": 1,
+      "scrollWidth": 1280,
+      "scrollHeight": 720
+    },
+    "container": {
+      "x": 64,
+      "y": 36,
+      "width": 1152,
+      "height": 648,
+      "right": 1216,
+      "bottom": 684
+    },
+    "canvas": {
+      "x": 66,
+      "y": 38,
+      "width": 1148,
+      "height": 644,
+      "right": 1214,
+      "bottom": 682
+    },
+    "canvasCss": {
+      "width": "1148px",
+      "height": "644px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.7826086956521738,
+    "unused": {
+      "left": 64,
+      "right": 64,
+      "top": 36,
+      "bottom": 36
+    },
+    "header": {
+      "x": 12,
+      "y": 10.390625,
+      "width": 1256,
+      "height": 48,
+      "right": 1268,
+      "bottom": 58.390625
+    },
+    "hud": {
+      "x": 78,
+      "y": 62,
+      "width": 1124,
+      "height": 608.8125,
+      "right": 1202,
+      "bottom": 670.8125
+    },
+    "hudTopline": {
+      "x": 78,
+      "y": 62,
+      "width": 1124,
+      "height": 58,
+      "right": 1202,
+      "bottom": 120
+    },
+    "hudCards": [
+      {
+        "selector": ".score-stat",
+        "x": 78,
+        "y": 62,
+        "width": 242.28125,
+        "height": 58,
+        "right": 320.28125,
+        "bottom": 120
+      },
+      {
+        "selector": ".health-stat",
+        "x": 327.46875,
+        "y": 62,
+        "width": 193.84375,
+        "height": 58,
+        "right": 521.3125,
+        "bottom": 120
+      },
+      {
+        "selector": "#havoc-card",
+        "x": 528.5,
+        "y": 62,
+        "width": 327.09375,
+        "height": 58,
+        "right": 855.59375,
+        "bottom": 120
+      },
+      {
+        "selector": "#kevin-card",
+        "x": 862.78125,
+        "y": 62,
+        "width": 339.203125,
+        "height": 58,
+        "right": 1201.984375,
+        "bottom": 120
+      }
+    ],
+    "hudBottomline": {
+      "x": 78,
+      "y": 628.828125,
+      "width": 1124,
+      "height": 41.984375,
+      "right": 1202,
+      "bottom": 670.8125
+    },
+    "pause": {
+      "x": 1181.96875,
+      "y": 10.390625,
+      "width": 86.03125,
+      "height": 48,
+      "right": 1268,
+      "bottom": 58.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "screenshot": "desktop-1280x720.png"
+  },
+  {
+    "name": "desktop-1366x768",
+    "input": {
+      "name": "desktop-1366x768",
+      "width": 1366,
+      "height": 768,
+      "dpr": 1,
+      "touch": false
+    },
+    "viewport": {
+      "width": 1366,
+      "height": 768,
+      "dpr": 1,
+      "scrollWidth": 1366,
+      "scrollHeight": 768
+    },
+    "container": {
+      "x": 68.59375,
+      "y": 38.40625,
+      "width": 1228.796875,
+      "height": 691.1875,
+      "right": 1297.390625,
+      "bottom": 729.59375
+    },
+    "canvas": {
+      "x": 70.59375,
+      "y": 40.40625,
+      "width": 1224.796875,
+      "height": 687.1875,
+      "right": 1295.390625,
+      "bottom": 727.59375
+    },
+    "canvasCss": {
+      "width": "1224.8px",
+      "height": "687.188px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.7823328785811732,
+    "unused": {
+      "left": 68.59375,
+      "right": 68.609375,
+      "top": 38.40625,
+      "bottom": 38.40625
+    },
+    "header": {
+      "x": 12,
+      "y": 10.390625,
+      "width": 1342,
+      "height": 48,
+      "right": 1354,
+      "bottom": 58.390625
+    },
+    "hud": {
+      "x": 82.59375,
+      "y": 64.40625,
+      "width": 1200.796875,
+      "height": 652,
+      "right": 1283.390625,
+      "bottom": 716.40625
+    },
+    "hudTopline": {
+      "x": 82.59375,
+      "y": 64.40625,
+      "width": 1200.796875,
+      "height": 58,
+      "right": 1283.390625,
+      "bottom": 122.40625
+    },
+    "hudCards": [
+      {
+        "selector": ".score-stat",
+        "x": 82.59375,
+        "y": 64.40625,
+        "width": 259.171875,
+        "height": 58,
+        "right": 341.765625,
+        "bottom": 122.40625
+      },
+      {
+        "selector": ".health-stat",
+        "x": 348.953125,
+        "y": 64.40625,
+        "width": 207.328125,
+        "height": 58,
+        "right": 556.28125,
+        "bottom": 122.40625
+      },
+      {
+        "selector": "#havoc-card",
+        "x": 563.46875,
+        "y": 64.40625,
+        "width": 349.890625,
+        "height": 58,
+        "right": 913.359375,
+        "bottom": 122.40625
+      },
+      {
+        "selector": "#kevin-card",
+        "x": 920.546875,
+        "y": 64.40625,
+        "width": 362.84375,
+        "height": 58,
+        "right": 1283.390625,
+        "bottom": 122.40625
+      }
+    ],
+    "hudBottomline": {
+      "x": 82.59375,
+      "y": 674.421875,
+      "width": 1200.796875,
+      "height": 41.984375,
+      "right": 1283.390625,
+      "bottom": 716.40625
+    },
+    "pause": {
+      "x": 1267.96875,
+      "y": 10.390625,
+      "width": 86.03125,
+      "height": 48,
+      "right": 1354,
+      "bottom": 58.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "screenshot": "desktop-1366x768.png"
+  },
+  {
+    "name": "desktop-1440x900",
+    "input": {
+      "name": "desktop-1440x900",
+      "width": 1440,
+      "height": 900,
+      "dpr": 1,
+      "touch": false
+    },
+    "viewport": {
+      "width": 1440,
+      "height": 900,
+      "dpr": 1,
+      "scrollWidth": 1440,
+      "scrollHeight": 900
+    },
+    "container": {
+      "x": 80,
+      "y": 90,
+      "width": 1280,
+      "height": 720,
+      "right": 1360,
+      "bottom": 810
+    },
+    "canvas": {
+      "x": 82,
+      "y": 92,
+      "width": 1276,
+      "height": 716,
+      "right": 1358,
+      "bottom": 808
+    },
+    "canvasCss": {
+      "width": "1276px",
+      "height": "716px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.782122905027933,
+    "unused": {
+      "left": 80,
+      "right": 80,
+      "top": 90,
+      "bottom": 90
+    },
+    "header": {
+      "x": 12,
+      "y": 10.390625,
+      "width": 1416,
+      "height": 48,
+      "right": 1428,
+      "bottom": 58.390625
+    },
+    "hud": {
+      "x": 94,
+      "y": 116,
+      "width": 1252,
+      "height": 680.8125,
+      "right": 1346,
+      "bottom": 796.8125
+    },
+    "hudTopline": {
+      "x": 94,
+      "y": 116,
+      "width": 1252,
+      "height": 58,
+      "right": 1346,
+      "bottom": 174
+    },
+    "hudCards": [
+      {
+        "selector": ".score-stat",
+        "x": 94,
+        "y": 116,
+        "width": 270.421875,
+        "height": 58,
+        "right": 364.421875,
+        "bottom": 174
+      },
+      {
+        "selector": ".health-stat",
+        "x": 371.609375,
+        "y": 116,
+        "width": 216.34375,
+        "height": 58,
+        "right": 587.953125,
+        "bottom": 174
+      },
+      {
+        "selector": "#havoc-card",
+        "x": 595.140625,
+        "y": 116,
+        "width": 365.0625,
+        "height": 58,
+        "right": 960.203125,
+        "bottom": 174
+      },
+      {
+        "selector": "#kevin-card",
+        "x": 967.390625,
+        "y": 116,
+        "width": 378.59375,
+        "height": 58,
+        "right": 1345.984375,
+        "bottom": 174
+      }
+    ],
+    "hudBottomline": {
+      "x": 94,
+      "y": 754.828125,
+      "width": 1252,
+      "height": 41.984375,
+      "right": 1346,
+      "bottom": 796.8125
+    },
+    "pause": {
+      "x": 1341.96875,
+      "y": 10.390625,
+      "width": 86.03125,
+      "height": 48,
+      "right": 1428,
+      "bottom": 58.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "screenshot": "desktop-1440x900.png"
+  },
+  {
+    "name": "desktop-1920x1080",
+    "input": {
+      "name": "desktop-1920x1080",
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1,
+      "touch": false
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1,
+      "scrollWidth": 1920,
+      "scrollHeight": 1080
+    },
+    "container": {
+      "x": 320,
+      "y": 180,
+      "width": 1280,
+      "height": 720,
+      "right": 1600,
+      "bottom": 900
+    },
+    "canvas": {
+      "x": 322,
+      "y": 182,
+      "width": 1276,
+      "height": 716,
+      "right": 1598,
+      "bottom": 898
+    },
+    "canvasCss": {
+      "width": "1276px",
+      "height": "716px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.782122905027933,
+    "unused": {
+      "left": 320,
+      "right": 320,
+      "top": 180,
+      "bottom": 180
+    },
+    "header": {
+      "x": 12,
+      "y": 10.390625,
+      "width": 1896,
+      "height": 48,
+      "right": 1908,
+      "bottom": 58.390625
+    },
+    "hud": {
+      "x": 334,
+      "y": 206,
+      "width": 1252,
+      "height": 680.8125,
+      "right": 1586,
+      "bottom": 886.8125
+    },
+    "hudTopline": {
+      "x": 334,
+      "y": 206,
+      "width": 1252,
+      "height": 58,
+      "right": 1586,
+      "bottom": 264
+    },
+    "hudCards": [
+      {
+        "selector": ".score-stat",
+        "x": 334,
+        "y": 206,
+        "width": 270.421875,
+        "height": 58,
+        "right": 604.421875,
+        "bottom": 264
+      },
+      {
+        "selector": ".health-stat",
+        "x": 611.609375,
+        "y": 206,
+        "width": 216.34375,
+        "height": 58,
+        "right": 827.953125,
+        "bottom": 264
+      },
+      {
+        "selector": "#havoc-card",
+        "x": 835.140625,
+        "y": 206,
+        "width": 365.0625,
+        "height": 58,
+        "right": 1200.203125,
+        "bottom": 264
+      },
+      {
+        "selector": "#kevin-card",
+        "x": 1207.390625,
+        "y": 206,
+        "width": 378.59375,
+        "height": 58,
+        "right": 1585.984375,
+        "bottom": 264
+      }
+    ],
+    "hudBottomline": {
+      "x": 334,
+      "y": 844.828125,
+      "width": 1252,
+      "height": 41.984375,
+      "right": 1586,
+      "bottom": 886.8125
+    },
+    "pause": {
+      "x": 1821.96875,
+      "y": 10.390625,
+      "width": 86.03125,
+      "height": 48,
+      "right": 1908,
+      "bottom": 58.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "positions": {
+      "player": {
+        "x": 340,
+        "y": 485
+      },
+      "ball": {
+        "x": 370,
+        "y": 365
+      },
+      "kevin": {
+        "x": 790,
+        "y": 110
+      },
+      "cameraX": 0,
+      "windows": [
+        {
+          "x": 1820,
+          "y": 95,
+          "width": 70,
+          "height": 52
+        },
+        {
+          "x": 1760,
+          "y": 220,
+          "width": 72,
+          "height": 52
+        },
+        {
+          "x": -100,
+          "y": 95,
+          "width": 70,
+          "height": 52
+        },
+        {
+          "x": -160,
+          "y": 220,
+          "width": 72,
+          "height": 52
+        }
+      ]
+    },
+    "screenshot": "desktop-1920x1080.png"
+  },
+  {
+    "name": "desktop-2560x1440",
+    "input": {
+      "name": "desktop-2560x1440",
+      "width": 2560,
+      "height": 1440,
+      "dpr": 1,
+      "touch": false
+    },
+    "viewport": {
+      "width": 2560,
+      "height": 1440,
+      "dpr": 1,
+      "scrollWidth": 2560,
+      "scrollHeight": 1440
+    },
+    "container": {
+      "x": 640,
+      "y": 360,
+      "width": 1280,
+      "height": 720,
+      "right": 1920,
+      "bottom": 1080
+    },
+    "canvas": {
+      "x": 642,
+      "y": 362,
+      "width": 1276,
+      "height": 716,
+      "right": 1918,
+      "bottom": 1078
+    },
+    "canvasCss": {
+      "width": "1276px",
+      "height": "716px"
+    },
+    "canvasBacking": {
+      "width": 960,
+      "height": 540
+    },
+    "canvasAspect": 1.782122905027933,
+    "unused": {
+      "left": 640,
+      "right": 640,
+      "top": 360,
+      "bottom": 360
+    },
+    "header": {
+      "x": 12,
+      "y": 10.390625,
+      "width": 2536,
+      "height": 48,
+      "right": 2548,
+      "bottom": 58.390625
+    },
+    "hud": {
+      "x": 654,
+      "y": 386,
+      "width": 1252,
+      "height": 680.8125,
+      "right": 1906,
+      "bottom": 1066.8125
+    },
+    "hudTopline": {
+      "x": 654,
+      "y": 386,
+      "width": 1252,
+      "height": 58,
+      "right": 1906,
+      "bottom": 444
+    },
+    "hudCards": [
+      {
+        "selector": ".score-stat",
+        "x": 654,
+        "y": 386,
+        "width": 270.421875,
+        "height": 58,
+        "right": 924.421875,
+        "bottom": 444
+      },
+      {
+        "selector": ".health-stat",
+        "x": 931.609375,
+        "y": 386,
+        "width": 216.34375,
+        "height": 58,
+        "right": 1147.953125,
+        "bottom": 444
+      },
+      {
+        "selector": "#havoc-card",
+        "x": 1155.140625,
+        "y": 386,
+        "width": 365.0625,
+        "height": 58,
+        "right": 1520.203125,
+        "bottom": 444
+      },
+      {
+        "selector": "#kevin-card",
+        "x": 1527.390625,
+        "y": 386,
+        "width": 378.59375,
+        "height": 58,
+        "right": 1905.984375,
+        "bottom": 444
+      }
+    ],
+    "hudBottomline": {
+      "x": 654,
+      "y": 1024.828125,
+      "width": 1252,
+      "height": 41.984375,
+      "right": 1906,
+      "bottom": 1066.8125
+    },
+    "pause": {
+      "x": 2461.96875,
+      "y": 10.390625,
+      "width": 86.03125,
+      "height": 48,
+      "right": 2548,
+      "bottom": 58.390625
+    },
+    "mobileControls": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "right": 0,
+      "bottom": 0
+    },
+    "state": "PLAYING",
+    "screenshot": "desktop-2560x1440.png"
+  },
+  {
+    "name": "mobile-390x844",
+    "input": {
+      "name": "mobile-390x844",
+      "width": 390,
+      "height": 844,
+      "dpr": 2,
+      "touch": true
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 2,
+      "scrollWidth": 390,
+      "scrollHeight": 844
+    },
+    "container": {
+      "x": 0,
+      "y": 312.3125,
+      "width": 390,
+      "height": 219.375,
+      "right": 390,
+      "bottom": 531.6875
+    },
+    "canvas": {
+      "x": 2,
+      "y": 314.3125,
+      "width": 386,
+      "height": 215.375,
+      "right": 388,
+      "bottom": 529.6875
+    },
+    "canvasCss": {
+      "width": "386px",
+      "height": "215.375px"
+    },
+    "canvasBacking": {
+      "width": 1920,
+      "height": 1080
+    },
+    "canvasAspect": 1.7922228670922808,
+    "unused": {
+      "left": 0,
+      "right": 0,
+      "top": 312.3125,
+      "bottom": 312.3125
+    },
+    "header": {
+      "x": 8.796875,
+      "y": 10.390625,
+      "width": 372.40625,
+      "height": 48,
+      "right": 381.203125,
+      "bottom": 58.390625
+    },
+    "hud": {
+      "x": 8.078125,
+      "y": 320.390625,
+      "width": 373.84375,
+      "height": 203.21875,
+      "right": 381.921875,
+      "bottom": 523.609375
+    },
+    "hudTopline": {
+      "x": 8.078125,
+      "y": 320.390625,
+      "width": 373.84375,
+      "height": 95.109375,
+      "right": 381.921875,
+      "bottom": 415.5
+    },
+    "hudCards": [
+      {
+        "selector": ".score-stat",
+        "x": 8.078125,
+        "y": 320.390625,
+        "width": 199.3125,
+        "height": 45,
+        "right": 207.390625,
+        "bottom": 365.390625
+      },
+      {
+        "selector": ".health-stat",
+        "x": 212.5,
+        "y": 320.390625,
+        "width": 169.421875,
+        "height": 45,
+        "right": 381.921875,
+        "bottom": 365.390625
+      },
+      {
+        "selector": "#havoc-card",
+        "x": 8.078125,
+        "y": 370.5,
+        "width": 199.3125,
+        "height": 45,
+        "right": 207.390625,
+        "bottom": 415.5
+      },
+      {
+        "selector": "#kevin-card",
+        "x": 212.5,
+        "y": 370.5,
+        "width": 169.421875,
+        "height": 45,
+        "right": 381.921875,
+        "bottom": 415.5
+      }
+    ],
+    "hudBottomline": {
+      "x": 8.078125,
+      "y": 490.40625,
+      "width": 373.84375,
+      "height": 33.203125,
+      "right": 381.921875,
+      "bottom": 523.609375
+    },
+    "pause": {
+      "x": 308.046875,
+      "y": 10.390625,
+      "width": 73.15625,
+      "height": 48,
+      "right": 381.203125,
+      "bottom": 58.390625
+    },
+    "mobileControls": {
+      "x": 12.796875,
+      "y": 755.203125,
+      "width": 364.40625,
+      "height": 76,
+      "right": 377.203125,
+      "bottom": 831.203125
+    },
+    "state": "PLAYING",
+    "screenshot": "mobile-390x844.png"
+  },
+  {
+    "name": "mobile-412x915",
+    "input": {
+      "name": "mobile-412x915",
+      "width": 412,
+      "height": 915,
+      "dpr": 2,
+      "touch": true
+    },
+    "viewport": {
+      "width": 412,
+      "height": 915,
+      "dpr": 2,
+      "scrollWidth": 412,
+      "scrollHeight": 915
+    },
+    "container": {
+      "x": 0,
+      "y": 341.625,
+      "width": 412,
+      "height": 231.75,
+      "right": 412,
+      "bottom": 573.375
+    },
+    "canvas": {
+      "x": 2,
+      "y": 343.625,
+      "width": 408,
+      "height": 227.75,
+      "right": 410,
+      "bottom": 571.375
+    },
+    "canvasCss": {
+      "width": "408px",
+      "height": "227.75px"
+    },
+    "canvasBacking": {
+      "width": 1920,
+      "height": 1080
+    },
+    "canvasAspect": 1.7914379802414928,
+    "unused": {
+      "left": 0,
+      "right": 0,
+      "top": 341.625,
+      "bottom": 341.625
+    },
+    "header": {
+      "x": 8.796875,
+      "y": 10.390625,
+      "width": 394.40625,
+      "height": 48,
+      "right": 403.203125,
+      "bottom": 58.390625
+    },
+    "hud": {
+      "x": 8.078125,
+      "y": 349.703125,
+      "width": 395.84375,
+      "height": 215.59375,
+      "right": 403.921875,
+      "bottom": 565.296875
+    },
+    "hudTopline": {
+      "x": 8.078125,
+      "y": 349.703125,
+      "width": 395.84375,
+      "height": 95.109375,
+      "right": 403.921875,
+      "bottom": 444.8125
+    },
+    "hudCards": [
+      {
+        "selector": ".score-stat",
+        "x": 8.078125,
+        "y": 349.703125,
+        "width": 211.203125,
+        "height": 45,
+        "right": 219.28125,
+        "bottom": 394.703125
+      },
+      {
+        "selector": ".health-stat",
+        "x": 224.390625,
+        "y": 349.703125,
+        "width": 179.53125,
+        "height": 45,
+        "right": 403.921875,
+        "bottom": 394.703125
+      },
+      {
+        "selector": "#havoc-card",
+        "x": 8.078125,
+        "y": 399.8125,
+        "width": 211.203125,
+        "height": 45,
+        "right": 219.28125,
+        "bottom": 444.8125
+      },
+      {
+        "selector": "#kevin-card",
+        "x": 224.390625,
+        "y": 399.8125,
+        "width": 179.53125,
+        "height": 45,
+        "right": 403.921875,
+        "bottom": 444.8125
+      }
+    ],
+    "hudBottomline": {
+      "x": 8.078125,
+      "y": 532.09375,
+      "width": 395.84375,
+      "height": 33.203125,
+      "right": 403.921875,
+      "bottom": 565.296875
+    },
+    "pause": {
+      "x": 330.046875,
+      "y": 10.390625,
+      "width": 73.15625,
+      "height": 48,
+      "right": 403.203125,
+      "bottom": 58.390625
+    },
+    "mobileControls": {
+      "x": 12.796875,
+      "y": 826.203125,
+      "width": 386.40625,
+      "height": 76,
+      "right": 399.203125,
+      "bottom": 902.203125
+    },
+    "state": "PLAYING",
+    "screenshot": "mobile-412x915.png"
+  },
+  {
+    "name": "tablet-844x390",
+    "input": {
+      "name": "tablet-844x390",
+      "width": 844,
+      "height": 390,
+      "dpr": 2,
+      "touch": true
+    },
+    "viewport": {
+      "width": 844,
+      "height": 390,
+      "dpr": 2,
+      "scrollWidth": 844,
+      "scrollHeight": 420
+    },
+    "container": {
+      "x": 110,
+      "y": 34.5,
+      "width": 624,
+      "height": 351,
+      "right": 734,
+      "bottom": 385.5
+    },
+    "canvas": {
+      "x": 112,
+      "y": 36.5,
+      "width": 620,
+      "height": 347,
+      "right": 732,
+      "bottom": 383.5
+    },
+    "canvasCss": {
+      "width": "620px",
+      "height": "347px"
+    },
+    "canvasBacking": {
+      "width": 1920,
+      "height": 1080
+    },
+    "canvasAspect": 1.7867435158501441,
+    "unused": {
+      "left": 110,
+      "right": 110,
+      "top": 34.5,
+      "bottom": 4.5
+    },
+    "header": {
+      "x": 12,
+      "y": 5.59375,
+      "width": 820,
+      "height": 48,
+      "right": 832,
+      "bottom": 53.59375
+    },
+    "hud": {
+      "x": 124,
+      "y": 60.5,
+      "width": 596,
+      "height": 311.8125,
+      "right": 720,
+      "bottom": 372.3125
+    },
+    "hudTopline": {
+      "x": 124,
+      "y": 60.5,
+      "width": 596,
+      "height": 58,
+      "right": 720,
+      "bottom": 118.5
+    },
+    "hudCards": [
+      {
+        "selector": ".score-stat",
+        "x": 124,
+        "y": 60.5,
+        "width": 126.234375,
+        "height": 58,
+        "right": 250.234375,
+        "bottom": 118.5
+      },
+      {
+        "selector": ".health-stat",
+        "x": 257.421875,
+        "y": 60.5,
+        "width": 101,
+        "height": 58,
+        "right": 358.421875,
+        "bottom": 118.5
+      },
+      {
+        "selector": "#havoc-card",
+        "x": 365.609375,
+        "y": 60.5,
+        "width": 170.4375,
+        "height": 58,
+        "right": 536.046875,
+        "bottom": 118.5
+      },
+      {
+        "selector": "#kevin-card",
+        "x": 543.234375,
+        "y": 60.5,
+        "width": 176.75,
+        "height": 58,
+        "right": 719.984375,
+        "bottom": 118.5
+      }
+    ],
+    "hudBottomline": {
+      "x": 124,
+      "y": 330.328125,
+      "width": 596,
+      "height": 41.984375,
+      "right": 720,
+      "bottom": 372.3125
+    },
+    "pause": {
+      "x": 741.421875,
+      "y": 5.59375,
+      "width": 90.578125,
+      "height": 48,
+      "right": 832,
+      "bottom": 53.59375
+    },
+    "mobileControls": {
+      "x": 7.1875,
+      "y": 12.796875,
+      "width": 829.625,
+      "height": 364.40625,
+      "right": 836.8125,
+      "bottom": 377.203125
+    },
+    "state": "PLAYING",
+    "screenshot": "tablet-844x390.png"
+  },
+  {
+    "name": "tablet-915x412",
+    "input": {
+      "name": "tablet-915x412",
+      "width": 915,
+      "height": 412,
+      "dpr": 2,
+      "touch": true
+    },
+    "viewport": {
+      "width": 915,
+      "height": 412,
+      "dpr": 2,
+      "scrollWidth": 915,
+      "scrollHeight": 420
+    },
+    "container": {
+      "x": 127.90625,
+      "y": 24.609375,
+      "width": 659.1875,
+      "height": 370.78125,
+      "right": 787.09375,
+      "bottom": 395.390625
+    },
+    "canvas": {
+      "x": 129.90625,
+      "y": 26.609375,
+      "width": 655.1875,
+      "height": 366.78125,
+      "right": 785.09375,
+      "bottom": 393.390625
+    },
+    "canvasCss": {
+      "width": "655.188px",
+      "height": "366.781px"
+    },
+    "canvasBacking": {
+      "width": 1920,
+      "height": 1080
+    },
+    "canvasAspect": 1.7863167760074976,
+    "unused": {
+      "left": 127.90625,
+      "right": 127.90625,
+      "top": 24.609375,
+      "bottom": 16.609375
+    },
+    "header": {
+      "x": 12,
+      "y": 5.59375,
+      "width": 891,
+      "height": 48,
+      "right": 903,
+      "bottom": 53.59375
+    },
+    "hud": {
+      "x": 141.90625,
+      "y": 50.609375,
+      "width": 631.1875,
+      "height": 331.59375,
+      "right": 773.09375,
+      "bottom": 382.203125
+    },
+    "hudTopline": {
+      "x": 141.90625,
+      "y": 50.609375,
+      "width": 631.1875,
+      "height": 58,
+      "right": 773.09375,
+      "bottom": 108.609375
+    },
+    "hudCards": [
+      {
+        "selector": ".score-stat",
+        "x": 141.90625,
+        "y": 50.609375,
+        "width": 133.96875,
+        "height": 58,
+        "right": 275.875,
+        "bottom": 108.609375
+      },
+      {
+        "selector": ".health-stat",
+        "x": 283.0625,
+        "y": 50.609375,
+        "width": 107.1875,
+        "height": 58,
+        "right": 390.25,
+        "bottom": 108.609375
+      },
+      {
+        "selector": "#havoc-card",
+        "x": 397.4375,
+        "y": 50.609375,
+        "width": 180.890625,
+        "height": 58,
+        "right": 578.328125,
+        "bottom": 108.609375
+      },
+      {
+        "selector": "#kevin-card",
+        "x": 585.515625,
+        "y": 50.609375,
+        "width": 187.5625,
+        "height": 58,
+        "right": 773.078125,
+        "bottom": 108.609375
+      }
+    ],
+    "hudBottomline": {
+      "x": 141.90625,
+      "y": 340.21875,
+      "width": 631.1875,
+      "height": 41.984375,
+      "right": 773.09375,
+      "bottom": 382.203125
+    },
+    "pause": {
+      "x": 816.96875,
+      "y": 5.59375,
+      "width": 86.03125,
+      "height": 48,
+      "right": 903,
+      "bottom": 53.59375
+    },
+    "mobileControls": {
+      "x": 7.1875,
+      "y": 12.796875,
+      "width": 900.625,
+      "height": 386.40625,
+      "right": 907.8125,
+      "bottom": 399.203125
+    },
+    "state": "PLAYING",
+    "screenshot": "tablet-915x412.png"
+  },
+  {
+    "name": "tablet-768x1024",
+    "input": {
+      "name": "tablet-768x1024",
+      "width": 768,
+      "height": 1024,
+      "dpr": 2,
+      "touch": true
+    },
+    "viewport": {
+      "width": 768,
+      "height": 1024,
+      "dpr": 2,
+      "scrollWidth": 768,
+      "scrollHeight": 1024
+    },
+    "container": {
+      "x": 0,
+      "y": 296,
+      "width": 768,
+      "height": 432,
+      "right": 768,
+      "bottom": 728
+    },
+    "canvas": {
+      "x": 2,
+      "y": 298,
+      "width": 764,
+      "height": 428,
+      "right": 766,
+      "bottom": 726
+    },
+    "canvasCss": {
+      "width": "764px",
+      "height": "428px"
+    },
+    "canvasBacking": {
+      "width": 1920,
+      "height": 1080
+    },
+    "canvasAspect": 1.7850467289719627,
+    "unused": {
+      "left": 0,
+      "right": 0,
+      "top": 296,
+      "bottom": 296
+    },
+    "header": {
+      "x": 12,
+      "y": 10.390625,
+      "width": 744,
+      "height": 48,
+      "right": 756,
+      "bottom": 58.390625
+    },
+    "hud": {
+      "x": 14,
+      "y": 322,
+      "width": 740,
+      "height": 392.8125,
+      "right": 754,
+      "bottom": 714.8125
+    },
+    "hudTopline": {
+      "x": 14,
+      "y": 322,
+      "width": 740,
+      "height": 58,
+      "right": 754,
+      "bottom": 380
+    },
+    "hudCards": [
+      {
+        "selector": ".score-stat",
+        "x": 14,
+        "y": 322,
+        "width": 157.890625,
+        "height": 58,
+        "right": 171.890625,
+        "bottom": 380
+      },
+      {
+        "selector": ".health-stat",
+        "x": 179.078125,
+        "y": 322,
+        "width": 126.3125,
+        "height": 58,
+        "right": 305.390625,
+        "bottom": 380
+      },
+      {
+        "selector": "#havoc-card",
+        "x": 312.578125,
+        "y": 322,
+        "width": 213.171875,
+        "height": 58,
+        "right": 525.75,
+        "bottom": 380
+      },
+      {
+        "selector": "#kevin-card",
+        "x": 532.9375,
+        "y": 322,
+        "width": 221.046875,
+        "height": 58,
+        "right": 753.984375,
+        "bottom": 380
+      }
+    ],
+    "hudBottomline": {
+      "x": 14,
+      "y": 672.828125,
+      "width": 740,
+      "height": 41.984375,
+      "right": 754,
+      "bottom": 714.8125
+    },
+    "pause": {
+      "x": 669.96875,
+      "y": 10.390625,
+      "width": 86.03125,
+      "height": 48,
+      "right": 756,
+      "bottom": 58.390625
+    },
+    "mobileControls": {
+      "x": 12.796875,
+      "y": 935.203125,
+      "width": 742.40625,
+      "height": 76,
+      "right": 755.203125,
+      "bottom": 1011.203125
+    },
+    "state": "PLAYING",
+    "screenshot": "tablet-768x1024.png"
+  },
+  {
+    "name": "tablet-1024x768",
+    "input": {
+      "name": "tablet-1024x768",
+      "width": 1024,
+      "height": 768,
+      "dpr": 2,
+      "touch": true
+    },
+    "viewport": {
+      "width": 1024,
+      "height": 768,
+      "dpr": 2,
+      "scrollWidth": 1024,
+      "scrollHeight": 768
+    },
+    "container": {
+      "x": 0,
+      "y": 96,
+      "width": 1024,
+      "height": 576,
+      "right": 1024,
+      "bottom": 672
+    },
+    "canvas": {
+      "x": 2,
+      "y": 98,
+      "width": 1020,
+      "height": 572,
+      "right": 1022,
+      "bottom": 670
+    },
+    "canvasCss": {
+      "width": "1020px",
+      "height": "572px"
+    },
+    "canvasBacking": {
+      "width": 1920,
+      "height": 1080
+    },
+    "canvasAspect": 1.7832167832167831,
+    "unused": {
+      "left": 0,
+      "right": 0,
+      "top": 96,
+      "bottom": 96
+    },
+    "header": {
+      "x": 12,
+      "y": 10.390625,
+      "width": 1000,
+      "height": 48,
+      "right": 1012,
+      "bottom": 58.390625
+    },
+    "hud": {
+      "x": 14,
+      "y": 122,
+      "width": 996,
+      "height": 536.8125,
+      "right": 1010,
+      "bottom": 658.8125
+    },
+    "hudTopline": {
+      "x": 14,
+      "y": 122,
+      "width": 996,
+      "height": 58,
+      "right": 1010,
+      "bottom": 180
+    },
+    "hudCards": [
+      {
+        "selector": ".score-stat",
+        "x": 14,
+        "y": 122,
+        "width": 214.15625,
+        "height": 58,
+        "right": 228.15625,
+        "bottom": 180
+      },
+      {
+        "selector": ".health-stat",
+        "x": 235.34375,
+        "y": 122,
+        "width": 171.328125,
+        "height": 58,
+        "right": 406.671875,
+        "bottom": 180
+      },
+      {
+        "selector": "#havoc-card",
+        "x": 413.859375,
+        "y": 122,
+        "width": 289.125,
+        "height": 58,
+        "right": 702.984375,
+        "bottom": 180
+      },
+      {
+        "selector": "#kevin-card",
+        "x": 710.171875,
+        "y": 122,
+        "width": 299.8125,
+        "height": 58,
+        "right": 1009.984375,
+        "bottom": 180
+      }
+    ],
+    "hudBottomline": {
+      "x": 14,
+      "y": 616.828125,
+      "width": 996,
+      "height": 41.984375,
+      "right": 1010,
+      "bottom": 658.8125
+    },
+    "pause": {
+      "x": 925.96875,
+      "y": 10.390625,
+      "width": 86.03125,
+      "height": 48,
+      "right": 1012,
+      "bottom": 58.390625
+    },
+    "mobileControls": {
+      "x": 12.796875,
+      "y": 679.203125,
+      "width": 998.40625,
+      "height": 76,
+      "right": 1011.203125,
+      "bottom": 755.203125
+    },
+    "state": "PLAYING",
+    "screenshot": "tablet-1024x768.png"
+  }
+]

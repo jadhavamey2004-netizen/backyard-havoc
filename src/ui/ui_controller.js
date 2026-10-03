@@ -466,6 +466,8 @@ export class UiController {
       const showHud = screen === 'PLAYING' || screen === 'PAUSED';
       this.elements.hud.hidden = !showHud;
       this.elements.hud.classList.toggle('hidden', !showHud);
+      this.elements.hud.inert = underlyingInert;
+      this.elements.hud.setAttribute('aria-hidden', String(underlyingInert || !showHud));
     }
     if (this.elements.pauseButton) this.elements.pauseButton.hidden = screen !== 'PLAYING';
     this.document.body.dataset.uiState = screen.toLowerCase();
