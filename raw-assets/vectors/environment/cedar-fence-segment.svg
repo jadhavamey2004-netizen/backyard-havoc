@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="144" viewBox="0 0 256 144">
+  <title>Muted cedar fence segment, Phase 13 authored source</title>
+  <metadata>Original Backyard Havoc vector artwork authored for Phase 13.</metadata>
+  <defs><linearGradient id="cedar" x2="1" y2=".2"><stop stop-color="#80684e"/><stop offset=".48" stop-color="#9b8060"/><stop offset="1" stop-color="#665443"/></linearGradient></defs>
+  <path d="M4 46h248v13H4zM4 105h248v13H4z" fill="#4b5142" stroke="#353e35" stroke-width="4"/>
+  <g fill="url(#cedar)" stroke="#42473c" stroke-width="3" stroke-linejoin="round">
+    <path d="M8 138V30l24-19 24 19v108z"/><path d="M72 138V30l24-19 24 19v108z"/>
+    <path d="M136 138V30l24-19 24 19v108z"/><path d="M200 138V30l24-19 24 19v108z"/>
+  </g>
+  <g fill="none" stroke="#bdab89" stroke-width="2" opacity=".7"><path d="M23 38v83M87 38v83M151 38v83M215 38v83"/></g>
+  <g fill="#303b37"><circle cx="32" cy="52" r="3"/><circle cx="96" cy="52" r="3"/><circle cx="160" cy="52" r="3"/><circle cx="224" cy="52" r="3"/></g>
+</svg>

@@ -1,6 +1,11 @@
 node_modules/
+.agents/
+.phase13-assetpack-input/
+.assetpack/
+skills-lock.json
 .vite/
 dist/
+dist-pixi-spike/
 dist-e2e/
 playwright-report/
 test-results/

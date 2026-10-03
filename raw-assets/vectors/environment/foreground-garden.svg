@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="120" viewBox="0 0 320 120">
+  <title>Foreground garden accent, Phase 13 authored source</title>
+  <metadata>Original Backyard Havoc vector artwork authored for Phase 13.</metadata>
+  <path d="M9 111c32-21 59-20 85-7 37-26 68-24 99-4 29-18 66-15 111 3v17H9Z" fill="#315843" stroke="#263d31" stroke-width="4"/>
+  <g stroke="#3b6749" stroke-width="8" stroke-linecap="round"><path d="M53 99 39 57M68 101l7-50M145 101l-9-43M157 101l17-50M253 103l-5-41M269 105l20-42"/></g>
+  <g fill="#d4b66d" stroke="#3d4d39" stroke-width="3"><circle cx="39" cy="54" r="9"/><circle cx="77" cy="47" r="8"/><circle cx="136" cy="55" r="9"/><circle cx="175" cy="49" r="8"/><circle cx="248" cy="57" r="9"/><circle cx="292" cy="58" r="8"/></g>
+  <g fill="#f1dec0"><circle cx="39" cy="54" r="3"/><circle cx="77" cy="47" r="3"/><circle cx="136" cy="55" r="3"/><circle cx="175" cy="49" r="3"/><circle cx="248" cy="57" r="3"/><circle cx="292" cy="58" r="3"/></g>
+</svg>

@@ -5,6 +5,7 @@ import { sounds } from './audio.js';
 import { mountAffiliateLink } from './affiliate_links.js';
 import { UiController } from './ui/ui_controller.js';
 import { MetaProgression } from './meta/meta_progression.js';
+import { mapClientToLogicalCoordinates } from './rendering/coordinate_mapper.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
   const canvas = document.getElementById('game-canvas');
@@ -246,9 +247,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   const getCanvasCoords = (clientX, clientY) => {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = 960 / (rect.width || 1);
-    const scaleY = 540 / (rect.height || 1);
-    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+    return mapClientToLogicalCoordinates(clientX, clientY, rect);
   };
 
   const coarsePointerQuery = window.matchMedia?.('(pointer: coarse)');
@@ -322,11 +321,58 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   window.addEventListener('blur', releaseAllGameInput);
 
+  let phase13Renderer = null;
+  const rendererSwitchAllowed = import.meta.env.DEV
+    || import.meta.env.MODE === 'e2e'
+    || import.meta.env.MODE === 'phase13-pixi-spike';
+  if (rendererSwitchAllowed) {
+    const { Canvas2DRenderer, RendererAdapter } = await import('./rendering/renderer_adapter.js');
+    const canvasRenderer = new Canvas2DRenderer(time => engine.renderCanvas(time));
+    const adapter = new RendererAdapter({ canvasRenderer });
+    engine.setRendererAdapter(adapter);
+    let pixiRenderer = null;
+
+    if (new URLSearchParams(window.location.search).get('renderer') === 'pixi') {
+      try {
+        const { PixiFeasibilityRenderer } = await import('./rendering/pixi_feasibility_renderer.js');
+        pixiRenderer = new PixiFeasibilityRenderer(canvas.parentElement);
+        await pixiRenderer.initialize();
+        adapter.setActiveRenderer(pixiRenderer);
+      } catch (error) {
+        adapter.lastError = error;
+        adapter.mode = 'canvas-fallback';
+        pixiRenderer?.destroy?.();
+      }
+    }
+
+    phase13Renderer = { adapter, pixiRenderer };
+    if (import.meta.env.MODE === 'e2e' && window.location.hostname === '127.0.0.1') {
+      window.__BACKYARD_TEST_RENDERER__ = {
+        getMode: () => adapter.mode,
+        getError: () => adapter.lastError ? `${adapter.lastError.name}: ${adapter.lastError.message}` : null,
+        getDiagnostics: () => pixiRenderer?.getDiagnostics?.() || null,
+        getPerformance: () => adapter.getMetrics(),
+        resetPerformance: () => adapter.resetMetrics(),
+        resetPixiPerformance: () => pixiRenderer?.resetPerformance?.(),
+        setMode: mode => {
+          if (mode === 'pixi' && pixiRenderer?.ready) adapter.setActiveRenderer(pixiRenderer);
+          else adapter.setActiveRenderer(canvasRenderer);
+          return adapter.mode;
+        },
+        mapClientPoint: (clientX, clientY) => getCanvasCoords(clientX, clientY),
+        setCollisionOverlay: enabled => pixiRenderer?.setCollisionOverlay?.(enabled),
+        setTuningPanel: enabled => pixiRenderer?.setTuningPanel?.(enabled),
+        prepareVisualScenario: name => pixiRenderer?.prepareVisualScenario?.(name)
+      };
+    }
+  }
+
   let lastTime = performance.now();
   engine.setPageVisibility(!document.hidden);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) releaseAllGameInput();
     engine.setPageVisibility(!document.hidden);
+    phase13Renderer?.pixiRenderer?.setPageVisible?.(!document.hidden);
     syncMobileControls();
     lastTime = performance.now();
   });
@@ -347,6 +393,15 @@ window.addEventListener('DOMContentLoaded', async () => {
       havocActive: engine.havocSystem.active
     });
     requestAnimationFrame(gameLoop);
+  }
+
+  if (rendererSwitchAllowed) {
+    window.addEventListener('pagehide', () => {
+      phase13Renderer?.pixiRenderer?.setPageVisible?.(false);
+    });
+    window.addEventListener('pageshow', () => {
+      phase13Renderer?.pixiRenderer?.setPageVisible?.(!document.hidden);
+    });
   }
 
   requestAnimationFrame(gameLoop);

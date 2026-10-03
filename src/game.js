@@ -17,6 +17,7 @@ import { breakObjectIntoFragments, createResidueRecord } from './destruction_sys
 import { getMaterialProfile } from './destruction_materials.js';
 import { calculateSubStepDt } from './physics.js';
 import { clampBallVelocity, computeBallContactResponse, GAMEPLAY_FEEL_TUNING } from './gameplay_feel.js';
+import { createRendererFrame } from './rendering/render_frame.js';
 import { sounds } from './audio.js';
 import { AudioDirector } from './audio_director.js';
 import { aiService } from './ai.js';
@@ -60,6 +61,7 @@ export class GameEngine {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+    this.rendererAdapter = null;
     this.width = 960;
     this.height = 540;
 
@@ -1598,7 +1600,19 @@ export class GameEngine {
     aiService.resetSession();
   }
 
+  setRendererAdapter(adapter) {
+    this.rendererAdapter = adapter || null;
+  }
+
   render(currentTime) {
+    if (this.rendererAdapter) {
+      this.rendererAdapter.renderFrame(createRendererFrame(this, currentTime));
+      return;
+    }
+    this.renderCanvas(currentTime);
+  }
+
+  renderCanvas(currentTime) {
     const ctx = this.ctx;
     const dpr = Math.max(1, Math.min(2.5, (typeof window !== 'undefined' && window.devicePixelRatio) || 1));
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
