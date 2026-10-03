@@ -12,7 +12,7 @@ The commits already present on the branch through the starting head `87aaf069293
 
 ## Baseline and toolchain
 
-Before Phase 13 changes, the recorded baseline was 319/319 Vitest tests across 35 files, a 44-module production build, and 54/58 local E2E scenarios; the four incomplete baseline scenarios were Firefox/WebKit launch failures while those Playwright browser binaries were unavailable. After `npm ci`, the Phase 13 local run passes 324/324 Vitest tests across 36 files, the production build, and 63/63 Chromium E2E projects. Playwright 1.63 requires Firefox build 1543 and WebKit build 2359; the workstation cache contained only Firefox 1490 and WebKit 2203. Both official Firefox download mirrors timed out, so the six Firefox/WebKit scenarios were not runnable locally. The GitHub workflow installs the exact current Playwright browsers on Ubuntu and remains the required authority for those results.
+Before Phase 13 changes, the recorded baseline was 319/319 Vitest tests across 35 files, a 44-module production build, and 54/58 local E2E scenarios; the four incomplete baseline scenarios were Firefox/WebKit launch failures while those Playwright browser binaries were unavailable. After `npm ci`, the Phase 13 local run passes 324/324 Vitest tests across 36 files, the production build, and 64/64 locally available Chromium E2E projects. Playwright 1.63 requires Firefox build 1543 and WebKit build 2359; the workstation cache contained only Firefox 1490 and WebKit 2203. Both official Firefox download mirrors timed out, so the six Firefox/WebKit scenarios were not runnable locally. The GitHub workflow installs the exact current Playwright browsers on Ubuntu and remains the required authority for those results.
 
 Verified project versions:
 
@@ -107,9 +107,11 @@ No inherited gameplay or other Phase 1–12 behavior needed correction in Phase 
 | Production hygiene assertion | PASS; 11 output files, no E2E globals, local paths, source maps, Pixi/tuning/debug markers |
 | `npm run build:pixi-spike` | PASS |
 | `npm run compare:remaster-collision` | PASS; all three bodies finite, no static-body displacement |
-| Chromium E2E projects | 63/63 PASS (desktop, inherited touch, Pixi touch, release and visual projects); the six Phase 13 touch/renderer checks and three deterministic visual comparisons re-run PASS after final-source cleanup |
+| Chromium E2E projects | 64/64 PASS (desktop, inherited touch, Pixi touch, release and visual projects); the six Phase 13 touch/renderer checks and three deterministic visual comparisons re-run PASS after the final renderer initialization change |
 | Firefox/WebKit E2E projects | Not runnable locally: required browser revisions absent and download mirrors timed out; no tests disabled in CI |
 | Chromium browser health | All captured records: pageErrors 0, consoleErrors 0, consoleWarnings 0, failedRequests 0, sameOriginFailures 0 |
+
+The Firefox/WebKit smoke also asserts that the Pixi canvas is already attached when its WebGL context is created and that no context-loss event occurs during the run. This covers the Firefox startup loss seen in the first exact-head CI attempt; the exact-head cross-browser workflow remains the authority for confirming the fix.
 
 `npm audit --omit=dev` reports 0 vulnerabilities. Full `npm audit` reports 9 development/transitive advisories (3 moderate, 5 high, 1 critical) involving the pinned tooling tree, including Vite/Vitest and AssetPack's minimatch/Sharp dependencies. No forced dependency changes were made because the prescribed versions are pinned for this experiment; these findings are a review limitation and should be reassessed before broader adoption of the asset tooling.
 

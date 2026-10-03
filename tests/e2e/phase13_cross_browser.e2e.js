@@ -54,6 +54,8 @@ test('Phase 13 Pixi WebGL smoke keeps authoritative scene and DOM controls avail
   expect(evidence.state).toBe('PLAYING');
   expect(evidence.renderer.backend).toMatch(/webgl/i);
   expect(evidence.renderer.screen).toEqual({ width: 960, height: 540 });
+  expect(evidence.renderer.canvasConnectedAtContextCreation).toBe(true);
+  expect(evidence.renderer.contextLossCount).toBe(0);
   expect(evidence.renderer.emptyTextureInitialized).toBe(true);
   expect(evidence.renderer.whiteTextureAlphaMode).toBe('premultiplied-alpha');
   expect(evidence.rectDeltaPx).toBeLessThanOrEqual(1);

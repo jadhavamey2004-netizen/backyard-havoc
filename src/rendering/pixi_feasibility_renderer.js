@@ -65,6 +65,9 @@ export class PixiFeasibilityRenderer {
     this.ready = false;
     this.visible = !document.hidden;
     this.contextLost = false;
+    this.contextLossCount = 0;
+    this.canvasConnectedAtContextCreation = false;
+    this.canvas = null;
     this.tuningPanel = null;
     this.debugOverlay = new MatterDebugOverlay();
     this.tuning = {
@@ -88,6 +91,7 @@ export class PixiFeasibilityRenderer {
     this.boundContextLost = event => {
       event.preventDefault();
       this.contextLost = true;
+      this.contextLossCount += 1;
     };
     this.boundContextRestored = () => { this.contextLost = false; };
     this.styleElement = null;
@@ -97,6 +101,20 @@ export class PixiFeasibilityRenderer {
     const dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
     preparePlaceholderTextures();
     this.app = new Application();
+    this.canvas = document.createElement('canvas');
+    this.canvas.classList.add('phase13-pixi-canvas');
+    this.canvas.setAttribute('aria-hidden', 'true');
+    this.canvas.style.visibility = 'hidden';
+    this.canvas.addEventListener('webglcontextlost', this.boundContextLost);
+    this.canvas.addEventListener('webglcontextrestored', this.boundContextRestored);
+    this.styleElement = document.createElement('style');
+    this.styleElement.dataset.phase13RendererStyle = 'true';
+    this.styleElement.textContent = '.phase13-pixi-canvas{position:absolute;z-index:1;inset:0 auto auto 0;display:block;pointer-events:none}.canvas-container[data-renderer="pixi"] #game-canvas{opacity:0}';
+    document.head.appendChild(this.styleElement);
+    // Firefox may discard WebGL resources created on a detached canvas while Pixi
+    // loads its assets. Connect the canvas before asking Pixi to create its context.
+    this.mount.appendChild(this.canvas);
+    this.canvasConnectedAtContextCreation = this.canvas.isConnected;
     try {
       await this.app.init({
         width: WIDTH,
@@ -104,6 +122,7 @@ export class PixiFeasibilityRenderer {
         resolution: dpr,
         autoDensity: true,
         antialias: true,
+        canvas: this.canvas,
         preference: 'webgl',
         autoStart: false,
         backgroundAlpha: 1
@@ -120,17 +139,8 @@ export class PixiFeasibilityRenderer {
       this.assetTextures = Object.fromEntries(loaded);
       for (const [key, texture] of Object.entries(this.assetTextures)) this.textures.set(key, texture);
 
-      this.app.canvas.classList.add('phase13-pixi-canvas');
-      this.styleElement = document.createElement('style');
-      this.styleElement.dataset.phase13RendererStyle = 'true';
-      this.styleElement.textContent = '.phase13-pixi-canvas{position:absolute;z-index:1;inset:0 auto auto 0;display:block;pointer-events:none}.canvas-container[data-renderer="pixi"] #game-canvas{opacity:0}';
-      document.head.appendChild(this.styleElement);
-      this.app.canvas.setAttribute('aria-hidden', 'true');
-      this.mount.appendChild(this.app.canvas);
       this.mount.dataset.renderer = 'pixi';
       this.buildScene();
-      this.app.canvas.addEventListener('webglcontextlost', this.boundContextLost);
-      this.app.canvas.addEventListener('webglcontextrestored', this.boundContextRestored);
       window.addEventListener('resize', this.boundResize);
       const sourceCanvas = this.mount.querySelector('#game-canvas');
       if (sourceCanvas && typeof ResizeObserver !== 'undefined') {
@@ -140,6 +150,7 @@ export class PixiFeasibilityRenderer {
       await this.setTuningPanel(new URLSearchParams(window.location.search).get('phase13-tuning') === '1');
       this.syncResolution();
       this.ready = true;
+      this.app.canvas.style.visibility = this.visible ? 'visible' : 'hidden';
       return this;
     } catch (error) {
       await this.destroy();
@@ -512,6 +523,8 @@ export class PixiFeasibilityRenderer {
       projectileCount: this.lastFrame?.projectiles?.length || 0,
       visible: this.visible,
       contextLost: this.contextLost,
+      contextLossCount: this.contextLossCount,
+      canvasConnectedAtContextCreation: this.canvasConnectedAtContextCreation,
       emptyTextureInitialized: Boolean(Texture.EMPTY.source.resource),
       whiteTextureAlphaMode: Texture.WHITE.source.alphaMode,
       assetTextureNames: [...this.textures.keys()],
@@ -523,9 +536,9 @@ export class PixiFeasibilityRenderer {
     window.removeEventListener('resize', this.boundResize);
     this.layoutObserver?.disconnect();
     this.layoutObserver = null;
-    if (this.app?.canvas) {
-      this.app.canvas.removeEventListener('webglcontextlost', this.boundContextLost);
-      this.app.canvas.removeEventListener('webglcontextrestored', this.boundContextRestored);
+    if (this.canvas) {
+      this.canvas.removeEventListener('webglcontextlost', this.boundContextLost);
+      this.canvas.removeEventListener('webglcontextrestored', this.boundContextRestored);
     }
     this.tuningPanel?.destroy();
     this.styleElement?.remove();
@@ -541,8 +554,11 @@ export class PixiFeasibilityRenderer {
     if (this.app?.renderer) {
       this.mount?.dataset && delete this.mount.dataset.renderer;
       this.app.destroy({ removeView: true, releaseGlobalResources: true }, { children: true });
+    } else {
+      this.canvas?.remove();
     }
     this.ready = false;
     this.app = null;
+    this.canvas = null;
   }
 }
