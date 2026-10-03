@@ -85,7 +85,7 @@ The JSON is `test-results/phase13-prop-collision-comparison.json`. CPU timings i
 
 `tests/e2e/phase13_visual_evidence.e2e.js` records a Canvas title/baseline and named Pixi states for the scene, player idle/run/kick, Kevin calm/throw, prop, collision overlay, destruction, reduced motion, and Results. Visual captures use Playwright's existing snapshot facility; there is no new image-diff dependency. Eight required screen sizes, Canvas/Pixi coordinate parity, camera effects, real touch movement/action, semantic DOM HUD, and browser-health data are covered by the Phase 13 E2E scenarios. The focused Pixi rendering smoke is assigned to Chromium, Firefox, and WebKit, not the entire historical suite.
 
-The machine-readable renderer/performance comparison is attached as `test-results/phase13-renderer-comparison.json`. The latest full local Chromium sample reports Canvas median/p95/p99/max intervals of 15.5/17.0/92.5/140.7 ms and Pixi 50.6/63.1/2008.7/3217.4 ms, with 120 frames at DPR 1; median renderer-call costs are 1.2 and 0.9 ms respectively. It also reports logical/backing size, Matter/particle/projectile counts, Pixi texture count, and a render-node proxy. It explicitly labels headless measurements as gross-regression evidence, not low-end-device performance; no fabricated GPU draw-call metrics are present. Large Pixi interval outliers varied between runs and are not used as hardware claims.
+The machine-readable renderer/performance comparison is attached as `test-results/phase13-renderer-comparison.json`. The latest local Pixi project run reports Canvas median/p95/p99/max intervals of 15.0/16.6/113.1/148.9 ms and Pixi 52.3/92.2/2026.9/2993 ms, with 120 frames at DPR 1; median renderer-call costs are 1.4 and 1.0 ms respectively. It also reports logical/backing size, Matter/particle/projectile counts, Pixi texture count, and a render-node proxy. It explicitly labels headless measurements as gross-regression evidence, not low-end-device performance; no fabricated GPU draw-call metrics are present. Large Pixi interval outliers varied between runs and are not used as hardware claims.
 
 The clean v1 JavaScript baseline measured 335,855 bytes / 99,985 gzip. Regular production measures 337,055 bytes / 100,396 gzip (+1,200 / +411). The isolated Pixi spike totals 900,090 bytes / 265,391 gzip (+564,235 / +165,406). The release build retains Canvas; production-build negative assertions verify that development-only Pixi, GUI, overlays, toggles, and test hooks are absent.
 
@@ -97,25 +97,43 @@ The existing semantic DOM controls, Canvas description/focus, mobile controls, a
 
 No inherited gameplay or other Phase 1–12 behavior needed correction in Phase 13. Production integration only adds the optional renderer seam; the adapter is only activated in development/E2E/spike modes. `.ai/CROSS_PHASE_REMEDIATION_LOG.md` records: `No cross-phase remediation required in Phase 13.`
 
-## Verification and external evidence
+## Corrected test-integrity verification and external evidence
 
-| Check | Local result |
+The inherited Phase 12 release regression `tests/e2e/phase12_release_smoke.e2e.js` is byte-for-byte identical to the locked v1 baseline at `802654e517ad28ef5f49d014786f26e5ef50edf0`. Both the baseline Git blob and restored file hash to `093864e87dd0c2b203254de02950fa9e50a27c7c`. The unapproved `test.setTimeout(90_000)` addition was removed without adding a replacement timeout, retry, or assertion change. A baseline-to-Phase-13 test diff audit found no other modified inherited Phase 1–12 regression test; all other Phase 13 test additions are new Phase 13 coverage or the new renderer-adapter unit test.
+
+Clean local verification after restoration:
+
+| Check | Result |
 |---|---|
 | `npm ci` | PASS |
 | `npm test` | 324/324 PASS across 36 files |
 | `npm run build` | PASS; 770 modules transformed |
-| Production hygiene assertion | PASS; 11 output files, no E2E globals, local paths, source maps, Pixi/tuning/debug markers |
-| `npm run build:pixi-spike` | PASS |
-| `npm run compare:remaster-collision` | PASS; all three bodies finite, no static-body displacement |
-| Chromium E2E projects | 64/64 PASS locally (desktop, inherited touch, Pixi touch, normal release, and Pixi release). Phase 13 CI isolation correction: `chromium-release` is restored to Desktop Chrome without forced SwiftShader and runs only the unchanged Phase 12 release smoke file; `chromium-pixi-release` owns the Phase 13 renderer, visual, and cross-browser Chromium evidence with software WebGL. `chromium-pixi-touch` remains separate. CI runs normal Chromium and software-WebGL evidence in separate jobs. The inherited Phase 12 tests each took about 2.3–2.4 seconds locally and 2.5/2.2 seconds on the first separated-project CI run. Phase 13 touch/renderer checks and deterministic visual comparisons pass after direct renderer initialization. |
-| Firefox/WebKit E2E projects | Not runnable locally: required browser revisions absent and download mirrors timed out; no tests disabled in CI |
-| Chromium browser health | All captured records: pageErrors 0, consoleErrors 0, consoleWarnings 0, failedRequests 0, sameOriginFailures 0 |
+| `npm run test:e2e -- --project=chromium --project=chromium-touch --project=chromium-release` | 54/54 PASS; the two normal Phase 12 release smoke tests took 2.2s and 2.4s |
+| `npm run test:e2e -- --project=chromium-pixi-touch --project=chromium-pixi-release` | 10/10 PASS |
+| Combined requested Chromium projects | 64/64 PASS |
 
-The Firefox/WebKit smoke also asserts that the Pixi canvas is already attached when its WebGL context is created and that no context-loss event occurs during the run. Pixi's default renderer selection probes WebGL by deliberately losing a temporary test context; Firefox reports that probe as a console warning. The feasibility path now initializes the explicitly required WebGL renderer directly, avoiding the temporary probe while retaining the live-renderer browser smoke. Exact-head cross-browser CI remains the authority for confirming the result.
+The exact-head correction Quality Gate was run on restored-test commit `295e8493774abbc5442caa881a5db1c70a9e40a4`: [Quality Gate run 37096648535](https://github.com/jadhavamey2004-netizen/backyard-havoc/actions/runs/37096648535). All four jobs passed:
+
+- Unit tests and production build.
+- Chromium desktop, touch, and normal Phase 12 release: 54/54; the inherited Phase 12 tests took 2.3s and 2.2s on the normal Desktop Chrome project.
+- Chromium Pixi touch, renderer, and visual evidence: 10/10.
+- Firefox and WebKit release smoke: 6/6.
+
+All 70 browser-health records report `pageErrors: 0`, `consoleErrors: 0`, `consoleWarnings: 0`, `failedRequests: 0`, and `sameOriginFailures: 0`.
+
+Artifacts from that exact-head run:
+
+| Artifact | ID | Size | Digest |
+|---|---:|---:|---|
+| `chromium-release-evidence` | `11264861487` | 34,720,107 bytes | `sha256:34a05cb9e8c6aeedf941cc06eb4c9e3c996fc1d8aa5276c9f1bbd3644f6a7ab4` |
+| `phase13-pixi-evidence` | `11263944191` | 5,184,625 bytes | `sha256:4db36a4616fae85c6c3a4f967114c984303ba34565924628638adb358f233b8b` |
+| `phase12-cross-browser-evidence` | `11264028670` | 8,542,801 bytes | `sha256:3fc65a83406164360a54864c1d808388f525e3e06a0f224fa6cd53696bb53d33` |
+
+The Vercel Preview deployment `6823240251` is Ready at [backyard-havoc-eokuwiszu-brainy-highlander.vercel.app](https://backyard-havoc-eokuwiszu-brainy-highlander.vercel.app) with deployment SHA exactly `295e8493774abbc5442caa881a5db1c70a9e40a4`. PR #16 remains a draft; its current checks and Preview are the authority for any later documentation-only evidence refresh.
+
+The Firefox/WebKit smoke also asserts that the Pixi canvas is already attached when its WebGL context is created and that no context-loss event occurs during the run. Pixi's default renderer selection probes WebGL by deliberately losing a temporary test context; Firefox reports that probe as a console warning. The feasibility path initializes the explicitly required WebGL renderer directly, avoiding the temporary probe while retaining the live-renderer browser smoke.
 
 `npm audit --omit=dev` reports 0 vulnerabilities. Full `npm audit` reports 9 development/transitive advisories (3 moderate, 5 high, 1 critical) involving the pinned tooling tree, including Vite/Vitest and AssetPack's minimatch/Sharp dependencies. No forced dependency changes were made because the prescribed versions are pinned for this experiment; these findings are a review limitation and should be reassessed before broader adoption of the asset tooling.
-
-GitHub must provide exact-head Quality Gate, Chromium visual evidence artifact, Firefox/WebKit smoke results, and Vercel Preview provenance before the Phase 13 review handoff is final. No interim SHA is final evidence.
 
 ## Known limits and deferrals
 
