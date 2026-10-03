@@ -16,19 +16,19 @@ The controlled headless Chromium sample used 120 frames at 1280 × 720 CSS pixel
 
 | Measure | Canvas2D | Pixi WebGL |
 |---|---:|---:|
-| Median frame interval | 15.4 ms | 30.3 ms |
-| p95 frame interval | 16.6 ms | 47.8 ms |
-| p99 frame interval | 17.3 ms | 1260.4 ms |
-| Maximum interval | 28.4 ms | 1567.3 ms |
-| Median renderer call | 1.2 ms | 1.0 ms |
+| Median frame interval | 15.5 ms | 50.6 ms |
+| p95 frame interval | 17.0 ms | 63.1 ms |
+| p99 frame interval | 92.5 ms | 2008.7 ms |
+| Maximum interval | 140.7 ms | 3217.4 ms |
+| Median renderer call | 1.2 ms | 0.9 ms |
 | Texture count | n/a | 8 |
 | Renderable/draw-call proxy | n/a | 46 scene nodes |
 
-This is software/headless-browser evidence, not a low-end-device or GPU benchmark. The extreme Pixi p99/max interval indicates that the capture environment was unstable and must not be treated as representative hardware FPS. The Pixi renderer-call cost was lower in this sample, but the full frame interval was not. No Spector.js GPU capture was taken, and the 46-node value is explicitly a scene-node proxy, not measured draw calls.
+This latest full local Chromium sample is software/headless-browser evidence, not a low-end-device or GPU benchmark. The extreme Pixi p99/max interval indicates that the capture environment was unstable and must not be treated as representative hardware FPS. Pixi's renderer-call cost was lower in this sample, but its full frame interval was substantially worse. No Spector.js GPU capture was taken, and the 46-node value is explicitly a scene-node proxy, not measured draw calls.
 
 ### Bundle cost
 
-The clean v1 baseline build contained 335,855 JavaScript bytes (99,985 gzip). The regular production build after Phase 13 contains 337,055 bytes (100,396 gzip), a 1,200 byte / 411 gzip increase. Production does not include Pixi or development tools. The isolated Pixi spike build contains 970,374 JavaScript bytes (286,341 gzip), a 634,519 byte / 186,356 gzip increase over the v1 baseline. Pixi's migration cost is therefore material even before a complete art conversion.
+The clean v1 baseline build contained 335,855 JavaScript bytes (99,985 gzip). The regular production build after Phase 13 contains 337,055 bytes (100,396 gzip), a 1,200 byte / 411 gzip increase. Production does not include Pixi or development tools. The isolated Pixi spike build contains 900,090 JavaScript bytes (265,391 gzip), a 564,235 byte / 165,406 gzip increase over the v1 baseline. Pixi's migration cost is therefore material even before a complete art conversion.
 
 ### Complexity and testability
 

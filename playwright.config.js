@@ -60,12 +60,18 @@ export default defineConfig({
     },
     {
       name: 'chromium-release',
+      testMatch: ['**/phase12_release_smoke.e2e.js'],
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'chromium-pixi-release',
       testMatch: [
-        '**/phase12_release_smoke.e2e.js',
         '**/phase13_renderer_smoke.e2e.js',
         '**/phase13_visual_evidence.e2e.js',
         '**/phase13_cross_browser.e2e.js',
       ],
+      // Keep the committed Phase 13 screenshot baseline stable across the project split.
+      snapshotPathTemplate: '{testDir}/{testFilePath}-snapshots/{arg}-chromium-release-{platform}{ext}',
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },

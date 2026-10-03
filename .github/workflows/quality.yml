@@ -58,8 +58,8 @@ jobs:
       - name: Build isolated Pixi spike for bundle-cost evidence
         run: npm run build:pixi-spike
 
-      - name: Run full Chromium desktop, touch, and release smoke tests
-        run: npm run test:e2e -- --project=chromium --project=chromium-touch --project=chromium-pixi-touch --project=chromium-release
+      - name: Run Chromium desktop, touch, normal release, and Pixi release smoke tests
+        run: npm run test:e2e -- --project=chromium --project=chromium-touch --project=chromium-pixi-touch --project=chromium-release --project=chromium-pixi-release
 
       - name: Assert production bundle hygiene
         run: node scripts/assert-production-build.mjs
