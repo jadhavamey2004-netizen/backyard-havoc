@@ -45,5 +45,6 @@ without reducing gameplay correctness or accessibility.
 ## Context retrieval
 
 - Start with `.ai/CURRENT_PHASE_CAPSULE.md` and the exact prompt; open history only when needed.
-- For substantial code navigation, use focused Atlas orientation, then Serena symbols/references/bodies. Search CSS, HTML, and test inventories directly; verify findings in source and tests. Skip Serena for tiny edits.
-- Retrieve only the top 3–5 relevant `.memory` entries.
+- For substantial JS/TS navigation, prefer Serena symbols/references/bodies before whole-file reads. Search CSS, HTML, and test inventories directly; verify findings in source and tests. Skip Serena for tiny edits.
+- Use a focused Atlas map only when broad repository orientation would materially help; never treat it as source of truth or preload it by default.
+- Retrieve Markdown memory only when a durable prior decision is relevant; fetch at most the top 3–5 entries and do not preload the memory set.
