@@ -9,14 +9,14 @@ Do not rewrite or force-move `main`.
 ## Remaster architecture
 
 - Matter.js remains authoritative for physics and collision/gameplay state.
-- PixiJS may replace rendering progressively, not gameplay rules.
+- Keep Canvas2D as the production renderer until a reviewed phase changes the Phase 13 decision; PixiJS remains an isolated feasibility path.
 - Existing DOM UI remains HTML unless a specific reviewed phase changes it.
 - Do not change scoring, Kevin thresholds, Havoc rules, progression, health, physics tuning or monetization while doing visual-remaster phases unless a phase explicitly authorizes it.
 
 ## Required implementation discipline
 
 - Load/use the official PixiJS agent skills before substantial PixiJS work.
-- Prefer PixiJS WebGL for production; do not make WebGPU a release requirement.
+- Use PixiJS WebGL for feasibility work; do not make WebGPU a release requirement.
 - Use `raw-assets/` for authored sources and generated public assets for runtime.
 - Never hand-edit generated AssetPack output.
 - Keep `lil-gui` development-only.
@@ -41,3 +41,9 @@ A change must improve one or more of:
 - performance
 
 without reducing gameplay correctness or accessibility.
+
+## Context retrieval
+
+- Start with `.ai/CURRENT_PHASE_CAPSULE.md` and the exact prompt; open history only when needed.
+- For substantial code navigation, use focused Atlas orientation, then Serena symbols/references/bodies. Search CSS, HTML, and test inventories directly; verify findings in source and tests. Skip Serena for tiny edits.
+- Retrieve only the top 3–5 relevant `.memory` entries.
