@@ -20,8 +20,8 @@ Updated for the one-time context preflight on 2026-10-03. Read this capsule with
 ## Retrieval and phase workflow
 
 - Start from this capsule and the exact phase prompt. Do not preload all historical phase reports or read all source files.
-- For nontrivial code navigation, use a focused Atlas map for orientation, then Serena symbol outlines, exact symbols, references, and bodies. Use targeted text searches for CSS/HTML, exact test inventories, or anything the map omits. Verify callers and tests before editing.
-- Retrieve only the top 3–5 relevant Markdown memories. Maps and memories guide retrieval; source and tests remain authoritative.
+- For nontrivial JS/TS navigation, prefer Serena symbol outlines, exact symbols, references, and bodies. Use targeted text searches for CSS/HTML, exact test inventories, or anything semantic retrieval omits. Verify callers and tests before editing.
+- Use a focused Atlas map only when broad repository orientation would materially help; do not preload it by default. Retrieve Markdown memory only when a durable prior decision is relevant, at most the top 3–5 entries.
 - Before an implementation phase, refresh `main`, confirm the exact required base SHA and a clean tree, create only the requested branch, follow its scope, run its stated checks, and preserve inherited tests. Record cross-phase fixes explicitly.
 - Complete local verification, push, verify exact-head GitHub checks and artifacts (plus Preview SHA when required), create a draft PR, and stop for external review. Do not merge unless directly instructed.
 
