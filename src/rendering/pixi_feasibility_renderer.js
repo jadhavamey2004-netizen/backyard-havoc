@@ -44,6 +44,19 @@ function createCharacterTexture(width, height, draw, anchor) {
   };
 }
 
+function preparePlaceholderTextures() {
+  // Pixi binds EMPTY in unused texture slots. Back it with a real transparent texel so
+  // WebGL does not need to lazily clear null texture storage on first draw.
+  const transparentCanvas = document.createElement('canvas');
+  transparentCanvas.width = 1;
+  transparentCanvas.height = 1;
+  Texture.EMPTY.source = Texture.from(transparentCanvas).source;
+
+  // WHITE is an opaque byte texture, so it is already premultiplied and needs no
+  // upload-time alpha conversion (which Firefox warns about for byte-array uploads).
+  Texture.WHITE.source.alphaMode = 'premultiplied-alpha';
+}
+
 export class PixiFeasibilityRenderer {
   constructor(mount) {
     this.mount = mount;
@@ -71,6 +84,7 @@ export class PixiFeasibilityRenderer {
     this.propSprites = new Map();
     this.projectileShapes = new Map();
     this.boundResize = () => this.syncResolution();
+    this.layoutObserver = null;
     this.boundContextLost = event => {
       event.preventDefault();
       this.contextLost = true;
@@ -81,6 +95,7 @@ export class PixiFeasibilityRenderer {
 
   async initialize() {
     const dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
+    preparePlaceholderTextures();
     this.app = new Application();
     try {
       await this.app.init({
@@ -106,11 +121,9 @@ export class PixiFeasibilityRenderer {
       for (const [key, texture] of Object.entries(this.assetTextures)) this.textures.set(key, texture);
 
       this.app.canvas.classList.add('phase13-pixi-canvas');
-      this.app.canvas.style.width = '100%';
-      this.app.canvas.style.height = '100%';
       this.styleElement = document.createElement('style');
       this.styleElement.dataset.phase13RendererStyle = 'true';
-      this.styleElement.textContent = '.phase13-pixi-canvas{position:absolute;z-index:1;inset:0;display:block;width:100%;height:100%;pointer-events:none}.canvas-container[data-renderer="pixi"] #game-canvas{opacity:0}';
+      this.styleElement.textContent = '.phase13-pixi-canvas{position:absolute;z-index:1;inset:0 auto auto 0;display:block;pointer-events:none}.canvas-container[data-renderer="pixi"] #game-canvas{opacity:0}';
       document.head.appendChild(this.styleElement);
       this.app.canvas.setAttribute('aria-hidden', 'true');
       this.mount.appendChild(this.app.canvas);
@@ -119,6 +132,11 @@ export class PixiFeasibilityRenderer {
       this.app.canvas.addEventListener('webglcontextlost', this.boundContextLost);
       this.app.canvas.addEventListener('webglcontextrestored', this.boundContextRestored);
       window.addEventListener('resize', this.boundResize);
+      const sourceCanvas = this.mount.querySelector('#game-canvas');
+      if (sourceCanvas && typeof ResizeObserver !== 'undefined') {
+        this.layoutObserver = new ResizeObserver(() => this.syncCanvasLayout());
+        this.layoutObserver.observe(sourceCanvas);
+      }
       await this.setTuningPanel(new URLSearchParams(window.location.search).get('phase13-tuning') === '1');
       this.syncResolution();
       this.ready = true;
@@ -275,6 +293,20 @@ export class PixiFeasibilityRenderer {
       this.app.renderer.resolution = resolution;
       this.app.renderer.resize(WIDTH, HEIGHT);
     }
+
+    this.syncCanvasLayout();
+  }
+
+  syncCanvasLayout() {
+    if (!this.app?.canvas || !this.mount) return;
+    const sourceCanvas = this.mount.querySelector('#game-canvas');
+    if (!sourceCanvas) return;
+    const sourceRect = sourceCanvas.getBoundingClientRect();
+    const mountRect = this.mount.getBoundingClientRect();
+    this.app.canvas.style.left = `${sourceRect.left - mountRect.left - this.mount.clientLeft}px`;
+    this.app.canvas.style.top = `${sourceRect.top - mountRect.top - this.mount.clientTop}px`;
+    this.app.canvas.style.width = `${sourceRect.width}px`;
+    this.app.canvas.style.height = `${sourceRect.height}px`;
   }
 
   renderEnvironment(frame) {
@@ -480,6 +512,8 @@ export class PixiFeasibilityRenderer {
       projectileCount: this.lastFrame?.projectiles?.length || 0,
       visible: this.visible,
       contextLost: this.contextLost,
+      emptyTextureInitialized: Boolean(Texture.EMPTY.source.resource),
+      whiteTextureAlphaMode: Texture.WHITE.source.alphaMode,
       assetTextureNames: [...this.textures.keys()],
       tuning: { ...this.tuning }
     };
@@ -487,6 +521,8 @@ export class PixiFeasibilityRenderer {
 
   async destroy() {
     window.removeEventListener('resize', this.boundResize);
+    this.layoutObserver?.disconnect();
+    this.layoutObserver = null;
     if (this.app?.canvas) {
       this.app.canvas.removeEventListener('webglcontextlost', this.boundContextLost);
       this.app.canvas.removeEventListener('webglcontextrestored', this.boundContextRestored);

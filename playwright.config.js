@@ -60,7 +60,12 @@ export default defineConfig({
     },
     {
       name: 'chromium-release',
-      testMatch: ['**/phase12_release_smoke.e2e.js', '**/phase13_renderer_smoke.e2e.js', '**/phase13_visual_evidence.e2e.js'],
+      testMatch: [
+        '**/phase12_release_smoke.e2e.js',
+        '**/phase13_renderer_smoke.e2e.js',
+        '**/phase13_visual_evidence.e2e.js',
+        '**/phase13_cross_browser.e2e.js',
+      ],
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
@@ -73,7 +78,10 @@ export default defineConfig({
         browserName: 'firefox',
         launchOptions: {
           headless: !process.env.CI,
-          firefoxUserPrefs: { 'webgl.force-enabled': true },
+          firefoxUserPrefs: {
+            'webgl.force-enabled': true,
+            'webgl.out-of-process': false,
+          },
         },
       },
     },

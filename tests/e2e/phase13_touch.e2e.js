@@ -105,6 +105,12 @@ test('touch pointer mapping and renderer sizing remain aligned in portrait and l
     { width: 1920, height: 1080 },
   ]) {
     await page.setViewportSize(viewport);
+    await expect.poll(() => page.evaluate(() => {
+      const canvas = document.querySelector('#game-canvas').getBoundingClientRect();
+      const pixi = document.querySelector('.phase13-pixi-canvas').getBoundingClientRect();
+      return canvas.x === pixi.x && canvas.y === pixi.y
+        && canvas.width === pixi.width && canvas.height === pixi.height;
+    })).toBe(true);
     const result = await page.evaluate(() => {
       const canvas = document.querySelector('#game-canvas').getBoundingClientRect();
       const pixi = document.querySelector('.phase13-pixi-canvas').getBoundingClientRect();

@@ -137,6 +137,12 @@ test('Phase 13 renderer input and scaling stay aligned across the viewport matri
   const evidence = [];
   for (const [width, height] of sizes) {
     await page.setViewportSize({ width, height });
+    await expect.poll(() => page.evaluate(() => {
+      const canvas = document.querySelector('#game-canvas').getBoundingClientRect();
+      const renderer = document.querySelector('.phase13-pixi-canvas').getBoundingClientRect();
+      return canvas.x === renderer.x && canvas.y === renderer.y
+        && canvas.width === renderer.width && canvas.height === renderer.height;
+    })).toBe(true);
     const geometry = await page.evaluate(() => {
       const canvas = document.querySelector('#game-canvas').getBoundingClientRect();
       const renderer = document.querySelector('.phase13-pixi-canvas').getBoundingClientRect();

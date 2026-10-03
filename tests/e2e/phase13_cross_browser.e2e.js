@@ -30,6 +30,7 @@ test('Phase 13 Pixi WebGL smoke keeps authoritative scene and DOM controls avail
     const diagnostics = window.__BACKYARD_TEST_RENDERER__.getDiagnostics();
     const canvasRect = document.querySelector('#game-canvas').getBoundingClientRect();
     const pixiRect = document.querySelector('.phase13-pixi-canvas').getBoundingClientRect();
+    const mountRect = document.querySelector('.canvas-container').getBoundingClientRect();
     const rectDeltaPx = Math.max(
       Math.abs(canvasRect.x - pixiRect.x),
       Math.abs(canvasRect.y - pixiRect.y),
@@ -43,6 +44,7 @@ test('Phase 13 Pixi WebGL smoke keeps authoritative scene and DOM controls avail
         ball: { x: engine.ball.position.x, y: engine.ball.position.y },
         renderer: diagnostics,
         pointerTransparent: getComputedStyle(document.querySelector('.phase13-pixi-canvas')).pointerEvents === 'none',
+        mountRect: { x: mountRect.x, y: mountRect.y, width: mountRect.width, height: mountRect.height },
         canvasRect: { x: canvasRect.x, y: canvasRect.y, width: canvasRect.width, height: canvasRect.height },
         pixiRect: { x: pixiRect.x, y: pixiRect.y, width: pixiRect.width, height: pixiRect.height },
         rectDeltaPx,
@@ -52,6 +54,8 @@ test('Phase 13 Pixi WebGL smoke keeps authoritative scene and DOM controls avail
   expect(evidence.state).toBe('PLAYING');
   expect(evidence.renderer.backend).toMatch(/webgl/i);
   expect(evidence.renderer.screen).toEqual({ width: 960, height: 540 });
+  expect(evidence.renderer.emptyTextureInitialized).toBe(true);
+  expect(evidence.renderer.whiteTextureAlphaMode).toBe('premultiplied-alpha');
   expect(evidence.rectDeltaPx).toBeLessThanOrEqual(1);
   expect(evidence.pointerTransparent).toBe(true);
   await attachScreenshot(testInfo, page, 'phase13-cross-browser-scene.png');
