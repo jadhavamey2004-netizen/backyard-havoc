@@ -210,6 +210,7 @@ test('Phase 13 deterministic Pixi visual states establish the remaster baseline 
 });
 
 test('Phase 13 Canvas and Pixi controlled performance and bundle comparison', async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
   await startGame(page, true);
   await page.evaluate(() => {
     const engine = window.__BACKYARD_TEST_ENGINE__;

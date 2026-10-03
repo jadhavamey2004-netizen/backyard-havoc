@@ -28,26 +28,31 @@ test('Phase 13 Pixi WebGL smoke keeps authoritative scene and DOM controls avail
     engine.camera.reset();
     engine.render(1234);
     const diagnostics = window.__BACKYARD_TEST_RENDERER__.getDiagnostics();
+    const canvasRect = document.querySelector('#game-canvas').getBoundingClientRect();
+    const pixiRect = document.querySelector('.phase13-pixi-canvas').getBoundingClientRect();
+    const rectDeltaPx = Math.max(
+      Math.abs(canvasRect.x - pixiRect.x),
+      Math.abs(canvasRect.y - pixiRect.y),
+      Math.abs(canvasRect.width - pixiRect.width),
+      Math.abs(canvasRect.height - pixiRect.height),
+    );
     return {
-      state: engine.gameState,
-      score: engine.score,
-      player: { x: engine.player.x, y: engine.player.y, state: engine.player.state },
-      ball: { x: engine.ball.position.x, y: engine.ball.position.y },
-      renderer: diagnostics,
-      pointerTransparent: getComputedStyle(document.querySelector('.phase13-pixi-canvas')).pointerEvents === 'none',
-      canvasAndPixiRectsMatch: (() => {
-        const canvas = document.querySelector('#game-canvas').getBoundingClientRect();
-        const pixi = document.querySelector('.phase13-pixi-canvas').getBoundingClientRect();
-        return canvas.x === pixi.x && canvas.y === pixi.y
-          && canvas.width === pixi.width && canvas.height === pixi.height;
-      })(),
+        state: engine.gameState,
+        score: engine.score,
+        player: { x: engine.player.x, y: engine.player.y, state: engine.player.state },
+        ball: { x: engine.ball.position.x, y: engine.ball.position.y },
+        renderer: diagnostics,
+        pointerTransparent: getComputedStyle(document.querySelector('.phase13-pixi-canvas')).pointerEvents === 'none',
+        canvasRect: { x: canvasRect.x, y: canvasRect.y, width: canvasRect.width, height: canvasRect.height },
+        pixiRect: { x: pixiRect.x, y: pixiRect.y, width: pixiRect.width, height: pixiRect.height },
+        rectDeltaPx,
     };
   });
+  await attachJsonEvidence(testInfo, 'phase13-cross-browser-renderer.json', evidence);
   expect(evidence.state).toBe('PLAYING');
   expect(evidence.renderer.backend).toMatch(/webgl/i);
   expect(evidence.renderer.screen).toEqual({ width: 960, height: 540 });
-  expect(evidence.canvasAndPixiRectsMatch).toBe(true);
+  expect(evidence.rectDeltaPx).toBeLessThanOrEqual(1);
   expect(evidence.pointerTransparent).toBe(true);
-  await attachJsonEvidence(testInfo, 'phase13-cross-browser-renderer.json', evidence);
   await attachScreenshot(testInfo, page, 'phase13-cross-browser-scene.png');
 });

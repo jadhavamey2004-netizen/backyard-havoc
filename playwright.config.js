@@ -71,13 +71,16 @@ export default defineConfig({
       testMatch: ['**/phase12_release_smoke.e2e.js', '**/phase13_cross_browser.e2e.js'],
       use: {
         browserName: 'firefox',
-        launchOptions: { firefoxUserPrefs: { 'webgl.force-enabled': true } },
+        launchOptions: {
+          headless: !process.env.CI,
+          firefoxUserPrefs: { 'webgl.force-enabled': true },
+        },
       },
     },
     {
       name: 'webkit-release',
       testMatch: ['**/phase12_release_smoke.e2e.js', '**/phase13_cross_browser.e2e.js'],
-      use: { browserName: 'webkit' },
+      use: { browserName: 'webkit', launchOptions: { headless: !process.env.CI } },
     },
   ],
   webServer: {
