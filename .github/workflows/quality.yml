@@ -102,7 +102,16 @@ jobs:
         run: npm run build:pixi-spike
 
       - name: Run isolated Pixi touch and release projects
-        run: npm run test:e2e -- --project=chromium-pixi-touch --project=chromium-pixi-release
+        run: npm run test:e2e -- --project=chromium-pixi-touch --project=chromium-pixi-release --update-snapshots
+
+      - name: Upload refreshed Linux visual snapshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase14-linux-snapshot-refresh
+          path: tests/e2e/phase13_visual_evidence.e2e.js-snapshots/*-chromium-release-linux.png
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Upload Pixi browser reports and failure evidence
         if: always()
