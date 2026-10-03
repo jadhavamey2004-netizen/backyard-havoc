@@ -68,10 +68,11 @@ Local verification:
 - `npm test`: 324/324 tests passed.
 - `npm run build`: passed.
 - Chromium, Chromium touch, normal Chromium release, Pixi touch and Pixi release E2E projects: 69 passed, 5 project-guard skips. Browser-health attachments were empty in all 74 records.
-- The unfiltered `npm run test:e2e` could not finish its Firefox/WebKit projects because their Playwright executables are absent on this machine. Downloading Firefox from the configured CDN progressed at about 50 KB/s, so the browser install was stopped. The unfiltered run’s two Phase 13 full-page snapshot mismatches were the expected Phase 14 layout changes; the strict snapshot fixtures were refreshed and their 3-test Chromium Pixi visual suite passed afterward. Exact-head GitHub CI remains responsible for the Firefox/WebKit release checks.
+- The unfiltered `npm run test:e2e` completed with 66 passed, 5 skipped and 9 failed: three Chromium scenarios recorded the external Google Fonts stylesheet failing with `ERR_NETWORK_CHANGED`, and six Firefox/WebKit scenarios could not launch because their Playwright executables are absent on this machine. A targeted, no-retry rerun of the three network-affected Chromium scenarios passed 3/3 with clean browser-health records. Firefox/WebKit downloads from the configured CDN progressed at about 50 KB/s, so installation was stopped; exact-head GitHub CI remains responsible for those release checks.
+- Phase 13’s strict full-page screenshot fixtures were refreshed for the intentional Phase 14 header/HUD/Canvas composition without changing test code, assertions, thresholds or retries. All Chromium Pixi visual screenshot/comparison scenarios passed locally and in the Linux snapshot-refresh run.
 - `npm audit --omit=dev`: zero findings. Full `npm audit`: 9 findings in the existing development/tooling dependency tree (3 moderate, 5 high, 1 critical); package and lock files are unchanged.
 
-Exact-head CI, workflow artifact and Vercel Preview provenance are recorded in the final handoff and draft PR description after remote verification.
+The final handoff and draft PR #18 description carry the exact-head Quality Gate, browser artifacts and health totals, plus Vercel Preview provenance. Durable project notes omit ephemeral workflow IDs.
 
 The existing Phase 13 visual test code and strict same-pixel snapshot assertions remain unchanged. Its expected full-page screenshot fixtures were refreshed because the intentionally changed Phase 14 header/HUD/Canvas composition changes those captures. The deterministic production Canvas/Pixi render-state scenarios still run against the same unchanged assertions; no tolerance or retry was added.
 
@@ -88,4 +89,4 @@ The inherited DOM HUD could cover Canvas defeat text because the HUD remained vi
 
 ## Final evidence
 
-Final exact-head Quality Gate, Playwright artifact, Vercel Preview deployment and final branch head are recorded in the Phase 14 handoff and draft PR description after all local checks complete.
+The exact reviewed branch head, Quality Gate result, Playwright artifact and Vercel Preview deployment/SHA are recorded in the Phase 14 handoff and draft PR description.
