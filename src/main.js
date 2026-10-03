@@ -44,6 +44,17 @@ window.addEventListener('DOMContentLoaded', async () => {
   };
   let ui = null;
   let releaseAllGameInput = () => {};
+  const gameHud = document.getElementById('game-hud');
+  const syncGamePresentation = () => {
+    const screen = ui?.getState().screen;
+    const cinematic = engine.gameState === 'INTRO_CUTSCENE' || engine.gameState === 'ENDING_CUTSCENE';
+    const inaccessible = cinematic || screen !== 'PLAYING';
+    document.body.dataset.gamePhase = engine.gameState.toLowerCase().replaceAll('_', '-');
+    if (!gameHud) return;
+    gameHud.classList.toggle('cinematic-hidden', cinematic);
+    gameHud.inert = inaccessible;
+    gameHud.setAttribute('aria-hidden', String(inaccessible || gameHud.hidden));
+  };
   applyReducedMotion(getReducedMotion());
   reducedMotionPreference?.addEventListener?.('change', event => {
     if (reducedMotionOverride === null) {
@@ -57,13 +68,18 @@ window.addEventListener('DOMContentLoaded', async () => {
       sounds.init();
       engine.startIntroCutscene();
       metaProgression.beginRun();
+      queueMicrotask(syncGamePresentation);
       return true;
     },
     onPause: () => {
       releaseAllGameInput();
       return engine.setPaused(true);
     },
-    onResume: () => engine.setPaused(false),
+    onResume: () => {
+      const resumed = engine.setPaused(false);
+      queueMicrotask(syncGamePresentation);
+      return resumed;
+    },
     onRestart: () => {
       releaseAllGameInput();
       metaProgression.abandonRun();
@@ -72,12 +88,14 @@ window.addEventListener('DOMContentLoaded', async () => {
       sounds.resetTransientAudio();
       engine.skipOrEndIntroCutscene();
       metaProgression.beginRun();
+      queueMicrotask(syncGamePresentation);
       return true;
     },
     onMainMenu: () => {
       releaseAllGameInput();
       metaProgression.abandonRun();
       engine.resetEnvironment();
+      queueMicrotask(syncGamePresentation);
       return true;
     },
     onSetMuted: muted => {
@@ -117,6 +135,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     muted: sounds.isMuted,
     reducedMotion: getReducedMotion()
   });
+  syncGamePresentation();
 
   const affiliatePlacement = document.getElementById('affiliate-placement');
   engine.onGameOverCallback = stats => {
@@ -124,6 +143,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const progressionSummary = metaProgression.completeRun(stats);
     mountAffiliateLink(affiliatePlacement);
     ui.showResults(stats, progressionSummary);
+    syncGamePresentation();
   };
   engine.onGameplayEvent = event => metaProgression.handleGameplayEvent(event);
 
@@ -381,6 +401,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const dt = Math.min(0.1, (currentTime - lastTime) / 1000);
     lastTime = currentTime;
     engine.update(dt);
+    syncGamePresentation();
     engine.render(currentTime);
     syncMobileControls();
     ui.updateHud({

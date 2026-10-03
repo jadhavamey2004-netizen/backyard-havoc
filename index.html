@@ -23,32 +23,32 @@
         </button>
       </header>
 
+      <section id="game-hud" class="game-hud hidden" aria-label="Run status" hidden>
+        <div class="hud-topline">
+          <div class="hud-stat score-stat"><span class="hud-label">SCORE</span><strong id="score-display" class="hud-number">0</strong></div>
+          <div class="hud-stat health-stat"><span class="hud-label">HEALTH</span><strong id="player-health-display" class="health-value" aria-label="Health: 3 of 3">3/3</strong></div>
+          <div id="havoc-card" class="havoc-card">
+            <div class="havoc-heading"><span class="hud-label">HAVOC</span><strong id="havoc-value-display">0%</strong></div>
+            <div class="havoc-bar-bg" role="progressbar" aria-label="Havoc meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div id="havoc-bar-fill" class="havoc-bar-fill"></div>
+            </div>
+            <span id="havoc-mode-display" class="havoc-mode-display" hidden>HAVOC MODE</span>
+          </div>
+          <div id="kevin-card" class="kevin-card"><span class="hud-label">NEIGHBOR WATCH</span><strong id="kevin-state-display" data-state="calm">KEVIN: CALM</strong></div>
+        </div>
+
+        <div class="hud-bottomline">
+          <div class="combo-card" aria-label="Juggle combo">
+            <span class="hud-label">COMBO</span><strong id="combo-display" class="combo-number">1x</strong>
+            <span class="combo-bar-bg" aria-hidden="true"><span id="combo-bar-fill" class="combo-bar-fill"></span></span>
+          </div>
+          <p class="controls-hint"><kbd>A</kbd>/<kbd>D</kbd> MOVE <span aria-hidden="true">·</span> CLICK ACTION <span aria-hidden="true">·</span> HOLD TO CHARGE</p>
+        </div>
+      </section>
+
       <main id="game-stage" class="game-stage">
         <div class="canvas-container">
           <canvas id="game-canvas" width="960" height="540" tabindex="-1" role="img" aria-label="Backyard Havoc game playfield. Move with A and D or the touch movement buttons. Point and click or tap to aim and act; hold to charge, and drag while held to adjust aim."></canvas>
-
-          <section id="game-hud" class="game-hud hidden" aria-label="Run status" hidden>
-            <div class="hud-topline">
-              <div class="hud-stat score-stat"><span class="hud-label">SCORE</span><strong id="score-display" class="hud-number">0</strong></div>
-              <div class="hud-stat health-stat"><span class="hud-label">HEALTH</span><strong id="player-health-display" class="health-value" aria-label="Health: 3 of 3">3/3</strong></div>
-              <div id="havoc-card" class="havoc-card">
-                <div class="havoc-heading"><span class="hud-label">HAVOC</span><strong id="havoc-value-display">0%</strong></div>
-                <div class="havoc-bar-bg" role="progressbar" aria-label="Havoc meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                  <div id="havoc-bar-fill" class="havoc-bar-fill"></div>
-                </div>
-                <span id="havoc-mode-display" class="havoc-mode-display" hidden>HAVOC MODE</span>
-              </div>
-              <div id="kevin-card" class="kevin-card"><span class="hud-label">NEIGHBOR WATCH</span><strong id="kevin-state-display" data-state="calm">KEVIN: CALM</strong></div>
-            </div>
-
-            <div class="hud-bottomline">
-              <div class="combo-card" aria-label="Juggle combo">
-                <span class="hud-label">COMBO</span><strong id="combo-display" class="combo-number">1x</strong>
-                <span class="combo-bar-bg" aria-hidden="true"><span id="combo-bar-fill" class="combo-bar-fill"></span></span>
-              </div>
-              <p class="controls-hint"><kbd>A</kbd>/<kbd>D</kbd> MOVE <span aria-hidden="true">·</span> CLICK ACTION <span aria-hidden="true">·</span> HOLD TO CHARGE</p>
-            </div>
-          </section>
         </div>
 
         <div id="mobile-game-controls" class="mobile-game-controls" aria-label="Touch movement controls" hidden>

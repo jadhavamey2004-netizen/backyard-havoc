@@ -37,7 +37,7 @@ export default defineConfig({
     },
     {
       name: 'chromium-touch',
-      testMatch: ['**/phase11_touch.e2e.js'],
+      testMatch: ['**/phase11_touch.e2e.js', '**/phase14_theater_hud.e2e.js'],
       use: {
         browserName: 'chromium',
         viewport: { width: 390, height: 844 },

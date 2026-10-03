@@ -1,0 +1,28 @@
+{
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 3
+  },
+  "canvasCss": {
+    "width": 1745.765625,
+    "height": 981.984375,
+    "aspect": 1.77779368943625
+  },
+  "canvasBacking": {
+    "width": 2400,
+    "height": 1350
+  },
+  "cappedDpr": 2.5,
+  "frameIntervalsMs": {
+    "samples": 30,
+    "median": 33.299999999999955,
+    "p95": 50.09999999999991,
+    "max": 55.19999999925494
+  },
+  "particles": 0,
+  "particleCap": 400,
+  "matterBodies": 33,
+  "shards": 0,
+  "projectiles": 0
+}
