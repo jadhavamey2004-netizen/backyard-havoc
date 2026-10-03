@@ -101,6 +101,8 @@ No inherited gameplay or other Phase 1–12 behavior needed correction in Phase 
 
 The inherited Phase 12 release regression `tests/e2e/phase12_release_smoke.e2e.js` is byte-for-byte identical to the locked v1 baseline at `802654e517ad28ef5f49d014786f26e5ef50edf0`. Both the baseline Git blob and restored file hash to `093864e87dd0c2b203254de02950fa9e50a27c7c`. The unapproved `test.setTimeout(90_000)` addition was removed without adding a replacement timeout, retry, or assertion change. A baseline-to-Phase-13 test diff audit found no other modified inherited Phase 1–12 regression test; all other Phase 13 test additions are new Phase 13 coverage or the new renderer-adapter unit test.
 
+The new eight-viewport Pixi-touch mapping test exceeded the default 30s budget on one documentation-only CI run (35.3s elapsed); the same test passed in 33.4s on the preceding exact-head run. It now has a 60s test-specific budget so the software-WebGL viewport matrix can finish on the CI runner. The viewport list and all geometry/input assertions are unchanged. This budget applies only to the new Phase 13 test; the inherited Phase 12 test remains the baseline file byte-for-byte.
+
 Clean local verification after restoration:
 
 | Check | Result |

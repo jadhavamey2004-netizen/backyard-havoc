@@ -92,6 +92,7 @@ test('Pixi keeps real touch action and held movement on the original input surfa
 });
 
 test('touch pointer mapping and renderer sizing remain aligned in portrait and landscape', async ({ page }, testInfo) => {
+  test.setTimeout(60_000);
   await beginPixiRun(page);
   const results = [];
   for (const viewport of [
