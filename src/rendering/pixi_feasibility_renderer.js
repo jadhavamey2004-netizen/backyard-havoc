@@ -1,5 +1,5 @@
 import Matter from 'matter-js';
-import { Application, Assets, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
+import { Assets, Container, Graphics, Sprite, Text, Texture, WebGLRenderer } from 'pixi.js';
 import { drawPlayerCharacter } from '../player_renderer.js';
 import { drawKevinCharacter } from '../kevin_renderer.js';
 import { MatterDebugOverlay } from './matter_debug_overlay.js';
@@ -61,7 +61,9 @@ export class PixiFeasibilityRenderer {
   constructor(mount) {
     this.mount = mount;
     this.mode = 'pixi';
-    this.app = null;
+    this.renderer = null;
+    this.rendererInitialized = false;
+    this.stage = null;
     this.ready = false;
     this.visible = !document.hidden;
     this.contextLost = false;
@@ -100,7 +102,8 @@ export class PixiFeasibilityRenderer {
   async initialize() {
     const dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
     preparePlaceholderTextures();
-    this.app = new Application();
+    this.renderer = new WebGLRenderer();
+    this.stage = new Container();
     this.canvas = document.createElement('canvas');
     this.canvas.classList.add('phase13-pixi-canvas');
     this.canvas.setAttribute('aria-hidden', 'true');
@@ -111,12 +114,11 @@ export class PixiFeasibilityRenderer {
     this.styleElement.dataset.phase13RendererStyle = 'true';
     this.styleElement.textContent = '.phase13-pixi-canvas{position:absolute;z-index:1;inset:0 auto auto 0;display:block;pointer-events:none}.canvas-container[data-renderer="pixi"] #game-canvas{opacity:0}';
     document.head.appendChild(this.styleElement);
-    // Firefox may discard WebGL resources created on a detached canvas while Pixi
-    // loads its assets. Connect the canvas before asking Pixi to create its context.
+    // Keep the canvas connected while Pixi creates its WebGL context.
     this.mount.appendChild(this.canvas);
     this.canvasConnectedAtContextCreation = this.canvas.isConnected;
     try {
-      await this.app.init({
+      await this.renderer.init({
         width: WIDTH,
         height: HEIGHT,
         resolution: dpr,
@@ -127,6 +129,7 @@ export class PixiFeasibilityRenderer {
         autoStart: false,
         backgroundAlpha: 1
       });
+      this.rendererInitialized = true;
 
       const assetPaths = {
         house: '/assets/generated/vectors/environment/backyard-house.svg',
@@ -150,7 +153,7 @@ export class PixiFeasibilityRenderer {
       await this.setTuningPanel(new URLSearchParams(window.location.search).get('phase13-tuning') === '1');
       this.syncResolution();
       this.ready = true;
-      this.app.canvas.style.visibility = this.visible ? 'visible' : 'hidden';
+      this.renderer.canvas.style.visibility = this.visible ? 'visible' : 'hidden';
       return this;
     } catch (error) {
       await this.destroy();
@@ -159,7 +162,7 @@ export class PixiFeasibilityRenderer {
   }
 
   buildScene() {
-    const stage = this.app.stage;
+    const stage = this.stage;
     stage.label = 'phase13-pixi-stage';
     this.backdropZoom = new Container({ label: 'backdrop-camera-zoom' });
     this.backdropZoom.pivot.set(WIDTH / 2, HEIGHT / 2);
@@ -257,7 +260,7 @@ export class PixiFeasibilityRenderer {
     this.lightAccent = new Graphics({ label: 'phase13-upper-left-key-light' });
     this.lightAccent.poly([[0, 0], [90, 0], [0, 90]]).fill({ color: 0xffedb5, alpha: 0.13 });
     this.worldRoot.addChild(this.lightAccent);
-    this.app.render();
+    this.renderer.render({ container: this.stage });
   }
 
   setTuning(key, value) {
@@ -294,30 +297,30 @@ export class PixiFeasibilityRenderer {
   setActive(active) {
     const enabled = Boolean(active);
     if (this.mount) this.mount.dataset.renderer = enabled ? 'pixi' : 'canvas';
-    if (this.app?.canvas) this.app.canvas.style.visibility = enabled ? 'visible' : 'hidden';
+    if (this.renderer?.canvas) this.renderer.canvas.style.visibility = enabled ? 'visible' : 'hidden';
   }
 
   syncResolution() {
-    if (!this.app) return;
+    if (!this.renderer) return;
     const resolution = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
-    if (resolution !== this.app.renderer.resolution) {
-      this.app.renderer.resolution = resolution;
-      this.app.renderer.resize(WIDTH, HEIGHT);
+    if (resolution !== this.renderer.resolution) {
+      this.renderer.resolution = resolution;
+      this.renderer.resize(WIDTH, HEIGHT);
     }
 
     this.syncCanvasLayout();
   }
 
   syncCanvasLayout() {
-    if (!this.app?.canvas || !this.mount) return;
+    if (!this.renderer?.canvas || !this.mount) return;
     const sourceCanvas = this.mount.querySelector('#game-canvas');
     if (!sourceCanvas) return;
     const sourceRect = sourceCanvas.getBoundingClientRect();
     const mountRect = this.mount.getBoundingClientRect();
-    this.app.canvas.style.left = `${sourceRect.left - mountRect.left - this.mount.clientLeft}px`;
-    this.app.canvas.style.top = `${sourceRect.top - mountRect.top - this.mount.clientTop}px`;
-    this.app.canvas.style.width = `${sourceRect.width}px`;
-    this.app.canvas.style.height = `${sourceRect.height}px`;
+    this.renderer.canvas.style.left = `${sourceRect.left - mountRect.left - this.mount.clientLeft}px`;
+    this.renderer.canvas.style.top = `${sourceRect.top - mountRect.top - this.mount.clientTop}px`;
+    this.renderer.canvas.style.width = `${sourceRect.width}px`;
+    this.renderer.canvas.style.height = `${sourceRect.height}px`;
   }
 
   renderEnvironment(frame) {
@@ -481,7 +484,7 @@ export class PixiFeasibilityRenderer {
     this.renderBall(frame);
     this.renderActionAndAim(frame);
     this.debugOverlay.render(frame);
-    this.app.render();
+    this.renderer.render({ container: this.stage });
     this.recordFrame(start);
   }
 
@@ -500,17 +503,17 @@ export class PixiFeasibilityRenderer {
     const percentile = fraction => intervals.length ? intervals[Math.min(intervals.length - 1, Math.floor(intervals.length * fraction))] : null;
     return {
       mode: this.mode,
-      backend: this.app?.renderer?.name || this.app?.renderer?.constructor?.name || 'unknown',
+      backend: this.renderer?.name || this.renderer?.constructor?.name || 'unknown',
       cameraTransform: this.lastFrame?.camera?.transform || null,
       cameraWorldX: this.lastFrame?.camera?.worldX ?? null,
       reducedMotion: this.lastFrame?.reducedMotion ?? null,
       collisionOverlayVisible: this.debugOverlay.visible,
-      resolution: this.app?.renderer?.resolution || null,
-      screen: this.app ? { width: this.app.screen.width, height: this.app.screen.height } : null,
-      backing: this.app ? { width: this.app.canvas.width, height: this.app.canvas.height } : null,
+      resolution: this.renderer?.resolution || null,
+      screen: this.renderer ? { width: this.renderer.screen.width, height: this.renderer.screen.height } : null,
+      backing: this.renderer ? { width: this.renderer.canvas.width, height: this.renderer.canvas.height } : null,
       textureCount: this.textures.size + 3,
-      sceneRenderableCountProxy: this.app ? visit(this.app.stage) : 0,
-      drawCallCountProxy: this.app ? visit(this.app.stage) : 0,
+      sceneRenderableCountProxy: this.stage ? visit(this.stage) : 0,
+      drawCallCountProxy: this.stage ? visit(this.stage) : 0,
       sampleDurationMs: this.performance.firstFrame === null ? 0 : this.performance.lastFrame - this.performance.firstFrame,
       frameCount: this.performance.intervals.length,
       medianFrameIntervalMs: percentile(0.5),
@@ -551,14 +554,17 @@ export class PixiFeasibilityRenderer {
     for (const shape of this.projectileShapes.values()) shape.destroy();
     this.propSprites.clear();
     this.projectileShapes.clear();
-    if (this.app?.renderer) {
+    if (this.rendererInitialized) {
       this.mount?.dataset && delete this.mount.dataset.renderer;
-      this.app.destroy({ removeView: true, releaseGlobalResources: true }, { children: true });
+      this.stage?.destroy({ children: true });
+      this.renderer.destroy({ removeView: true, releaseGlobalResources: true });
     } else {
       this.canvas?.remove();
     }
     this.ready = false;
-    this.app = null;
+    this.renderer = null;
+    this.rendererInitialized = false;
+    this.stage = null;
     this.canvas = null;
   }
 }

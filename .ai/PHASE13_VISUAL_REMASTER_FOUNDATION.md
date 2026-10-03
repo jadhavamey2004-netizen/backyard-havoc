@@ -111,7 +111,7 @@ No inherited gameplay or other Phase 1–12 behavior needed correction in Phase 
 | Firefox/WebKit E2E projects | Not runnable locally: required browser revisions absent and download mirrors timed out; no tests disabled in CI |
 | Chromium browser health | All captured records: pageErrors 0, consoleErrors 0, consoleWarnings 0, failedRequests 0, sameOriginFailures 0 |
 
-The Firefox/WebKit smoke also asserts that the Pixi canvas is already attached when its WebGL context is created and that no context-loss event occurs during the run. This covers the Firefox startup loss seen in the first exact-head CI attempt; the exact-head cross-browser workflow remains the authority for confirming the fix.
+The Firefox/WebKit smoke also asserts that the Pixi canvas is already attached when its WebGL context is created and that no context-loss event occurs during the run. Pixi's default renderer selection probes WebGL by deliberately losing a temporary test context; Firefox reports that probe as a console warning. The feasibility path now initializes the explicitly required WebGL renderer directly, avoiding the temporary probe while retaining the live-renderer browser smoke. Exact-head cross-browser CI remains the authority for confirming the result.
 
 `npm audit --omit=dev` reports 0 vulnerabilities. Full `npm audit` reports 9 development/transitive advisories (3 moderate, 5 high, 1 critical) involving the pinned tooling tree, including Vite/Vitest and AssetPack's minimatch/Sharp dependencies. No forced dependency changes were made because the prescribed versions are pinned for this experiment; these findings are a review limitation and should be reassessed before broader adoption of the asset tooling.
 
