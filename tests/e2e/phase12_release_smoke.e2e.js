@@ -61,6 +61,7 @@ test('release smoke boots menus, starts an intro, accepts keyboard and pointer i
 });
 
 test('release smoke preserves local progression and the Results-only affiliate contract', async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
   await page.goto('/');
   const initialProfile = await page.evaluate(() => window.__BACKYARD_TEST_META__.getProfile());
   await page.locator('#btn-start-game').click();

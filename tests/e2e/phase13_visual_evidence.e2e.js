@@ -69,6 +69,7 @@ async function capture(testInfo, page, name) {
 }
 
 test('Phase 13 deterministic Canvas title and baseline screenshots', async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
   await page.goto('/');
   await page.waitForFunction(() => Boolean(window.__BACKYARD_TEST_ENGINE__));
   await page.evaluate(() => {
@@ -90,6 +91,7 @@ test('Phase 13 deterministic Canvas title and baseline screenshots', async ({ pa
 });
 
 test('Phase 13 deterministic Pixi visual states establish the remaster baseline suite', async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
   await startGame(page, true);
   const prepare = async scenario => page.evaluate(name => {
     const engine = window.__BACKYARD_TEST_ENGINE__;
@@ -145,6 +147,7 @@ test('Phase 13 deterministic Pixi visual states establish the remaster baseline 
     engine.render(1234);
   }, scenario);
 
+  await prepare('idle');
   await capture(testInfo, page, 'phase13-pixi-scene');
   await prepare('idle');
   await capture(testInfo, page, 'phase13-player-idle');

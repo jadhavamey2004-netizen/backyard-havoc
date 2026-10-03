@@ -14,12 +14,13 @@ test('Phase 13 Pixi WebGL smoke keeps authoritative scene and DOM controls avail
   await page.waitForFunction(() => Boolean(window.__BACKYARD_TEST_RENDERER__));
   await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_RENDERER__.getMode())).toBe('pixi');
   await expect(page.locator('.phase13-pixi-canvas')).toBeVisible();
-  await expect(page.locator('#btn-pause-game')).toBeVisible();
 
   await page.locator('#btn-start-game').click();
   await page.locator('#game-canvas').focus();
   await page.keyboard.press('Space');
   await expect.poll(() => page.evaluate(() => window.__BACKYARD_TEST_ENGINE__.gameState)).toBe('PLAYING');
+  await expect(page.locator('#screen-overlay')).toBeHidden();
+  await expect(page.locator('#btn-pause-game')).toBeVisible();
 
   const evidence = await page.evaluate(() => {
     const engine = window.__BACKYARD_TEST_ENGINE__;

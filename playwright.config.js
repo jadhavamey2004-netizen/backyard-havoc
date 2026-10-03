@@ -69,7 +69,10 @@ export default defineConfig({
     {
       name: 'firefox-release',
       testMatch: ['**/phase12_release_smoke.e2e.js', '**/phase13_cross_browser.e2e.js'],
-      use: { browserName: 'firefox' },
+      use: {
+        browserName: 'firefox',
+        launchOptions: { firefoxUserPrefs: { 'webgl.force-enabled': true } },
+      },
     },
     {
       name: 'webkit-release',
